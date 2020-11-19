@@ -9,7 +9,7 @@ Je travaille sur Ubuntu 20.04 LTS les logiciles suivants doivent-être installé
     sudo apt install gcc-arm-none-eabi
     sudo apt install stlink-tools
   
- la commande **st-info --probe** ne rapporte pas les bonnes information sur la carte. Il faut créé le fichier **/etc/modprobe.cond** qui contient la ligne suivante:
+ la commande **st-info --probe** ne rapporte pas les bonnes information sur la carte. Il faut créé le fichier **/etc/modprobe.conf** qui contient la ligne suivante:
  
     options usb-storage quirks=483:3744:i
 
@@ -24,9 +24,15 @@ Found 1 stlink programmers
  flash:      131072 (pagesize: 2048)
  sram:       32768
  chipid:     0x0468
- descr:      G4 Category-2
+ descr:      G4 Category-2*
 jacques@dv6:~$ 
 ```
 
+## Modification matérielle
 
+Sur la carte il y a un cristal de 24Mhz qui n'est branché d'emblé aux broches **OSCIN** et **OSCOUT** du **STM32G431**. Pour ce faire j'ai fermer les 2 ponts notés **9** et **10** sur la carte. Ils sont situé entre le MCU et le bouton **RESET** qui est à l'extrémité. 
   
+## Première étape
+
+Tout le code sera réalisé en assembleur. La première étape sera de configurer le MCU pour qu'il utilise le cristal **X2** et le PLL pour que la fréquence du MCU soit de **168Mhz**. 
+
