@@ -31,6 +31,8 @@ jacques@dv6:~$
 ## Modification matérielle
 
 Sur la carte il y a un cristal de 24Mhz qui n'est branché d'emblé aux broches **OSCIN** et **OSCOUT** du **STM32G431**. Pour ce faire j'ai fermer les 2 ponts notés **9** et **10** sur la carte. Ils sont situé entre le MCU et le bouton **RESET** qui est à l'extrémité. 
+
+![carte](docs/carte.png)
   
 ## Première étape
 
