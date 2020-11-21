@@ -4,12 +4,12 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-/* Highest address of the user mode stack */
-_estack = 0x20005800;    /* end of RAM */
-/* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0;      /* required amount of heap  */
-_Min_Stack_Size = 0x100; /* required amount of stack */
 
+_rStack_Size = 0x200; /* size of return stack */
+/* Highest address of the user mode stack */
+_rstack = 0x10002800;    /* end of CCRAM growind down */
+_dStack_Size = 0x200; /* size of data stack */
+_dstack = 0x10002400; /* growing up */
 /* Specify the memory areas */
 MEMORY
 {
@@ -105,15 +105,15 @@ SECTIONS
   } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
-  ._user_heap_stack :
+  ._forth_stacks :
   {
     . = ALIGN(8);
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
-    . = . + _Min_Heap_Size;
-    . = . + _Min_Stack_Size;
+    . = . + _dStack_Size;
+    . = . + _rStack_Size;
     . = ALIGN(8);
-  } >RAM
+  } >CCMRAM
 
   
   .ARM.attributes 0 : { *(.ARM.attributes) } 
