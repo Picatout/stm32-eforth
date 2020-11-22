@@ -1,6 +1,6 @@
 # stm32-eforth
 
-Adaptation de eforth pour sur la carte **STM32G431-NUCLEO-32**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. 
+Adaptation de eforth pour sur la carte **STM32G431-NUCLEO-32**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. Pour le suivit du projet voir le fichier [journal](journal.md).
 
 ## prérequis
 
