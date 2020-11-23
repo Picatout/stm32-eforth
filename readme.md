@@ -1,10 +1,6 @@
 # stm32-eforth
 
-<<<<<<< HEAD
 Adaptation de eforth pour sur la carte **blue-pill**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. 
-=======
-Adaptation de eforth pour sur la carte **STM32G431-NUCLEO-32**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. Pour le suivit du projet voir le fichier [journal](journal.md).
->>>>>>> 9ae0a76695678f68e3306f112f36541d472a1cf8
 
 ## prérequis
 
@@ -13,7 +9,7 @@ Je travaille sur Ubuntu 20.04 LTS les logiciles suivants doivent-être installé
     sudo apt install gcc-arm-none-eabi
     sudo apt install stlink-tools
   
- 
+Une description détaillée de l'installation des outils de développement est disponible [ici](https://picatout-jd.blogspot.com/2018/08/pilule-bleue-introduction.html). 
 ```
 Found 1 stlink programmers
  serial:     483f6e066772574857351967
@@ -25,10 +21,35 @@ Found 1 stlink programmers
 jacques@hp15:~/github/stm32-eforth$ 
 ```
 
-## Modification matérielle
+## carte blue pill
 ![carte](board/blue-pill/board-view-2.jpg)
-  
-## Première étape
 
-Tout le code sera réalisé en assembleur. La première étape sera de configurer le MCU pour qu'il utilise le cristal **8 Mhz** et le PLL pour que la fréquence du MCU soit de **72 Mhz**. 
+## communication
+
+La comminication avec la carte se fait par le USART1 configuré à 115200 BAUD, pas de parité, 8 bits et 1 stop. Pas de contrôle de flux.
+
+Pour l'adaptation des niveaux de voltage entre le port RS-232 du PC et la carte **blue-pill** j'ai fabriqué le petit adapteur de niveau que voici.
+
+![schématique](docs/rs-232-level-adaptor-schematic.png)
+
+![assemblage](docs/rs-232-level-adapter-assembly.png)
+
+Côté carte **blue pill** les connection sont les suivantes:
+
+ * **V+** broche **3.3v**.
+ * **GND** broche **G**.
+ * **TX** broche **A9**
+ * **RX** broche **A10**
+
+Côté RS-232
+
+* **TX** broche 2 du connecteur DB-9 femelle.
+* **RX** broche 3 du connecteur DB-9 femelle.
+* **GND** broche 5 du connecteur DB-9 femelle.
+
+![montage](docs/montage.jpg)
+
+## programmation
+
+Tout le code sera réalisé en assembleur. La première étape sera de configurer le MCU pour qu'il utilise le cristal **8 Mhz** et le PLL pour que la fréquence du MCU soit de **72 Mhz**.  Le code d'initialisation matériel sera dans le fichier [startup.s](board/blue-pill/startup.s).
 
