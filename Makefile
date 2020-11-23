@@ -24,7 +24,8 @@ build:  *.s
 	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o -o $(BUILD_DIR)$(NAME).elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).bin 
 
-flash: $(BUILD_DIR)$(NAME).bin  
+flash: $(BUILD_DIR)$(NAME).bin 
+	st-flash --area=option erase
 	st-flash write $(BUILD_DIR)$(NAME).bin 0x8000000
 
 dasm:
