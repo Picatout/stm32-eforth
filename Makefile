@@ -4,32 +4,37 @@ PREFIX=arm-none-eabi-
 CC=$(PREFIX)gcc
 AS=$(PREFIX)as 
 LD=$(PREFIX)ld
+DBG=gdb-multiarch
 OBJDUMP=$(PREFIX)objdump
 OBJCOPY=$(PREFIX)objcopy
 
 #build directory
 BUILD_DIR=build/
 #Link file
-LD_FILE=stm32g431.ld 
-LD_FLAGS=-mmcu=stm32g431
+LD_FILE=board/blue-pill/stm32f103c6.ld 
+LD_FLAGS=-mmcu=stm32f103
 #sources
-SRC=stm32eforth.s
+SRC=stm32eforth.s 
 
 .PHONY: all 
 
 all: clean build dasm
 
-build:  *.s 
-	$(AS) $(SRC) -o$(BUILD_DIR)$(NAME).o
+build:  *.s Makefile
+	$(AS) -a=$(BUILD_DIR)$(NAME).lst $(SRC) -g -o$(BUILD_DIR)$(NAME).o
 	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o -o $(BUILD_DIR)$(NAME).elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).bin 
+	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 flash: $(BUILD_DIR)$(NAME).bin 
-	st-flash --area=option erase
 	st-flash write $(BUILD_DIR)$(NAME).bin 0x8000000
 
 dasm:
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
+
+debug: 
+	cd $(BUILD) &&\
+	$(DBG) -tui --eval-command="target remote localhost:4242" $(NAME).elf
 
 .PHONY: clean 
 
