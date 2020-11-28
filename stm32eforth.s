@@ -216,7 +216,9 @@ isr_vectors:
   .align 2 
   .global default_handler
 default_handler:
-	_NEST
+	_DOLIT 
+	.word -1
+	BL ULED 
 	BL	CR	// new line
 	BL	DOTQP
 	.byte	16
@@ -225,6 +227,7 @@ default_handler:
 	BL HEX 
 	_PUSH 
 	ORR R5,LR,LR 
+	BL ONEM 
 	BL UDOT 
 Infinite_Loop:
   b  Infinite_Loop
@@ -374,7 +377,7 @@ wait_sws:
 * Version control
 *******************/
 .equ VER ,	0x01	/*major release version */
-.equ EXT ,	0x00	/*minor extension */
+.equ EXT ,	0x01	/*minor extension */
 
 /* Constants */
 
@@ -467,9 +470,31 @@ ULAST:
 //  Start of Forth dictionary
 //  usart1
 	.align 2 
+
+
+//  ULED ( T|F -- )
+// control user LED 
+	.word 0
+_ULED: .byte 4
+	.ascii "ULED"
+	.align 2
+	.type ULED, %function 
+ULED:
+	mov r6,#(1<<LED_PIN)
+	mov r4,#LED_GPIO&0xffff
+	movt r4,#LED_GPIO>>16
+	movs r0,r5 
+	_POP
+	beq ULED_OFF 
+	str r6,[r4,#GPIO_BRR]
+	_NEXT 
+ULED_OFF:
+	str r6,[r4,#GPIO_BSRR]	
+	_NEXT 
+	
 //    ?RX	 ( -- c T | F )
 // 	Return input character and true, or a false if no input.
-	.word	0
+	.word	_ULED-MAPOFFSET
 _QRX:	.byte   4
 	.ascii "?KEY"
 	.align 2 
@@ -596,6 +621,7 @@ QBRAN1:
  	ADD	LR,LR,#4
 	_NEXT
 	.align 2 
+
 //    branch	( -- )
 // 	Branch to an inline address.
 
@@ -1754,8 +1780,8 @@ _DEPTH:	.byte  5
 	.align 2 	
 DEPTH:
 	_PUSH
-	MOVW	R5,#0XFE00
-// 	MOVT	R5,#0X2000
+	MOVW	R5,#0X4f04
+ 	MOVT	R5,#0X2000
 	SUB	R5,R5,R1
 	ASR	R5,R5,#2
 	SUB	R5,R5,#1
@@ -2367,7 +2393,7 @@ DOSTR:
 	BL	RFROM			//  b0 set
 	BL	ONEM			//  clear b0
 	BL	DUPP
-	BL	COUNT			//  get addr-1 count
+	BL	COUNT			//  get addr+1 count
 	BL	PLUS
 	BL	ALGND			//  end of string
 	BL	ONEP			//  restore b0
@@ -2387,7 +2413,8 @@ STRQP:
 	_NEST
 	BL	DOSTR
 	_UNNEST			// force a call to dostr
-	.align 2 
+	.align 2
+
 //    .$	( -- )
 // 	Run time routine of ." . Output a compiled string.
 
@@ -3142,7 +3169,7 @@ _EVAL:	.byte  4
 EVAL:
 	_NEST
 EVAL1:
-  BL	TOKEN
+    BL	TOKEN
 	BL	DUPP
 	BL	CAT	// ?input stream empty
 	BL	QBRAN
@@ -3181,8 +3208,8 @@ _QUIT:	.byte  4
 	.align 2 	
 QUIT:
 	_NEST
-	MOVW	R2,#0X4F80  /* RESET RSTACK */
- 	MOVT	R2,#0X2000
+	MOVW	R2,#0x4F80  /* RESET RSTACK */
+ 	MOVT	R2,#0x2000
 QUIT1:
   BL	LBRAC			// start interpretation
 QUIT2:
@@ -3744,7 +3771,8 @@ OVERT:
 	BL	STORE
 	_UNNEST
 	.align 2 
-//    // 	   ( -- )
+
+//    ; 	   ( -- )
 // 	Terminate a colon definition.
 
 	.word	_OVERT-MAPOFFSET
@@ -3760,6 +3788,7 @@ SEMIS:
 	BL	OVERT
 	_UNNEST
 	.align 2 
+
 //    ]	   ( -- )
 // 	Start compiling the words in the input stream.
 
@@ -4164,6 +4193,7 @@ VERSN:
 	.word	VER*256+EXT
 	_UNNEST
 	.align 2 
+
 //    hi	  ( -- )
 // 	Display the sign-on message of eForth.
 
@@ -4175,8 +4205,8 @@ HI:
 	_NEST
 	BL	CR	// initialize I/O
 	BL	DOTQP
-	.byte	13
-	.ascii "stm32eForth v"	// model
+	.byte	23
+	.ascii "blue pill stm32eForth v"	// model
 	.align 2
 	BL	BASE
 	BL	AT
@@ -4215,6 +4245,9 @@ COLD:
 	NOP
 	_NEST
 COLD1:
+	_DOLIT 
+	.word 0 
+	BL ULED // turn off user LED 
 	_DOLIT
 	.word	UZERO-MAPOFFSET
 	_DOLIT
@@ -4227,7 +4260,6 @@ COLD1:
 	BL	ATEXE			// application boot
 	BL	OVERT
 	B.W	QUIT			// start interpretation
-	.align 2 
 COLD2:	
 CTOP:
 	.word	0XFFFFFFFF		//  keep CTOP even

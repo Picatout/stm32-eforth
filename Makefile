@@ -33,13 +33,14 @@ dasm:
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 debug: 
-	cd $(BUILD) &&\
+	cd $(BUILD_DIR) &&\
 	$(DBG) -tui --eval-command="target remote localhost:4242" $(NAME).elf
 
 .PHONY: clean 
 
 clean:
 	$(RM) build/*
+
 
 	
 
