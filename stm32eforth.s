@@ -79,15 +79,44 @@
 
   .include "board/blue-pill/stm32f103.inc"
 
-/*************************************
-    uninitialized variables 
-*************************************/
-  .section .bss
- 
-system_vars: .space ULAST-UZERO
+/* blue pill specific constants */ 
+  .equ LED_GPIO, GPIOC_BASE_ADR
+  .equ LED_PIN, 13
+  .equ UART, USART1_BASE_ADR 
 
-  .equ ticks , system_vars+4
-  .equ timer , system_var+8
+/* stm32f103c8t6 specific constants */
+.equ SPP 	,	0x20004E80	/*top of data stack (SP0) */
+.equ TIBB ,	0x20004E80	/*terminal input buffer (TIB) */
+.equ RPP 	,	0x20004F80	/*top of return stack (RP0) */
+.equ UPP 	,	0x20000000	/*start of user area (UP0) */
+.equ DTOP ,	0x20000100	/*start of usable RAM area (HERE) */
+.equ DEND , 0x20004E00  /*usable RAM end */
+
+/*************************************
+   system variables offset from UPP
+*************************************/
+  .equ TICKS_OFS, 4  // millseconds counter
+  .equ TIMER_OFS, 8  // count down timer
+  .equ BOOT_OFS, 12  // boot program address
+  .equ BASE_OFS, 16  // numeric conversion base 
+  .equ TMP_OFS, 20   // temporary variable
+  .equ SPAN_OFS, 24  // character count received by expect  
+  .equ TOIN_OFS, 28  // >IN  parse pointer in TIB
+  .equ NTIB_OFS, 32  // #TIB  characters in TIB 
+  .equ TIB_OFS, 36   // TIB buffer address 
+  .equ EVAL_OFS, 40  // eval|compile vector 
+  .equ HLD_OFS, 44   // hold pointer 
+  .equ CTXT_OFS, 48  // context pointer 
+  .equ FLSH_CTOP_OFS, 52  // flash free dictionary address 
+  .equ RAM_CTOP_OFS, 56  // ram free dictionary address
+  .equ LASTN_OFS, 60     // last word in dictionary link nfa 
+
+/*************************************
+    reserve space for system variables 
+*************************************/
+  .section .bss 
+system_vars: .space 0x100
+
 
 
 /***********************************************
@@ -222,34 +251,31 @@ default_handler:
 	BL	CR	// new line
 	BL	DOTQP
 	.byte	16
-	.ascii " exception hatl!"	// model
+	.ascii " exception hatl!"	
 	.align 2 
-	BL HEX 
-	_PUSH 
-	ORR R5,LR,LR 
-	BL ONEM 
-	BL UDOT 
 Infinite_Loop:
   b  Infinite_Loop
   .size  default_handler, .-default_handler
 
+
+
+/*********************************
+	system milliseconds counter
+*********************************/	
   .type systick_handler, %function
   .align 2 
   .global systick_handler
 systick_handler:
-  ldr r0,=ticks 
-  ldr r1,[r0]
-  add r1,#1
-  str r1,[r0]
-  ldr r1,[r0,#4]
-  cbz r1, stk_exit
-  sub r1,#1
-  str r1,[r0,#4]
-stk_exit:
+  ldr r0,[r3,#TICKS_OFS]  
+  add r0,#1
+  str r0,[r3,#TICKS_OFS]
+  ldr r0,[r3,#TIMER_OFS]
+  cbz r0, systick_exit
+  sub r0,#1
+  str r0,[r3,#TIMER_OFS]
+systick_exit:
   bx lr
 
-  .equ LED_GPIO, GPIOC_BASE_ADR
-  .equ LED_PIN, 13
 
 /**************************************
   reset_handler execute at MCU reset
@@ -270,7 +296,7 @@ zero_loop:
 	bne zero_loop		
 	bl	init_devices	 	/* RCC, GPIOs, USART */
 	bl	UNLOCK			/* unlock flash memory */
-	b	COLD
+	b COLD 
 
   .type init_devices, %function
   .align 2 
@@ -355,7 +381,6 @@ wait_sws:
   orr r1,r1,r2 
   str r1,[r0,#GPIO_CRH]
 
-  .equ UART, USART1_BASE_ADR 
   mov r0,#UART&0xFFFF
   movt r0,#UART>>16	
 /* BAUD rate */
@@ -403,23 +428,16 @@ wait_sws:
 /********************************************************
 * RAM memory mapping
 * 	0x20000000	RAM base address
-*	  0x20000000  system variables	
+*	0x20000000  system variables	
 * 	0x20000100	Forth dictionary
 * 	0x2000????	top of dictionary, HERE
 * 	0x2000????	WORD buffer, HERE+16
 *   0x20004E00  end of user space
-* 	0x20004F00	top of data stack
-* 	0x20004F00	TIB terminal input buffer
-* 	0x20004F80	top of return stack
-* 	0x20005000	top of hardware stack for interrupts
+* 	0x20004E80	top of data stack  R2
+* 	0x20004E80	TIB terminal input buffer
+* 	0x20004F80	top of return stack  R1
+* 	0x20005000	top of hardware stack for interrupts R14
 ********************************************************/
-
-.equ SPP 	,	0x20004F00	/*top of data stack (SP0) */
-.equ TIBB ,	0x20004F00	/*terminal input buffer (TIB) */
-.equ RPP 	,	0x20004F80	/*top of return stack (RP0) */
-.equ UPP 	,	0x20000000	/*start of user area (UP0) */
-.equ DTOP ,	0x20000100	/*start of usable RAM area (HERE) */
-.equ DEND , 0x20004E00  /*usable RAM end */
 
 
 /******************************************************
@@ -428,21 +446,6 @@ wait_sws:
 ******************************************************/
 	.align 2   	
   
-  .equ TICKS_OFS, 4
-  .equ TIMER_OFS, 8
-  .equ BOOT_OFS, 12
-  .equ BASE_OFS, 16
-  .equ TMP_OFS, 20
-  .equ SPAN_OFS, 24 
-  .equ TOIN_OFS, 28
-  .equ NTIB_OFS, 32
-  .equ TIB_OFS, 36
-  .equ EVAL_OFS, 40
-  .equ HLD_OFS, 44 
-  .equ CTXT_OFS, 48 
-  .equ FLSH_CTOP_OFS, 52
-  .equ RAM_CTOP_OFS, 56
-  .equ LASTN_OFS, 60
 
 UZERO:
 	.word 0  			/*Reserved */
@@ -466,15 +469,35 @@ ULAST:
 
  
 
-// **********************************************************************
+/***********************************
 //  Start of Forth dictionary
-//  usart1
+***********************************/
+
 	.align 2 
 
+// PAUSE ( u -- ) 
+// suspend execution for u milliseconds
+	.word 0
+_PAUSE: .byte 5
+	.ascii "PAUSE"
+	.align 2
+PAUSE:
+	_NEST 
+	BL TIMER 
+	BL STORE 
+PAUSE_LOOP:
+	BL TIMER 
+	BL AT 
+	BL QBRAN 
+	.word PAUSE_EXIT 
+	BL BRAN 
+	.word PAUSE_LOOP 
+PAUSE_EXIT: 		
+	_UNNEST 
 
 //  ULED ( T|F -- )
-// control user LED 
-	.word 0
+// control user LED, -1 ON, 0 OFF  
+	.word _PAUSE 
 _ULED: .byte 4
 	.ascii "ULED"
 	.align 2
@@ -489,7 +512,7 @@ ULED:
 	str r6,[r4,#GPIO_BRR]
 	_NEXT 
 ULED_OFF:
-	str r6,[r4,#GPIO_BSRR]	
+	str r6,[r4,#GPIO_BSRR]
 	_NEXT 
 	
 //    ?RX	 ( -- c T | F )
@@ -503,16 +526,16 @@ QRX:
 	_PUSH
 	mov r4,#UART&0xFFFF
 	movt r4,#UART>>16
-	ldrh	r6, [r4, #USART_SR]	//  USART->SR
+	ldrh	r6, [r4, #USART_SR]
 	ands	r6, #0x20		//  RXE
 	BEQ	QRX1
  	LDR	R5, [R4, #USART_DR]
 	_PUSH
-  IT NE 
+    IT NE 
 	MVNNE	R5,#0
 QRX1:
 	IT EQ 
-  MOVEQ	R5,#0
+    MOVEQ	R5,#0
 	_NEXT
 	.align 2 
 
@@ -536,7 +559,7 @@ TX1:
 	_POP
 	_NEXT
 
-	.align 2 
+
 	
 // **************************************************************************
 //  The kernel
@@ -550,7 +573,7 @@ _NOP:	.byte   3
 	.align 2 	
 NOP:
 	_NEXT
-	.align 2 
+ 
 
 //    doLIT	( -- w )
 // 	Push an inline literal.
@@ -565,7 +588,6 @@ DOLIT:
 	LDR	R5,[LR],#4		//  get literal at word boundary
 	ORR	LR,LR,#1		//  aet b0 in LR
 	_NEXT
-	.align 2 
 
 //    EXECUTE	( ca -- )
 // 	Execute the word at ca.
@@ -578,9 +600,8 @@ EXECU:
 	ORR	R4,R5,#1		//  b0=1 
 	_POP
 	BX	R4
-	.align 2 
 
-//    next	( -- )
+//    next	( -- ) counter on R:
 // 	Run time code for the single index loop.
 // 	: next ( -- ) \ hilevel model
 // 	 r> r> dup if 1 - >r @ >r exit then drop cell+ >r // 
@@ -593,16 +614,18 @@ DONXT:
 	LDR	R4,[R2]
 	MOVS	R4,R4
 	BNE	NEXT1
-	ADD	R2,R2,#4
-	ADD	LR,LR,#4
+	/* loop done */
+	ADD	R2,R2,#4 // drop counter 
+	ADD	LR,LR,#4 // skip after loop 
 	_NEXT
 NEXT1:
+	/* decrement loop counter */
 	SUB	R4,R4,#1
 	STR	R4,[R2]
 	LDR	LR,[LR,#-1]	//  handle b0 in LR 
-	ORR	LR,LR,#1
+	ORR	LR,LR,#1 // begining of loop
 	_NEXT
-	.align 2 
+
 //    ?branch	( f -- )
 // 	Branch if flag is zero.
 
@@ -620,7 +643,6 @@ QBRAN:
 QBRAN1:
  	ADD	LR,LR,#4
 	_NEXT
-	.align 2 
 
 //    branch	( -- )
 // 	Branch to an inline address.
@@ -633,7 +655,6 @@ BRAN:
 	LDR	LR,[LR,#-1]
 	ORR	LR,LR,#1
 	_NEXT
-	.align 2 
 
 //    EXIT	(  -- )
 // 	Exit the currently executing command.
@@ -644,7 +665,7 @@ _EXIT:	.byte   4
 	.align 2 	
 EXIT:
 	_UNNEST
-	.align 2 
+
 //    !	   ( w a -- )
 // 	Pop the data stack to memory.
 
@@ -657,7 +678,7 @@ STORE:
 	STR	R4,[R5]
 	_POP
 	_NEXT
-	.align 2 
+
 //    @	   ( a -- w )
 // 	Push memory location to the data stack.
 
@@ -668,7 +689,7 @@ _AT:	.byte   1
 AT:
 	LDR	R5,[R5]
 	_NEXT
-	.align 2 
+
 //    C!	  ( c b -- )
 // 	Pop the data stack to byte memory.
 
@@ -681,7 +702,7 @@ CSTOR:
 	STRB	R4,[R5]
 	_POP
 	_NEXT
-	.align 2 
+
 //    C@	  ( b -- c )
 // 	Push byte memory location to the data stack.
 
@@ -692,7 +713,7 @@ _CAT:	.byte   2
 CAT:
 	LDRB	R5,[R5]
 	_NEXT
-	.align 2 
+
 //    R>	  ( -- w )
 // 	Pop the return stack to the data stack.
 
@@ -704,7 +725,6 @@ RFROM:
 	_PUSH
 	LDR	R5,[R2],#4
 	_NEXT
-	.align 2 
 
 //    R@	  ( -- w )
 // 	Copy top of return stack to the data stack.
@@ -717,7 +737,7 @@ RAT:
 	_PUSH
 	LDR	R5,[R2]
 	_NEXT
-	.align 2 
+
 //    >R	  ( w -- )
 // 	Push the data stack to the return stack.
 
@@ -729,7 +749,6 @@ TOR:
 	STR	R5,[R2,#-4]!
 	_POP
 	_NEXT
-	.align 2 
 
 //    SP@	 ( -- a )
 // 	Push the current data stack pointer.
@@ -742,7 +761,7 @@ SPAT:
 	_PUSH
 	MOV	R5,R1
 	_NEXT
-	.align 2 
+
 //    DROP	( w -- )
 // 	Discard top stack item.
 
@@ -753,7 +772,6 @@ _DROP:	.byte   4
 DROP:
 	_POP
 	_NEXT
-	.align 2 
 
 //    DUP	 ( w -- w w )
 // 	Duplicate the top stack item.
@@ -765,7 +783,6 @@ _DUPP:	.byte   3
 DUPP:
 	_PUSH
 	_NEXT
-	.align 2 
 
 //    SWAP	( w1 w2 -- w2 w1 )
 // 	Exchange top two stack items.
@@ -779,7 +796,7 @@ SWAP:
 	STR	R5,[R1]
 	MOV	R5,R4
 	_NEXT
-	.align 2 
+
 //    OVER	( w1 w2 -- w1 w2 w1 )
 // 	Copy second stack item to top.
 
@@ -791,7 +808,7 @@ OVER:
 	_PUSH
 	LDR	R5,[R1,#4]
 	_NEXT
-	.align 2 
+
 //    0<	  ( n -- t )
 // 	Return true if n is negative.
 
@@ -803,7 +820,6 @@ ZLESS:
 	MOV	R4,#0
 	ADD	R5,R4,R5,ASR #32
 	_NEXT
-	.align 2 
 
 //    AND	 ( w w -- w )
 // 	Bitwise AND.
@@ -816,7 +832,6 @@ ANDD:
 	LDR	R4,[R1],#4
 	AND	R5,R5,R4
 	_NEXT
-	.align 2 
 
 //    OR	  ( w w -- w )
 // 	Bitwise inclusive OR.
@@ -829,7 +844,6 @@ ORR:
 	LDR	R4,[R1],#4
 	ORR	R5,R5,R4
 	_NEXT
-	.align 2 
 
 //    XOR	 ( w w -- w )
 // 	Bitwise exclusive OR.
@@ -842,7 +856,6 @@ XORR:
 	LDR	R4,[R1],#4
 	EOR	R5,R5,R4
 	_NEXT
-	.align 2 
 
 //    UM+	 ( w w -- w cy )
 // 	Add two numbers, return the sum and carry flag.
@@ -858,9 +871,9 @@ UPLUS:
 	ADC	R5,R5,#0
 	STR	R4,[R1]
 	_NEXT
-	.align 2 
+
 //    RSHIFT	 ( w # -- w )
-// 	Right shift # bits.
+// 	arithmetic Right shift # bits.
 
 	.word	_UPLUS-MAPOFFSET
 _RSHIFT:	.byte   6
@@ -870,7 +883,6 @@ RSHIFT:
 	LDR	R4,[R1],#4
 	MOV	R5,R4,ASR R5
 	_NEXT
-	.align 2 
 
 //    LSHIFT	 ( w # -- w )
 // 	Right shift # bits.
@@ -883,7 +895,6 @@ LSHIFT:
 	LDR	R4,[R1],#4
 	MOV	R5,R4,LSL R5
 	_NEXT
-	.align 2 
 
 //    +	 ( w w -- w )
 // 	Add.
@@ -896,7 +907,7 @@ PLUS:
 	LDR	R4,[R1],#4
 	ADD	R5,R5,R4
 	_NEXT
-	.align 2 
+
 //    -	 ( w w -- w )
 // 	Subtract.
 
@@ -908,7 +919,6 @@ SUBB:
 	LDR	R4,[R1],#4
 	RSB	R5,R5,R4
 	_NEXT
-	.align 2 
 
 //    *	 ( w w -- w )
 // 	Multiply.
@@ -921,7 +931,6 @@ STAR:
 	LDR	R4,[R1],#4
 	MUL	R5,R4,R5
 	_NEXT
-	.align 2 
 
 //    UM*	 ( w w -- ud )
 // 	Unsigned multiply.
@@ -936,9 +945,9 @@ UMSTA:
 	STR	R6,[R1]
 	MOV	R5,R7
 	_NEXT
-	.align 2 
+
 //    M*	 ( w w -- d )
-// 	Unsigned multiply.
+// 	signed multiply.
 
 	.word	_UMSTA-MAPOFFSET
 _MSTAR:	.byte   2
@@ -950,7 +959,7 @@ MSTAR:
 	STR	R6,[R1]
 	MOV	R5,R7
 	_NEXT
-	.align 2 
+
 //    1+	 ( w -- w+1 )
 // 	Add 1.
 
@@ -961,7 +970,6 @@ _ONEP:	.byte   2
 ONEP:
 	ADD	R5,R5,#1
 	_NEXT
-	.align 2 
 
 //    1-	 ( w -- w-1 )
 // 	Subtract 1.
@@ -973,7 +981,6 @@ _ONEM:	.byte   2
 ONEM:
 	SUB	R5,R5,#1
 	_NEXT
-	.align 2 
 
 //    2+	 ( w -- w+2 )
 // 	Add 1.
@@ -985,7 +992,6 @@ _TWOP:	.byte   2
 TWOP:
 	ADD	R5,R5,#2
 	_NEXT
-	.align 2 
 
 //    2-	 ( w -- w-2 )
 // 	Subtract 2.
@@ -997,31 +1003,28 @@ _TWOM:	.byte   2
 TWOM:
 	SUB	R5,R5,#2
 	_NEXT
-	.align 2 
 
 //    CELL+	( w -- w+4 )
-// 	Add 4.
+// 	Add CELLL.
 
 	.word	_TWOM-MAPOFFSET
 _CELLP:	.byte   5
 	.ascii "CELL+"
 	.align 2 	
 CELLP:
-	ADD	R5,R5,#4
+	ADD	R5,R5,#CELLL
 	_NEXT
-	.align 2 
 
 //    CELL-	( w -- w-4 )
-// 	Subtract 4.
+// 	Subtract CELLL.
 
 	.word	_CELLP-MAPOFFSET
 _CELLM:	.byte   5
 	.ascii "CELL-"
 	.align 2 	
 CELLM:
-	SUB	R5,R5,#4
+	SUB	R5,R5,#CELLL
 	_NEXT
-	.align 2 
  
 //    BL	( -- 32 )
 // 	Blank (ASCII space).
@@ -1034,7 +1037,6 @@ BLANK:
 	_PUSH
 	MOV	R5,#32
 	_NEXT
-	.align 2 
 
 //    CELLS	( w -- w*4 )
 // 	Multiply 4.
@@ -1046,7 +1048,6 @@ _CELLS:	.byte   5
 CELLS:
 	MOV	R5,R5,LSL#2
 	_NEXT
-	.align 2 
 
 //    CELL/	( w -- w/4 )
 // 	Divide by 4.
@@ -1058,7 +1059,6 @@ _CELLSL:	.byte   5
 CELLSL:
 	MOV	R5,R5,ASR#2
 	_NEXT
-	.align 2 
 
 //    2*	( w -- w*2 )
 // 	Multiply 2.
@@ -1070,7 +1070,6 @@ _TWOST:	.byte   2
 TWOST:
 	MOV	R5,R5,LSL#1
 	_NEXT
-	.align 2 
 
 //    2/	( w -- w/2 )
 // 	Divide by 2.
@@ -1082,7 +1081,6 @@ _TWOSL:	.byte   2
 TWOSL:
 	MOV	R5,R5,ASR#1
 	_NEXT
-	.align 2 
 
 //    ?DUP	( w -- w w | 0 )
 // 	Conditional duplicate.
@@ -1094,9 +1092,8 @@ _QDUP:	.byte   4
 QDUP:
 	MOVS	R4,R5
 	IT NE 
-  STRNE	R5,[R1,#-4]!
+    STRNE	R5,[R1,#-4]!
 	_NEXT
-	.align 2 
 
 //    ROT	( w1 w2 w3 -- w2 w3 w1 )
 // 	Rotate top 3 items.
@@ -1106,12 +1103,11 @@ _ROT:	.byte   3
 	.ascii "ROT"
 	.align 2 	
 ROT:
-	LDR	R4,[R1]
-	STR	R5,[R1]
-	LDR	R5,[R1,#4]
-	STR	R4,[R1,#4]
+	LDR	R4,[R1]  // r4=w2 
+	STR	R5,[R1]  // w3 replace w2 
+	LDR	R5,[R1,#4] // w1 replace w3 
+	STR	R4,[R1,#4] // w2 rpelace w1 
 	_NEXT
-	.align 2 
 
 //    2DROP	( w1 w2 -- )
 // 	Drop top 2 items.
@@ -1124,7 +1120,6 @@ DDROP:
 	_POP
 	_POP
 	_NEXT
-	.align 2 
 
 //    2DUP	( w1 w2 -- w1 w2 w1 w2 )
 // 	Duplicate top 2 items.
@@ -1134,11 +1129,11 @@ _DDUP:	.byte   4
 	.ascii "2DUP"
 	.align 2 	
 DDUP:
-	LDR	R4,[R1]
-	STR	R5,[R1,#-4]!
-	STR	R4,[R1,#-4]!
+	LDR	R4,[R1] // r4=w1
+	STR	R5,[R1,#-4]! // push w2  
+	STR	R4,[R1,#-4]! // push w1 
 	_NEXT
-	.align 2 
+
 //    D+	( d1 d2 -- d3 )
 // 	Add top 2 double numbers.
 
@@ -1154,7 +1149,7 @@ DPLUS:
 	STR	R4,[R1]
 	ADC	R5,R5,R6
 	_NEXT
-	.align 2 
+
 //    NOT	 ( w -- !w )
 // 	1"s complement.
 
@@ -1165,7 +1160,6 @@ _INVER:	.byte   3
 INVER:
 	MVN	R5,R5
 	_NEXT
-	.align 2 
 
 //    NEGATE	( w -- -w )
 // 	2's complement.
@@ -1177,7 +1171,6 @@ _NEGAT:	.byte   6
 NEGAT:
 	RSB	R5,R5,#0
 	_NEXT
-	.align 2 
 
 //    ABS	 ( w -- |w| )
 // 	Absolute.
@@ -1189,9 +1182,8 @@ _ABSS:	.byte   3
 ABSS:
 	TST	R5,#0x80000000
 	IT NE
-  RSBNE   R5,R5,#0
+    RSBNE   R5,R5,#0
 	_NEXT
-	.align 2 
 
 //    =	 ( w w -- t )
 // 	Equal?
@@ -1204,10 +1196,10 @@ EQUAL:
 	LDR	R4,[R1],#4
 	CMP	R5,R4
 	ITE EQ 
-  MVNEQ	R5,#0
+    MVNEQ	R5,#0
 	MOVNE	R5,#0
 	_NEXT
-	.align 2 
+
 //    U<	 ( w w -- t )
 // 	Unsigned equal?
 
@@ -1219,10 +1211,10 @@ ULESS:
 	LDR	R4,[R1],#4
 	CMP	R4,R5
 	ITE CC 
-  MVNCC	R5,#0
+	MVNCC	R5,#0
 	MOVCS	R5,#0
 	_NEXT
-	.align 2 
+
 //    <	( w w -- t )
 // 	Less?
 
@@ -1233,11 +1225,11 @@ _LESS:	.byte   1
 LESS:
 	LDR	R4,[R1],#4
 	CMP	R4,R5
-  ITE LT
+    ITE LT
 	MVNLT	R5,#0
 	MOVGE	R5,#0
 	_NEXT
-	.align 2 
+
 //    >	( w w -- t )
 // 	greater?
 
@@ -1249,10 +1241,10 @@ GREAT:
 	LDR	R4,[R1],#4
 	CMP	R4,R5
 	ITE GT
-  MVNGT	R5,#0
+    MVNGT	R5,#0
 	MOVLE	R5,#0
 	_NEXT
-	.align 2 
+
 //    MAX	 ( w w -- max )
 // 	Leave maximum.
 
@@ -1264,9 +1256,9 @@ MAX:
 	LDR	R4,[R1],#4
 	CMP	R4,R5
 	IT GT 
-  MOVGT	R5,R4
+	MOVGT	R5,R4
 	_NEXT
-	.align 2 
+
 //    MIN	 ( w w -- min )
 // 	Leave minimum.
 
@@ -1278,9 +1270,9 @@ MIN:
 	LDR	R4,[R1],#4
 	CMP	R4,R5
 	IT LT
-  MOVLT	R5,R4
+	MOVLT	R5,R4
 	_NEXT
-	.align 2 
+
 //    +!	 ( w a -- )
 // 	Add to memory.
 
@@ -1295,7 +1287,7 @@ PSTOR:
 	STR	R6,[R5]
 	_POP
 	_NEXT
-	.align 2 
+
 //    2!	 ( d a -- )
 // 	Store double number.
 
@@ -1310,7 +1302,7 @@ DSTOR:
 	STR	R6,[R5]
 	_POP
 	_NEXT
-	.align 2 
+
 //    2@	 ( a -- d )
 // 	Fetch double number.
 
@@ -1323,7 +1315,6 @@ DAT:
 	STR	R4,[R1,#-4]!
 	LDR	R5,[R5]
 	_NEXT
-	.align 2 
 
 //    COUNT	( b -- b+1 c )
 // 	Fetch length of string.
@@ -1337,7 +1328,6 @@ COUNT:
 	_PUSH
 	MOV	R5,R4
 	_NEXT
-	.align 2 
 
 //    DNEGATE	( d -- -d )
 // 	Negate double number.
@@ -1348,12 +1338,12 @@ _DNEGA:	.byte   7
 	.align 2 	
 DNEGA:
 	LDR	R4,[R1]
-	SUB	R8,R8,R8
-	SUBS	R4,R6,R4
+	SUB	R6,R6,R6
+	SUBS R4,R6,R4
 	SBC	R5,R6,R5
 	STR	R4,[R1]
 	_NEXT
-	.align 2 
+
 // **************************************************************************
 //  System and user variables
 
@@ -1368,10 +1358,9 @@ DOVAR:
 	_PUSH
 	SUB	R5,LR,#1		//  CLEAR B0
 	_UNNEST
-	.align 2 
 
 //    doCON	( -- a ) 
-// 	Run time r outine for CONSTANT.
+// 	Run time routine for CONSTANT.
 
 // 	.word	_DOVAR-MAPOFFSET
 // _DOCON	.byte  COMPO+5
@@ -1381,24 +1370,24 @@ DOCON:
 	_PUSH
 	LDR	R5,[LR,#-1]	//  clear b0
 	_UNNEST
-	.align 2 
+
 /***********************
   system variables 
 ***********************/
   
-//  TICKS ( -- a)
+//  MSEC ( -- a)
+// return address of milliseconds counter
   .word _DNEGA-MAPOFFSET 
-_TICKS: .byte 5
-  .ascii "TICKS"
+_MSEC: .byte 4
+  .ascii "MSEC"
   .align 2 
-TICKS:
+MSEC:
   _PUSH
   ADD R5,R3,#TICKS_OFS
   _NEXT 
-  .align 2 
 
 // TIMER ( -- a )
-  .word _TICKS-MAPOFFSET
+  .word _MSEC-MAPOFFSET
 _TIMER:  .byte 5
   .ascii "TIMER"
   .align 2 
@@ -1406,7 +1395,6 @@ TIMER:
   _PUSH 
   ADD R5,53,#TIMER_OFS
   _NEXT
-  .align 2 
 
 //    'BOOT	 ( -- a )
 // 	Application.
@@ -1419,7 +1407,6 @@ TBOOT:
 	_PUSH
 	ADD	R5,R3,#BOOT_OFS 
 	_NEXT
-	.align 2 
 	
 //    BASE	( -- a )
 // 	Storage of the radix base for numeric I/O.
@@ -1432,7 +1419,6 @@ BASE:
 	_PUSH
 	ADD	R5,R3,#BASE_OFS
 	_NEXT
-	.align 2 
 
 //    tmp	 ( -- a )
 // 	A temporary storage location used in parse and find.
@@ -1445,7 +1431,6 @@ TEMP:
 	_PUSH
 	ADD	R5,R3,#TMP_OFS
 	_NEXT
-	.align 2 
 
 //    SPAN	( -- a )
 // 	Hold character count received by EXPECT.
@@ -1458,7 +1443,6 @@ SPAN:
 	_PUSH
 	ADD	R5,R3,#SPAN_OFS
 	_NEXT
-	.align 2 
 
 //    >IN	 ( -- a )
 // 	Hold the character pointer while parsing input stream.
@@ -1471,7 +1455,6 @@ INN:
 	_PUSH
 	ADD	R5,R3,#TOIN_OFS
 	_NEXT
-	.align 2 
 
 //    #TIB	( -- a )
 // 	Hold the current count and address of the terminal input buffer.
@@ -1484,7 +1467,6 @@ NTIB:
 	_PUSH
 	ADD	R5,R3,#NTIB_OFS
 	_NEXT
-	.align 2 
 
 //    'EVAL	( -- a )
 // 	Execution vector of EVAL.
@@ -1497,7 +1479,6 @@ TEVAL:
 	_PUSH
 	ADD	R5,R3,#EVAL_OFS
 	_NEXT
-	.align 2 
 
 //    HLD	 ( -- a )
 // 	Hold a pointer in building a numeric output string.
@@ -1510,7 +1491,6 @@ HLD:
 	_PUSH
 	ADD	R5,R3,#HLD_OFS
 	_NEXT
-	.align 2 
 
 //    CONTEXT	( -- a )
 // 	A area to specify vocabulary search order.
@@ -1524,7 +1504,6 @@ CRRNT:
 	_PUSH
 	ADD	R5,R3,#CTXT_OFS
 	_NEXT
-	.align 2 
 
 //    CP	( -- a )
 // 	Point to top name in RAM vocabulary.
@@ -1537,7 +1516,6 @@ CPP:
 	_PUSH
 	ADD	R5,R3,#RAM_CTOP_OFS
 	_NEXT
-	.align 2 
 
 //   FCP ( -- a )
 //  Point ot top of Flash dictionary
@@ -1549,7 +1527,6 @@ FCPP:
 	_PUSH 
 	ADD R5,R3,#FLSH_CTOP_OFS 
 	_NEXT 
-	.align 2  
 
 //    LAST	( -- a )
 // 	Point to the last name in the name dictionary.
@@ -1562,7 +1539,6 @@ LAST:
 	_PUSH
 	ADD	R5,R3,#LASTN_OFS
 	_NEXT
-	.align 2 
 
 // **************************************************************************
 //  Common functions
@@ -1583,7 +1559,7 @@ WITHI:
 	BL	RFROM
 	BL	ULESS
 	_UNNEST
-	.align 2 
+
 //  Divide
 
 //    UM/MOD	( udl udh u -- ur uq )
@@ -1615,7 +1591,6 @@ UMMOD2:
 	MOV	R5,R6
 	STR	R4,[R1]
 	_NEXT
-	.align 2 
 
 //    M/MOD	( d n -- r q )
 // 	Signed floored divide of double by single. Return mod and quotient.
@@ -1655,7 +1630,6 @@ MMOD2:
 	BL	SWAP
 MMOD3:   
 	_UNNEST
-	.align 2 
 
 //    /MOD	( n n -- r q )
 // 	Signed divide. Return mod and quotient.
@@ -1671,7 +1645,7 @@ SLMOD:
 	BL	SWAP
 	BL	MSMOD
 	_UNNEST
-	.align 2 
+
 //    MOD	 ( n n -- r )
 // 	Signed divide. Return mod only.
 
@@ -1684,7 +1658,7 @@ MODD:
 	BL	SLMOD
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 //    /	   ( n n -- q )
 // 	Signed divide. Return quotient only.
 
@@ -1698,7 +1672,7 @@ SLASH:
 	BL	SWAP
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 //    */MOD	( n1 n2 n3 -- r q )
 // 	Multiply n1 and n2, then divide by n3. Return mod and quotient.
 
@@ -1713,7 +1687,7 @@ SSMOD:
 	BL	RFROM
 	BL	MSMOD
 	_UNNEST
-	.align 2 
+
 //    */	  ( n1 n2 n3 -- q )
 // 	Multiply n1 by n2, then divide by n3. Return quotient only.
 
@@ -1727,7 +1701,7 @@ STASL:
 	BL	SWAP
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Miscellaneous
 
@@ -1743,7 +1717,6 @@ ALGND:
 	MVN	R4,#3
 	AND	R5,R5,R4
 	_NEXT
-	.align 2 
 
 //    >CHAR	( c -- c )
 // 	Filter non-printing characters.
@@ -1770,7 +1743,7 @@ TCHAR:
 	.word	'_'	// replace non-printables
 TCHA1:
 	  _UNNEST
-	.align 2 
+
 //    DEPTH	( -- n )
 // 	Return the depth of the data stack.
 
@@ -1786,7 +1759,6 @@ DEPTH:
 	ASR	R5,R5,#2
 	SUB	R5,R5,#1
 	_NEXT
-	.align 2 
 
 //    PICK	( ... +n -- ... w )
 // 	Copy the nth stack item to tos.
@@ -1803,7 +1775,6 @@ PICK:
 	BL	PLUS
 	BL	AT
 	_UNNEST
-	.align 2 
 
 // **************************************************************************
 //  Memory access
@@ -1820,7 +1791,6 @@ HERE:
 	BL	CPP
 	BL	AT
 	_UNNEST
-	.align 2 
 	
 //    PAD	 ( -- a )
 // 	Return the address of a temporary buffer.
@@ -1834,7 +1804,7 @@ PAD:
 	BL	HERE
 	ADD	R5,R5,#80
 	_UNNEST
-	.align 2 
+
 //    TIB	 ( -- a )
 // 	Return the address of the terminal input buffer.
 
@@ -1842,13 +1812,10 @@ PAD:
 _TIB:	.byte  3
 	.ascii "TIB"
 	.align 2 	
-	.equ TIB_ADR, 0x20004F00
 TIB:
 	_PUSH
-	mov r5,#TIB_ADR&0xffff
-	movt r5,#TIB_ADR>>16
+	ldr r5,[r3,#TIB_OFS]
 	_NEXT
-	.align 2 
 
 //    @EXECUTE	( a -- )
 // 	Execute vector stored in address a.
@@ -1865,7 +1832,6 @@ ATEXE:
     IT NE 
 	BXNE	R4
 	_NEXT
-	.align 2 
 
 //    CMOVE	( b1 b2 u -- )
 // 	Copy u bytes from b1 to b2.
@@ -1889,7 +1855,6 @@ CMOV1:
 CMOV2:
 	_POP
 	_NEXT
-	.align 2 
 
 //    MOVE	( a1 a2 u -- )
 // 	Copy u words from a1 to a2.
@@ -1914,7 +1879,6 @@ MOVE1:
 MOVE2:
 	_POP
 	_NEXT
-	.align 2 
 
 //    FILL	( b u c -- )
 // 	Fill u bytes of character c to area beginning at b.
@@ -1938,9 +1902,9 @@ FILL1:
 FILL2:
 	_POP
 	_NEXT
-	.align 2 
+
 //    PACK$	( b u a -- a )
-// 	Build a countedDCB with u characters from b. Null fill.
+// 	Build a counted word with u characters from b. Null fill.
 
 	.word	_FILL-MAPOFFSET
 _PACKS:	.byte  5
@@ -1969,7 +1933,7 @@ PACKS:
 	BL	CMOVE
 	BL	RFROM
 	_UNNEST   			// move string
-	.align 2 
+
 // **************************************************************************
 //  Numeric output, single precision
 
@@ -1990,7 +1954,7 @@ DIGIT:
 	BL	PLUS
 	ADD	R5,R5,#'0'
 	_UNNEST
-	.align 2 
+
 //    EXTRACT	( n base -- n c )
 // 	Extract the least significant digit from n.
 
@@ -2007,7 +1971,7 @@ EXTRC:
 	BL	SWAP
 	BL	DIGIT
 	_UNNEST
-	.align 2 
+
 //    <#	  ( -- )
 // 	Initiate the numeric output process.
 
@@ -2021,7 +1985,6 @@ BDIGS:
 	BL	HLD
 	BL	STORE
 	_UNNEST
-	.align 2 
 
 //    HOLD	( c -- )
 // 	Insert a character into the numeric output string.
@@ -2040,7 +2003,6 @@ HOLD:
 	BL	STORE
 	BL	CSTOR
 	_UNNEST
-	.align 2
 
 //    #	   ( u -- u )
 // 	Extract one digit from u and append the digit to output string.
@@ -2056,7 +2018,7 @@ DIG:
 	BL	EXTRC
 	BL	HOLD
 	_UNNEST
-	.align 2 
+
 //    #S	  ( u -- 0 )
 // 	Convert u until all digits are added to the output string.
 
@@ -2074,7 +2036,6 @@ DIGS1:
 	B	DIGS1
 DIGS2:
 	  _UNNEST
-	.align 2 
 
 //    SIGN	( n -- )
 // 	Add a minus sign to the numeric output string.
@@ -2093,7 +2054,7 @@ SIGN:
 	BL	HOLD
 SIGN1:
 	  _UNNEST
-	.align 2 
+
 //    #>	  ( w -- b u )
 // 	Prepare the outputDCB to be TYPE'd.
 
@@ -2110,7 +2071,7 @@ EDIGS:
 	BL	OVER
 	BL	SUBB
 	_UNNEST
-	.align 2 
+
 //    str	 ( n -- b u )
 // 	Convert a signed integer to a numeric string.
 
@@ -2129,7 +2090,7 @@ STRR:
 	BL	SIGN
 	BL	EDIGS
 	_UNNEST
-	.align 2 
+
 //    HEX	 ( -- )
 // 	Use radix 16 as base for numeric conversions.
 
@@ -2144,7 +2105,6 @@ HEX:
 	BL	BASE
 	BL	STORE
 	_UNNEST
-	.align 2
 
 //    DECIMAL	( -- )
 // 	Use radix 10 as base for numeric conversions.
@@ -2160,7 +2120,6 @@ DECIM:
 	BL	BASE
 	BL	STORE
 	_UNNEST
-	.align 2
 
 // **************************************************************************
 //  Numeric input, single precision
@@ -2197,7 +2156,7 @@ DGTQ1:
 	BL	RFROM
 	BL	ULESS
 	_UNNEST
-	.align 2 
+
 //    NUMBER?	( a -- n T | a F )
 // 	Convert a numberDCB to integer. Push a flag on tos.
 
@@ -2287,7 +2246,7 @@ NUMQ6:
 	BL	BASE
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Basic I/O
 
@@ -2301,11 +2260,11 @@ _KEY:	.byte  3
 KEY:
 	_NEST
 KEY1:
-  BL	QRX
+	BL	QRX
 	BL	QBRAN
 	.word	KEY1-MAPOFFSET
 	_UNNEST
-	.align 2 
+
 //    SPACE	( -- )
 // 	Send the blank character to the output device.
 
@@ -2318,7 +2277,7 @@ SPACE:
 	BL	BLANK
 	BL	EMIT
 	_UNNEST
-	.align 2 
+
 //    SPACES	( +n -- )
 // 	Send n spaces to the output device.
 
@@ -2334,12 +2293,11 @@ SPACS:
 	BL	TOR
 	B.W	CHAR2
 CHAR1:
-  BL	SPACE
+	BL	SPACE
 CHAR2:
-  BL	DONXT
+	BL	DONXT
 	.word	CHAR1-MAPOFFSET
 	_UNNEST
-	.align 2 
 
 //    TYPE	( b u -- )
 // 	Output u characters from b.
@@ -2361,7 +2319,6 @@ TYPE2:
 	.word	TYPE1-MAPOFFSET
 	BL	DROP
 	_UNNEST
-	.align 2 
 
 //    CR	  ( -- )
 // 	Output a carriage return and a line feed.
@@ -2379,9 +2336,10 @@ CR:
 	.word	LF
 	BL	EMIT
 	_UNNEST
-	.align 2 
+
 //    do_$	( -- a )
 // 	Return the address of a compiled string.
+//  adjust return address to skip over it.
 
 // 	.word	_CR-MAPOFFSET
 // _DOSTR	.byte  COMPO+3
@@ -2401,7 +2359,7 @@ DOSTR:
 	BL	SWAP			//  count tugged
 	BL	TOR
 	_UNNEST
-	.align 2 
+
 //    $"|	( -- a )
 // 	Run time routine compiled by _". Return address of a compiled string.
 
@@ -2413,9 +2371,8 @@ STRQP:
 	_NEST
 	BL	DOSTR
 	_UNNEST			// force a call to dostr
-	.align 2
 
-//    .$	( -- )
+//    .$	( a -- )
 // 	Run time routine of ." . Output a compiled string.
 
 // 	.word	_STRQP-MAPOFFSET
@@ -2427,7 +2384,7 @@ DOTST:
 	BL	COUNT
 	BL	TYPEE
 	_UNNEST
-	.align 2 
+
 //    ."|	( -- )
 // 	Run time routine of ." . Output a compiled string.
 
@@ -2440,7 +2397,7 @@ DOTQP:
 	BL	DOSTR
 	BL	DOTST
 	_UNNEST
-	.align 2 
+
 //    .R	  ( n +n -- )
 // 	Display an integer in a field of n columns, right justified.
 
@@ -2458,7 +2415,7 @@ DOTR:
 	BL	SPACS
 	BL	TYPEE
 	_UNNEST
-	.align 2 
+
 //    U.R	 ( u +n -- )
 // 	Display an unsigned integer in n column, right justified.
 
@@ -2478,7 +2435,7 @@ UDOTR:
 	BL	SPACS
 	BL	TYPEE
 	_UNNEST
-	.align 2 
+
 //    U.	  ( u -- )
 // 	Display an unsigned integer in free format.
 
@@ -2494,7 +2451,7 @@ UDOT:
 	BL	SPACE
 	BL	TYPEE
 	_UNNEST
-	.align 2 
+
 //    .	   ( w -- )
 // 	Display an integer in free format, preceeded by a space.
 
@@ -2518,7 +2475,7 @@ DOT1:
 	BL	SPACE
 	BL	TYPEE
 	_UNNEST			// yes, display signed
-	.align 2 
+
 //    ?	   ( a -- )
 // 	Display the contents in a memory cell.
 
@@ -2531,7 +2488,6 @@ QUEST:
 	BL	AT
 	BL	DOT
 	_UNNEST
-	.align 2 
 
 // **************************************************************************
 //  Parsing
@@ -2624,7 +2580,6 @@ PARS8:
 	BL	RFROM
 	BL	SUBB
 	_UNNEST
-	.align 2 
 
 //    PARSE	( c -- b u //  string> )
 // 	Scan input stream and return counted string delimited by c.
@@ -2650,7 +2605,7 @@ PARSE:
 	BL	INN
 	BL	PSTOR
 	_UNNEST
-	.align 2 
+
 //    .(	  ( -- )
 // 	Output following string up to next ) .
 
@@ -2665,7 +2620,7 @@ DOTPR:
 	BL	PARSE
 	BL	TYPEE
 	_UNNEST
-	.align 2 
+
 //    (	   ( -- )
 // 	Ignore following string up to next ) . A comment.
 
@@ -2680,7 +2635,7 @@ PAREN:
 	BL	PARSE
 	BL	DDROP
 	_UNNEST
-	.align 2 
+
 //    \	   ( -- )
 // 	Ignore following text till the end of line.
 
@@ -2695,7 +2650,7 @@ BKSLA:
 	BL	INN
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 //    CHAR	( -- c )
 // 	Parse next word and return its first character.
 
@@ -2710,7 +2665,7 @@ CHAR:
 	BL	DROP
 	BL	CAT
 	_UNNEST
-	.align 2 
+
 //    WORD	( c -- a //  string> )
 // 	Parse a word from input stream and copy it to code dictionary.
 
@@ -2725,7 +2680,7 @@ WORDD:
 	BL	CELLP
 	BL	PACKS
 	_UNNEST
-	.align 2 
+
 //    TOKEN	( -- a //  string> )
 // 	Parse a word from input stream and copy it to name dictionary.
 
@@ -2738,7 +2693,7 @@ TOKEN:
 	BL	BLANK
 	BL	WORDD
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Dictionary search
 
@@ -2758,7 +2713,7 @@ NAMET:
 	BL	PLUS
 	BL	ALGND
 	_UNNEST
-	.align 2 
+
 //    SAME?	( a a u -- a a f \ -0+ )
 // 	Compare u cells in two strings. Return 0 if identical.
 
@@ -2794,7 +2749,7 @@ SAME2:
 	_DOLIT
 	.word	0
 	_UNNEST			// strings equal
-	.align 2 
+
 //    find	( a na -- ca na | a F )
 // 	Search a vocabulary for a string. Return ca and na if succeeded.
 
@@ -2862,7 +2817,6 @@ FIND5:
 	BL	NAMET			//  na ca
 	BL	SWAP			//  ca na
 	_UNNEST			//  return with a match
-	.align 2 
 
 //    NAME?	( a -- ca na | a F )
 // 	Search all context vocabularies for a string.
@@ -2877,7 +2831,7 @@ NAMEQ:
 	BL	AT
 	BL	FIND
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Terminal input
 
@@ -2912,7 +2866,7 @@ BKSP:
 // 	BL	ATEXE
 BACK1:
 	  _UNNEST
-	.align 2 
+
 //    TAP	 ( bot eot cur c -- bot eot cur )
 // 	Accept and echo the key stroke and bump the cursor.
 
@@ -2929,7 +2883,7 @@ TAP:
 	BL	CSTOR
 	BL	ONEP
 	_UNNEST
-	.align 2 
+
 //    kTAP	( bot eot cur c -- bot eot cur )
 // 	Process a key stroke, CR or backspace.
 
@@ -2964,7 +2918,7 @@ KTAP2:
 	BL	DROP
 	BL	DUPP
 	_UNNEST
-	.align 2 
+
 //    ACCEPT	( b u -- b u )
 // 	Accept characters to input buffer. Return with actual count.
 
@@ -3002,7 +2956,7 @@ ACCP4:
 	BL	OVER
 	BL	SUBB
 	_UNNEST
-	.align 2 
+
 //    QUERY	( -- )
 // 	Accept input stream to terminal input buffer.
 
@@ -3024,7 +2978,7 @@ QUERY:
 	BL	INN
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Error handling
 
@@ -3046,7 +3000,6 @@ ABORT:
 	BL	CR
 	BL	PRESE
 	B.W	QUIT
-	.align 2 
 
 //    _abort"	( f -- )
 // 	Run time routine of ABORT" . Abort with a message.
@@ -3068,7 +3021,7 @@ ABOR1:
   BL	DOSTR
 	BL	DROP
 	_UNNEST			// drop error
-	.align 2 
+
 // **************************************************************************
 //  The text interpreter
 
@@ -3117,7 +3070,7 @@ LBRAC:
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 //    .OK	 ( -- )
 // 	Display "ok" only while interpreting.
 
@@ -3137,11 +3090,10 @@ DOTOK:
 	BL	DOTQP
 	.byte	3
 	.ascii " ok"
-	.align 2 	
 DOTO1:
-  BL	CR
+	BL	CR
 	_UNNEST
-	.align 2 
+
 //    ?STACK	( -- )
 // 	Abort if the data stack underflows.
 
@@ -3158,7 +3110,7 @@ QSTAC:
 	.ascii " underflow"
 	.align 2 	
 	_UNNEST
-	.align 2 
+
 //    EVAL	( -- )
 // 	Interpret the input stream.
 
@@ -3182,7 +3134,6 @@ EVAL2:
   BL	DROP
 	BL	DOTOK
 	_UNNEST	// prompt
-	.align 2 
 
 //    PRESET	( -- )
 // 	Reset data stack pointer and the terminal input buffer.
@@ -3197,7 +3148,6 @@ PRESE:
  	MOVT	R1,#0X2000
 	MOVW	R0,#0			//  init TOS ???
 	_UNNEST
-	.align 2 
 
 //    QUIT	( -- )
 // 	Reset return stack pointer and start text interpreter.
@@ -3233,7 +3183,6 @@ UNLOCK:	//  unlock flash memory
 	ldr	r4, =FLASH_KEY2
 	str	r4, [r0, #FLASH_OPTKEYR]
 	_NEXT
-	.align 2 
 WAIT_BSY:
 	ldr	r0,=FLASH_BASE_ADR
 WAIT1:
@@ -3241,7 +3190,6 @@ WAIT1:
 	ands	r4, #0x1	//  BSY
 	bne	WAIT1
 	_NEXT
-	.align 2 
 
 //    ERASE_SECTOR	   ( sector -- )
 // 	  Erase one sector of flash memory.  Sector=0 to 11
@@ -3265,7 +3213,7 @@ ESECT: 	//  sector --
 // 	bl	WAIT_BSY
 	_POP
 	_UNNEST
-	.align 2 
+
 //    I!	   ( data address -- )
 // 	   Write one word into flash memory
 
@@ -3286,8 +3234,6 @@ ISTOR:	//  data address --
 	bic	r4,R4,#0x1		//  PG
 	str	r4, [r0, #0x10]	//  disable programming
 	_UNNEST
-	.align 2 
-	
 
 //    TURNKEY	( -- )
 // 	Copy dictionary from RAM to flash.
@@ -3325,7 +3271,6 @@ TURN1:
 	.word	TURN1-MAPOFFSET
 	BL	DDROP
 	_UNNEST
-	.align 2 
 
 // **************************************************************************
 //  The compiler
@@ -3358,7 +3303,7 @@ ALLOT:
 	BL	CPP
 	BL	PSTOR
 	_UNNEST			// adjust code pointer
-	.align 2 
+
 //    ,	   ( w -- )
 // 	Compile an integer into the code dictionary.
 
@@ -3387,7 +3332,7 @@ BCOMP:
 	BL	TICK
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    COMPILE	( -- )
 // 	Compile the next address in colon list to code dictionary.
 
@@ -3406,7 +3351,7 @@ COMPI:
 	ORR	R5,R5,#1
 	BL	TOR
 	_UNNEST			// adjust return address
-	.align 2 
+
 //    LITERAL	( w -- )
 // 	Compile tos to code dictionary as an integer literal.
 
@@ -3420,7 +3365,7 @@ LITER:
 	.word	DOLIT-MAPOFFSET
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    $,"	( -- )
 // 	Compile a literal string up to next " .
 
@@ -3443,7 +3388,7 @@ STRCQ:
 	BL	CPP
 	BL	STORE
 	_UNNEST 			// adjust the code pointer
-	.align 2 
+
 // **************************************************************************
 //  Structures
 
@@ -3460,7 +3405,7 @@ FOR:
 	.word	TOR-MAPOFFSET
 	BL	HERE
 	_UNNEST
-	.align 2 
+
 //    BEGIN	( -- a )
 // 	Start an infinite or indefinite loop structure.
 
@@ -3486,7 +3431,7 @@ NEXT:
 	.word	DONXT-MAPOFFSET
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    UNTIL	( a -- )
 // 	Terminate a BEGIN-UNTIL indefinite loop structure.
 
@@ -3500,7 +3445,7 @@ UNTIL:
 	.word	QBRAN-MAPOFFSET
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    AGAIN	( a -- )
 // 	Terminate a BEGIN-AGAIN infinite loop structure.
 
@@ -3514,7 +3459,7 @@ AGAIN:
 	.word	BRAN-MAPOFFSET
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    IF	  ( -- A )
 // 	Begin a conditional branch structure.
 
@@ -3532,7 +3477,7 @@ IFF:
 	BL	CPP
 	BL	PSTOR
 	_UNNEST
-	.align 2 
+
 //    AHEAD	( -- A )
 // 	Compile a forward branch instruction.
 
@@ -3550,7 +3495,7 @@ AHEAD:
 	BL	CPP
 	BL	PSTOR
 	_UNNEST
-	.align 2 
+
 //    REPEAT	( A a -- )
 // 	Terminate a BEGIN-WHILE-REPEAT indefinite loop.
 
@@ -3565,7 +3510,7 @@ REPEA:
 	BL	SWAP
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 //    THEN	( A -- )
 // 	Terminate a conditional branch structure.
 
@@ -3579,7 +3524,7 @@ THENN:
 	BL	SWAP
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 //    AFT	 ( a -- a A )
 // 	Jump to THEN in a FOR-AFT-THEN-NEXT loop the first time through.
 
@@ -3594,7 +3539,7 @@ AFT:
 	BL	BEGIN
 	BL	SWAP
 	_UNNEST
-	.align 2 
+
 //    ELSE	( A -- A )
 // 	Start the false clause in an IF-ELSE-THEN structure.
 
@@ -3608,7 +3553,7 @@ ELSEE:
 	BL	SWAP
 	BL	THENN
 	_UNNEST
-	.align 2 
+
 //    WHILE	( a -- A a )
 // 	Conditional branch out of a BEGIN-WHILE-REPEAT loop.
 
@@ -3621,7 +3566,7 @@ WHILE:
 	BL	IFF
 	BL	SWAP
 	_UNNEST
-	.align 2 
+
 //    ABORT"	( -- //  string> )
 // 	Conditional abort with an error message.
 
@@ -3635,7 +3580,7 @@ ABRTQ:
 	.word	ABORQ-MAPOFFSET
 	BL	STRCQ
 	_UNNEST
-	.align 2 
+
 //    $"	( -- //  string> )
 // 	Compile an inlineDCB literal.
 
@@ -3649,7 +3594,7 @@ STRQ:
 	.word	STRQP-MAPOFFSET
 	BL	STRCQ
 	_UNNEST
-	.align 2 
+
 //    ."	( -- //  string> )
 // 	Compile an inlineDCB literal to be typed out at run time.
 
@@ -3663,7 +3608,7 @@ DOTQ:
 	.word	DOTQP-MAPOFFSET
 	BL	STRCQ
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Name compiler
 
@@ -3690,7 +3635,7 @@ UNIQU:
 UNIQ1:
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 //    $,n	 ( na -- )
 // 	Build a new dictionary name using the data at na.
 
@@ -3770,7 +3715,6 @@ OVERT:
 	BL	CNTXT
 	BL	STORE
 	_UNNEST
-	.align 2 
 
 //    ; 	   ( -- )
 // 	Terminate a colon definition.
@@ -3787,7 +3731,6 @@ SEMIS:
 	BL	LBRAC
 	BL	OVERT
 	_UNNEST
-	.align 2 
 
 //    ]	   ( -- )
 // 	Start compiling the words in the input stream.
@@ -3803,7 +3746,7 @@ RBRAC:
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 //    BL.W	( ca -- )
 // 	Assemble a branch-link long instruction to ca.
 // 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
@@ -3828,7 +3771,7 @@ CALLC:
 	ORR	R5,R5,#0xF000
 	BL	COMMA			//  assemble BL.W instruction
 	_UNNEST
-	.align 2 
+
 
 // 	:	( -- //  string> )
 // 	Start a new colon definition using next word as its name.
@@ -3846,7 +3789,7 @@ COLON:
 	BL	COMMA
 	BL	RBRAC
 	_UNNEST
-	.align 2 
+
 //    IMMEDIATE   ( -- )
 // 	Make the last compiled word an immediate word.
 
@@ -3866,7 +3809,7 @@ IMMED:
 	BL	AT
 	BL	STORE
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Defining words
 
@@ -3890,7 +3833,7 @@ CONST:
 	BL	CALLC
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 //    CREATE	( -- //  string> )
 // 	Compile a new array entry without allocating code space.
 
@@ -3910,7 +3853,7 @@ CREAT:
 	.word	DOVAR-MAPOFFSET
 	BL	CALLC
 	_UNNEST
-	.align 2 
+
 //    VARIABLE	( -- //  string> )
 // 	Compile a new variable initialized to 0.
 
@@ -3925,7 +3868,7 @@ VARIA:
 	.word	0
 	BL	COMMA
 	_UNNEST
-	.align 2 
+
 // **************************************************************************
 //  Tools
 
@@ -3995,7 +3938,7 @@ DUMP3:
 	BL	BASE
 	BL	STORE			// restore radix
 	_UNNEST
-	.align 2 
+
 //    .S	  ( ... -- ... )
 // 	Display the contents of the data stack.
 
@@ -4019,7 +3962,7 @@ DOTS2:
 	.word	DOTS1-MAPOFFSET	// loop till done
 	BL	SPACE
 	_UNNEST
-	.align 2 
+
 //    >NAME	( ca -- na | F )
 // 	Convert code address to a name address.
 
@@ -4049,7 +3992,7 @@ TNAM2:
 	BL	RFROM
 	BL	DROP			//  0|na --
 	_UNNEST			// 0
-	.align 2 
+
 //    .ID	 ( na -- )
 // 	Display the name at address.
 
@@ -4074,7 +4017,7 @@ DOTI1:
 	.ascii " {noName}"
 	.align 2 	
 	_UNNEST
-	.align 2 
+
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
 
@@ -4097,7 +4040,7 @@ SEE1:
 	.word	SEE1-MAPOFFSET
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
 
@@ -4150,7 +4093,7 @@ DECOM2:
 // 	BL	RFROM
 	BL	DROP
 	_UNNEST
-	.align 2 
+
 //    WORDS	( -- )
 // 	Display the names in the context vocabulary.
 
@@ -4175,7 +4118,6 @@ WORS1:
 	B.W	WORS1
 WORS2:
 	_UNNEST
-	.align 2 
 
 // **************************************************************************
 //  cold start
@@ -4192,7 +4134,6 @@ VERSN:
 	_DOLIT
 	.word	VER*256+EXT
 	_UNNEST
-	.align 2 
 
 //    hi	  ( -- )
 // 	Display the sign-on message of eForth.
@@ -4225,7 +4166,6 @@ HI:
 	BL	STORE
 	BL	CR
 	_UNNEST			// restore radix
-	.align 2 
 
 //    COLD	( -- )
 // 	The high level cold start sequence.
@@ -4237,10 +4177,10 @@ LASTN:	.byte  4
 	.type COLD,%function 
 COLD:
 //  Initiate Forth registers
-	MOV R3,#UPP&0xffff		//  user area 
+	MOV R3,#UPP&0xffff	//  user area 
  	MOVT R3,#UPP>>16		  
 	ADD R2,R3,#0x4f80	// Forth return stack
-	ADD R1,R3,#0x4F00 // Forth data stack
+	ADD R1,R3,#0x4E80 // Forth data stack
 	MOV R5,#0			//  tos
 	NOP
 	_NEST
