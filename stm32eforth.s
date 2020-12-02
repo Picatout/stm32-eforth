@@ -127,8 +127,7 @@
 	.endm
 
  	.macro	_UNNEST	/*end high level word */
-	LDMFD	R2!,{LR}
-	BX LR 
+	LDMFD	R2!,{PC}
 	.endm
 
  	.macro	_DOLIT /*long literals */
@@ -396,6 +395,28 @@ wait_sws:
   str r1,[r0,STK_CTL]
   _NEXT  
 
+/* copy system to RAM */ 
+	.type remap, %function 
+
+remap:
+	mov r0,#RAM_START&0xffff 
+	movt r0,#RAM_START>>16 
+	movt r1,#UZERO&0xffff 
+	movt r1,#UZERO>>16 
+	mov r2,#CTOP-UZERO 
+1:	ldr r3,[r1],#4 
+	str r3,[r0],#4 
+	subs R2,#4 
+	bne 1b
+// zero end of RAM 
+	mov r2,#0x5000
+	movt r2,#0x2000
+	xor r3,r3,r3 
+2:  str r3,[r0],#4
+	cmps r0,r2 
+	blt 2b 
+	_NEXT 
+
 
 /********************
 * Version control
@@ -405,10 +426,11 @@ wait_sws:
 
 /* Constants */
 
-// .equ RAMOFFSET ,	0x20000000	;remap
-// .equ MAPOFFSET ,	0x08000000	;remap
-.equ RAMOFFSET  ,	0x00000000	/* absolute */
-.equ MAPOFFSET  ,	0x00000000	/* absolute */
+ .equ RAMOFFSET ,	0x20000000	;remap
+ .equ FLASHOFFSET ,	0x08000000	;remap
+//.equ RAMOFFSET  ,	0x00000000	/* absolute */
+//.equ MAPOFFSET  ,	0x00000000	/* absolute */
+  .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
 
 .equ COMPO ,	0x040	/*lexicon compile only */ 
 .equ IMEDD ,	0x080	/*lexicon immediate bit */
@@ -1406,7 +1428,7 @@ _TIMER:  .byte 5
   .p2align 2 
 TIMER:
   _PUSH 
-  ADD R5,53,#TIMER_OFS
+  ADD R5,R3,#TIMER_OFS
   _NEXT
 
 //    'BOOT	 ( -- a )
@@ -3755,7 +3777,7 @@ OVERT:
 
 	.word	_OVERT-MAPOFFSET
 _SEMIS:	.byte  IMEDD+COMPO+1
-	.ascii "// "
+	.ascii ";"
 	.p2align 2 	
 SEMIS:
 	_NEST

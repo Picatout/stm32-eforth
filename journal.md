@@ -1,3 +1,13 @@
+### 2020-12-02
+
+* Je ne connais pas le jeux d'instructions **thumb v2**. J'apprends donc en travaillant sur ce projet et ça réserve des surprises.  Ainsi le modèle *subroutine threaded* du **stm32eforth720** utilise l'instruction **BL** pour appeller les sous-routines composants un mot. Hors l'instruction **BL** est **pc relative** et le déplacement est limité à *21 bits signés.*  Au départ j'avais choisi d'exécuter les mots du système eForth à partir de la mémoire flash et de définir les mots utilisateurs dans la mémorie RAM. Le problème est que la distance est trop grandes entre la mémoire RAM qui débute à l'adresse **0x20000000** et la mémoire flash qui débute elle à **0x8000000** ou à **0** pour son alias pour faire des appel *pc relative* entre les 2 zones.  Il  ne me reste que 3 options:
+
+    * revenir au modèle initial, qui consiste à copier le système Forth en RAM et tout exécuter en mémoire RAM. Ce système a été conçu pour une carte **STM32F407VB explorer** qui possède 196Ko de mémoire RAM alors que la blue-pill n'en possède que 20Ko. Le système prendrait donc plus de 50% de la mémore RAM. 
+
+    * Compiler les nouvelles définitions directement dans la mémoire FLASH. Donc les nouvelles définitison s'exécuteraient aussi mémoire flash.  
+
+    * Modifier le modèle d'exécution pour un modèle indirect qui utiliserait l'instruction **BLX** au lieu d **BL**. L'appel indirect par registre a l'avantage de donner un accès à la plage complète d'adressage de 32 bits.
+
 ### 2020-12-01
 
 * Il y a un problème avec la directive **.align expr1,expr2** de l'assembleur **arm-none-eabi-as**. **expr2** est ignorée de sorte que le remplissage ne se fait pas. Ce problème empèche les mot **FIND** et **SAME?** de fonctionner correctement
