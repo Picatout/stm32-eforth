@@ -101,3 +101,24 @@
     .equ STK_LOAD, 4
     .equ STK_VAL, 8
     .equ STK_CALIB, 12
+
+   /* system control block */
+   .equ SCB_BASE_ADR, 0xE000ED00
+   /* registers offset */
+   .equ SCB_CPUID, 0
+   .equ SCB_ICSR, 4 
+   .equ SCB_VTOR, 8
+   .equ SCB_AIRCR, 12
+   .equ SCB_SCR, 16
+   .equ SCB_CCR, 20
+   .equ SCB_SHPR1,24
+   .equ SCB_SHPR2,28
+   .equ SCB_SHPR3,32
+   .equ SCB_SHCRS,36
+   .equ SCB_CFSR,40
+   .equ SCB_HFSR,44
+   .equ SCB_MMAR,52
+   .equ SCB_BFAR,56
+   // key to to write in SCB_AIRCR 
+   .equ SCB_VECTKEY,0x5fa 
+   
