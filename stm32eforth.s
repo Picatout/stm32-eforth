@@ -1767,8 +1767,8 @@ _DEPTH:	.byte  5
 	.p2align 2 	
 DEPTH:
 	_PUSH
-	MOVW	R5,#0X4f04
- 	MOVT	R5,#0X2000
+	MOVW	R5,#SPP&0xffff+4 
+ 	MOVT	R5,#SPP>>16 
 	SUB	R5,R5,R1
 	ASR	R5,R5,#2
 	SUB	R5,R5,#1
@@ -3988,11 +3988,11 @@ DOTS:
 	BL	TOR			// start count down loop
 	B.W	DOTS2			// skip first pass
 DOTS1:
-  BL	RAT
+	BL	RAT
 	BL	PICK
 	BL	DOT			// index stack, display contents
 DOTS2:
-  BL	DONXT
+	BL	DONXT
 	.word	DOTS1-MAPOFFSET	// loop till done
 	BL	SPACE
 	_UNNEST
