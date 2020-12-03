@@ -91,6 +91,14 @@
 .equ UPP ,	0x20000000	/*start of user area (UP0) */
 .equ DTOP ,	0x20000100	/*start of usable RAM area (HERE) */
 .equ DEND , 0x20004E00  /*usable RAM end */
+ .equ RAMOFFSET ,	0x20000000	// remap
+ .equ RAMEND, 0x20005000 // 20Ko
+ .equ FLASHOFFSET ,	0x08000c00	// remap
+//.equ RAMOFFSET  ,	0x00000000	/* absolute */
+//.equ MAPOFFSET  ,	0x00000000	/* absolute */
+  .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
+
+
 
 /*************************************
    system variables offset from UPP
@@ -240,18 +248,21 @@ isr_vectors:
   .p2align 2 
   .global default_handler
 default_handler:
-	_DOLIT 
-	.word -1
-	BL ULED 
-	BL	CR	// new line
-	BL	DOTQP
+	ldr r0,cr_adr
+	orr r0,r0,#1 
+	blx	r0	// new line
+	ldr r0,dotqp_adr 
+	orr r0,r0,#1 
+	blx	r0
 	.byte	16
 	.ascii " exception halt!"	
 	.p2align 2 
-	b REBOOT   
+	b reset_handler   
   .size  default_handler, .-default_handler
-
-
+cr_adr:
+	.word CR-MAPOFFSET
+dotqp_adr:
+	.word DOTQP-MAPOFFSET 
 
 /*********************************
 	system milliseconds counter
@@ -281,20 +292,14 @@ systick_exit:
   .p2align 2 
   .global reset_handler
 reset_handler:
-/* zero RAM */
-	mov r0,#0
-	movt r0,#0x2000
-	eor r1,r1,r1 // r1=0
-	mov r2,#0x5000 // RAM size 
-	add r3,r2,r0 
-zero_loop:
-	str r1,[r0],#4
-	subs r2,#4
-	bne zero_loop		
+	bl	remap 
 	bl	init_devices	 	/* RCC, GPIOs, USART */
-	bl	UNLOCK			/* unlock flash memory */
-	bl COLD 
-	b reset_handler 
+//	bl	UNLOCK			/* unlock flash memory */
+	ldr r0,forth_entry
+	orr r0,#1
+	bx r0 
+forth_entry:
+	.word COLD+MAPOFFSET 
 
   .type init_devices, %function
   .p2align 2 
@@ -399,11 +404,11 @@ wait_sws:
 	.type remap, %function 
 
 remap:
-	mov r0,#RAM_START&0xffff 
-	movt r0,#RAM_START>>16 
-	movt r1,#UZERO&0xffff 
-	movt r1,#UZERO>>16 
+	ldr r0,remap_dest  
+	ldr r1,remap_src 
 	mov r2,#CTOP-UZERO 
+	add r2,r2,#3
+	and r2,r2,#~3 
 1:	ldr r3,[r1],#4 
 	str r3,[r0],#4 
 	subs R2,#4 
@@ -411,12 +416,15 @@ remap:
 // zero end of RAM 
 	mov r2,#0x5000
 	movt r2,#0x2000
-	xor r3,r3,r3 
+	eor r3,r3,r3 
 2:  str r3,[r0],#4
-	cmps r0,r2 
+	cmp r0,r2 
 	blt 2b 
 	_NEXT 
-
+remap_src:
+	.word UZERO 
+remap_dest:
+	.word RAMOFFSET 
 
 /********************
 * Version control
@@ -426,18 +434,12 @@ remap:
 
 /* Constants */
 
- .equ RAMOFFSET ,	0x20000000	;remap
- .equ FLASHOFFSET ,	0x08000000	;remap
-//.equ RAMOFFSET  ,	0x00000000	/* absolute */
-//.equ MAPOFFSET  ,	0x00000000	/* absolute */
-  .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
-
 .equ COMPO ,	0x040	/*lexicon compile only */ 
 .equ IMEDD ,	0x080	/*lexicon immediate bit */
 .equ MASKK ,	0x0FFFFFF1F	/*lexicon bit mask, allowed for Chineze character */
 
 .equ CELLL ,	4	/*size of a cell */
-.equ BASEE ,	16	/*default radix */
+.equ BASEE ,	10	/*default radix */
 .equ VOCSS ,	8	/*depth of vocabulary stack */
 
 .equ BKSPP ,	8	/*backspace */
@@ -465,28 +467,27 @@ remap:
 *  COLD start moves the following to USER variables.
 *  MUST BE IN SAME ORDER AS USER VARIABLES.
 ******************************************************/
-	.p2align 2   	
-  
+	.p2align 10
+
 UZERO:
 	.word 0  			/*Reserved */
 	.word 0      /* system Ticks */
     .word 0     /* delay timer */
-	.word HI  	/*'BOOT */
+	.word HI+MAPOFFSET  	/*'BOOT */
 	.word BASEE 	/*BASE */
 	.word 0			/*tmp */
 	.word 0			/*SPAN */
 	.word 0			/*>IN */
 	.word 0			/*#TIB */
 	.word TIBB	/*TIB */
-	.word INTER	/*'EVAL */
+	.word INTER+MAPOFFSET	/*'EVAL */
 	.word 0			/*HLD */
-	.word LASTN	/*CONTEXT */
-	.word CTOP	/*FLASH */
-	.word DTOP	/* start adress of RAM dictionary RAM */
-	.word LASTN	/*LAST */
-  .word 0,0			/*reserved */
+	.word LASTN+MAPOFFSET	/*CONTEXT */
+	.word CTOP+MAPOFFSET	/*end of dictionnary */
+	.word CTOP+MAPOFFSET	/* end of RAM dictionary RAM */
+	.word LASTN+MAPOFFSET	/*LAST word in dictionary */
+	.word 0,0			/*reserved */
 ULAST:
-
  
 
 /***********************************
@@ -496,24 +497,23 @@ ULAST:
 	.p2align 2 
 
 // REBOOT ( -- )
-// system reset 
+// hardware reset 
 	.word 0
-_REBOOT:
-	.byte 6
+_REBOOT: .byte 6
 	.ascii "REBOOT"
 	.p2align 2 
 REBOOT:
-	mov r0,#SCB_BASE_ADR&0xffff
-	movt r0,#SCB_BASE_ADR>>16
+	ldr r0,scb_adr 
 	ldr r1,[r0,#SCB_AIRCR]
-	movt r1,#SCB_VECTKEY 
 	orr r1,#(1<<2)
+	movt r1,#SCB_VECTKEY
 	str r1,[r0,#SCB_AIRCR]
-	_NEXT 
-
+	b . 
+scb_adr:
+	.word SCB_BASE_ADR 
 // PAUSE ( u -- ) 
 // suspend execution for u milliseconds
-	.word _REBOOT 
+	.word _REBOOT+MAPOFFSET
 _PAUSE: .byte 5
 	.ascii "PAUSE"
 	.p2align 2
@@ -533,7 +533,7 @@ PAUSE_EXIT:
 
 //  ULED ( T|F -- )
 // control user LED, -1 ON, 0 OFF  
-	.word _PAUSE 
+	.word _PAUSE + MAPOFFSET
 _ULED: .byte 4
 	.ascii "ULED"
 	.p2align 2
@@ -553,7 +553,7 @@ ULED_OFF:
 	
 //    ?RX	 ( -- c T | F )
 // 	Return input character and true, or a false if no input.
-	.word	_ULED-MAPOFFSET
+	.word	_ULED+MAPOFFSET
 _QRX:	.byte   4
 	.ascii "?KEY"
 	.p2align 2 
@@ -578,7 +578,7 @@ QRX1:
 //    TX!	 ( c -- )
 // 	Send character c to the output device.
 
-	.word	_QRX-MAPOFFSET
+	.word	_QRX+MAPOFFSET
 _TXSTO:	.byte 4
 	.ascii "EMIT"
 	.p2align 2 	
@@ -603,7 +603,7 @@ TX1:
 //    NOP	( -- )
 // 	do nothing.
 
-	.word	_TXSTO-MAPOFFSET
+	.word	_TXSTO+MAPOFFSET
 _NOP:	.byte   3
 	.ascii "NOP"
 	.p2align 2 	
@@ -614,7 +614,7 @@ NOP:
 //    doLIT	( -- w )
 // 	Push an inline literal.
 
-// 	.word	_NOP-MAPOFFSET
+// 	.word	_NOP+MAPOFFSET
 // _LIT	.byte   COMPO+5
 // 	.ascii "doLIT"
 // 	.p2align 2 	
@@ -628,7 +628,7 @@ DOLIT:
 //    EXECUTE	( ca -- )
 // 	Execute the word at ca.
 
-	.word	_NOP-MAPOFFSET
+	.word	_NOP+MAPOFFSET
 _EXECU:	.byte   7
 	.ascii "EXECUTE"
 	.p2align 2 	
@@ -642,7 +642,7 @@ EXECU:
 // 	: next ( -- ) \ hilevel model
 // 	 r> r> dup if 1 - >r @ >r exit then drop cell+ >r // 
 
-// 	.word	_EXECU-MAPOFFSET
+// 	.word	_EXECU+MAPOFFSET
 // _DONXT	.byte   COMPO+4
 // 	.ascii "next"
 // 	.p2align 2 	
@@ -664,7 +664,7 @@ NEXT1:
 //    ?branch	( f -- )
 // 	Branch if flag is zero.
 
-// 	.word	_DONXT-MAPOFFSET
+// 	.word	_DONXT+MAPOFFSET
 // _QBRAN	.byte   COMPO+7
 // 	.ascii "?branch"
 // 	.p2align 2 	
@@ -682,7 +682,7 @@ QBRAN1:
 //    branch	( -- )
 // 	Branch to an inline address.
 
-// 	.word	_QBRAN-MAPOFFSET
+// 	.word	_QBRAN+MAPOFFSET
 // _BRAN	.byte   COMPO+6
 // 	.ascii "branch"
 // 	.p2align 2 	
@@ -694,7 +694,7 @@ BRAN:
 //    EXIT	(  -- )
 // 	Exit the currently executing command.
 
-	.word	_EXECU-MAPOFFSET
+	.word	_EXECU+MAPOFFSET
 _EXIT:	.byte   4
 	.ascii "EXIT"
 	.p2align 2 	
@@ -704,7 +704,7 @@ EXIT:
 //    !	   ( w a -- )
 // 	Pop the data stack to memory.
 
-	.word	_EXIT-MAPOFFSET
+	.word	_EXIT+MAPOFFSET
 _STORE:	.byte   1
 	.ascii "!"
 	.p2align 2 	
@@ -717,7 +717,7 @@ STORE:
 //    @	   ( a -- w )
 // 	Push memory location to the data stack.
 
-	.word	_STORE-MAPOFFSET
+	.word	_STORE+MAPOFFSET
 _AT:	.byte   1
 	.ascii "@"
 	.p2align 2 	
@@ -728,7 +728,7 @@ AT:
 //    C!	  ( c b -- )
 // 	Pop the data stack to byte memory.
 
-	.word	_AT-MAPOFFSET
+	.word	_AT+MAPOFFSET
 _CSTOR:	.byte   2
 	.ascii "C!"
 	.p2align 2 	
@@ -741,7 +741,7 @@ CSTOR:
 //    C@	  ( b -- c )
 // 	Push byte memory location to the data stack.
 
-	.word	_CSTOR-MAPOFFSET
+	.word	_CSTOR+MAPOFFSET
 _CAT:	.byte   2
 	.ascii "C@"
 	.p2align 2 	
@@ -752,7 +752,7 @@ CAT:
 //    R>	  ( -- w )
 // 	Pop the return stack to the data stack.
 
-	.word	_CAT-MAPOFFSET
+	.word	_CAT+MAPOFFSET
 _RFROM:	.byte   2
 	.ascii "R>"
 	.p2align 2 	
@@ -764,7 +764,7 @@ RFROM:
 //    R@	  ( -- w )
 // 	Copy top of return stack to the data stack.
 
-	.word	_RFROM-MAPOFFSET
+	.word	_RFROM+MAPOFFSET
 _RAT:	.byte   2
 	.ascii "R@"
 	.p2align 2 	
@@ -776,7 +776,7 @@ RAT:
 //    >R	  ( w -- )
 // 	Push the data stack to the return stack.
 
-	.word	_RAT-MAPOFFSET
+	.word	_RAT+MAPOFFSET
 _TOR:	.byte   COMPO+2
 	.ascii ">R"
 	.p2align 2 	
@@ -788,7 +788,7 @@ TOR:
 //    SP@	 ( -- a )
 // 	Push the current data stack pointer.
 
-	.word	_TOR-MAPOFFSET
+	.word	_TOR+MAPOFFSET
 _SPAT:	.byte   3
 	.ascii "SP@"
 	.p2align 2 	
@@ -800,7 +800,7 @@ SPAT:
 //    DROP	( w -- )
 // 	Discard top stack item.
 
-	.word	_SPAT-MAPOFFSET
+	.word	_SPAT+MAPOFFSET
 _DROP:	.byte   4
 	.ascii "DROP"
 	.p2align 2 	
@@ -811,7 +811,7 @@ DROP:
 //    DUP	 ( w -- w w )
 // 	Duplicate the top stack item.
 
-	.word	_DROP-MAPOFFSET
+	.word	_DROP+MAPOFFSET
 _DUPP:	.byte   3
 	.ascii "DUP"
 	.p2align 2 	
@@ -822,7 +822,7 @@ DUPP:
 //    SWAP	( w1 w2 -- w2 w1 )
 // 	Exchange top two stack items.
 
-	.word	_DUPP-MAPOFFSET
+	.word	_DUPP+MAPOFFSET
 _SWAP:	.byte   4
 	.ascii "SWAP"
 	.p2align 2 	
@@ -835,7 +835,7 @@ SWAP:
 //    OVER	( w1 w2 -- w1 w2 w1 )
 // 	Copy second stack item to top.
 
-	.word	_SWAP-MAPOFFSET
+	.word	_SWAP+MAPOFFSET
 _OVER:	.byte   4
 	.ascii "OVER"
 	.p2align 2 	
@@ -847,7 +847,7 @@ OVER:
 //    0<	  ( n -- t )
 // 	Return true if n is negative.
 
-	.word	_OVER-MAPOFFSET
+	.word	_OVER+MAPOFFSET
 _ZLESS:	.byte   2
 	.ascii "0<"
 	.p2align 2 	
@@ -859,7 +859,7 @@ ZLESS:
 //    AND	 ( w w -- w )
 // 	Bitwise AND.
 
-	.word	_ZLESS-MAPOFFSET
+	.word	_ZLESS+MAPOFFSET
 _ANDD:	.byte   3
 	.ascii "AND"
 	.p2align 2 	
@@ -871,7 +871,7 @@ ANDD:
 //    OR	  ( w w -- w )
 // 	Bitwise inclusive OR.
 
-	.word	_ANDD-MAPOFFSET
+	.word	_ANDD+MAPOFFSET
 _ORR:	.byte   2
 	.ascii "OR"
 	.p2align 2 	
@@ -883,7 +883,7 @@ ORR:
 //    XOR	 ( w w -- w )
 // 	Bitwise exclusive OR.
 
-	.word	_ORR-MAPOFFSET
+	.word	_ORR+MAPOFFSET
 _XORR:	.byte   3
 	.ascii "XOR"
 	.p2align 2 	
@@ -895,7 +895,7 @@ XORR:
 //    UM+	 ( w w -- w cy )
 // 	Add two numbers, return the sum and carry flag.
 
-	.word	_XORR-MAPOFFSET
+	.word	_XORR+MAPOFFSET
 _UPLUS:	.byte   3
 	.ascii "UM+"
 	.p2align 2 	
@@ -910,7 +910,7 @@ UPLUS:
 //    RSHIFT	 ( w # -- w )
 // 	arithmetic Right shift # bits.
 
-	.word	_UPLUS-MAPOFFSET
+	.word	_UPLUS+MAPOFFSET
 _RSHIFT:	.byte   6
 	.ascii "RSHIFT"
 	.p2align 2 	
@@ -922,7 +922,7 @@ RSHIFT:
 //    LSHIFT	 ( w # -- w )
 // 	Right shift # bits.
 
-	.word	_RSHIFT-MAPOFFSET
+	.word	_RSHIFT+MAPOFFSET
 _LSHIFT:	.byte   6
 	.ascii "LSHIFT"
 	.p2align 2 	
@@ -934,7 +934,7 @@ LSHIFT:
 //    +	 ( w w -- w )
 // 	Add.
 
-	.word	_LSHIFT-MAPOFFSET
+	.word	_LSHIFT+MAPOFFSET
 _PLUS:	.byte   1
 	.ascii "+"
 	.p2align 2 	
@@ -946,7 +946,7 @@ PLUS:
 //    -	 ( w w -- w )
 // 	Subtract.
 
-	.word	_PLUS-MAPOFFSET
+	.word	_PLUS+MAPOFFSET
 _SUBB:	.byte   1
 	.ascii "-"
 	.p2align 2 	
@@ -958,7 +958,7 @@ SUBB:
 //    *	 ( w w -- w )
 // 	Multiply.
 
-	.word	_SUBB-MAPOFFSET
+	.word	_SUBB+MAPOFFSET
 _STAR:	.byte   1
 	.ascii "*"
 	.p2align 2 	
@@ -970,7 +970,7 @@ STAR:
 //    UM*	 ( w w -- ud )
 // 	Unsigned multiply.
 
-	.word	_STAR-MAPOFFSET
+	.word	_STAR+MAPOFFSET
 _UMSTA:	.byte   3
 	.ascii "UM*"
 	.p2align 2 	
@@ -984,7 +984,7 @@ UMSTA:
 //    M*	 ( w w -- d )
 // 	signed multiply.
 
-	.word	_UMSTA-MAPOFFSET
+	.word	_UMSTA+MAPOFFSET
 _MSTAR:	.byte   2
 	.ascii "M*"
 	.p2align 2 	
@@ -998,7 +998,7 @@ MSTAR:
 //    1+	 ( w -- w+1 )
 // 	Add 1.
 
-	.word	_MSTAR-MAPOFFSET
+	.word	_MSTAR+MAPOFFSET
 _ONEP:	.byte   2
 	.ascii "1+"
 	.p2align 2 	
@@ -1009,7 +1009,7 @@ ONEP:
 //    1-	 ( w -- w-1 )
 // 	Subtract 1.
 
-	.word	_ONEP-MAPOFFSET
+	.word	_ONEP+MAPOFFSET
 _ONEM:	.byte   2
 	.ascii "1-"
 	.p2align 2 	
@@ -1020,7 +1020,7 @@ ONEM:
 //    2+	 ( w -- w+2 )
 // 	Add 1.
 
-	.word	_ONEM-MAPOFFSET
+	.word	_ONEM+MAPOFFSET
 _TWOP:	.byte   2
 	.ascii "2+"
 	.p2align 2 	
@@ -1031,7 +1031,7 @@ TWOP:
 //    2-	 ( w -- w-2 )
 // 	Subtract 2.
 
-	.word	_TWOP-MAPOFFSET
+	.word	_TWOP+MAPOFFSET
 _TWOM:	.byte   2
 	.ascii "2-"
 	.p2align 2 	
@@ -1042,7 +1042,7 @@ TWOM:
 //    CELL+	( w -- w+4 )
 // 	Add CELLL.
 
-	.word	_TWOM-MAPOFFSET
+	.word	_TWOM+MAPOFFSET
 _CELLP:	.byte   5
 	.ascii "CELL+"
 	.p2align 2 	
@@ -1053,7 +1053,7 @@ CELLP:
 //    CELL-	( w -- w-4 )
 // 	Subtract CELLL.
 
-	.word	_CELLP-MAPOFFSET
+	.word	_CELLP+MAPOFFSET
 _CELLM:	.byte   5
 	.ascii "CELL-"
 	.p2align 2 	
@@ -1064,7 +1064,7 @@ CELLM:
 //    BL	( -- 32 )
 // 	Blank (ASCII space).
 
-	.word	_CELLM-MAPOFFSET
+	.word	_CELLM+MAPOFFSET
 _BLANK:	.byte   2
 	.ascii "BL"
 	.p2align 2 	
@@ -1076,7 +1076,7 @@ BLANK:
 //    CELLS	( w -- w*4 )
 // 	Multiply 4.
 
-	.word	_BLANK-MAPOFFSET
+	.word	_BLANK+MAPOFFSET
 _CELLS:	.byte   5
 	.ascii "CELLS"
 	.p2align 2 	
@@ -1087,7 +1087,7 @@ CELLS:
 //    CELL/	( w -- w/4 )
 // 	Divide by 4.
 
-	.word	_CELLS-MAPOFFSET
+	.word	_CELLS+MAPOFFSET
 _CELLSL:	.byte   5
 	.ascii "CELL/"
 	.p2align 2 	
@@ -1098,7 +1098,7 @@ CELLSL:
 //    2*	( w -- w*2 )
 // 	Multiply 2.
 
-	.word	_CELLSL-MAPOFFSET
+	.word	_CELLSL+MAPOFFSET
 _TWOST:	.byte   2
 	.ascii "2*"
 	.p2align 2 	
@@ -1109,7 +1109,7 @@ TWOST:
 //    2/	( w -- w/2 )
 // 	Divide by 2.
 
-	.word	_TWOST-MAPOFFSET
+	.word	_TWOST+MAPOFFSET
 _TWOSL:	.byte   2
 	.ascii "2/"
 	.p2align 2 	
@@ -1120,7 +1120,7 @@ TWOSL:
 //    ?DUP	( w -- w w | 0 )
 // 	Conditional duplicate.
 
-	.word	_TWOSL-MAPOFFSET
+	.word	_TWOSL+MAPOFFSET
 _QDUP:	.byte   4
 	.ascii "?DUP"
 	.p2align 2 	
@@ -1133,7 +1133,7 @@ QDUP:
 //    ROT	( w1 w2 w3 -- w2 w3 w1 )
 // 	Rotate top 3 items.
 
-	.word	_QDUP-MAPOFFSET
+	.word	_QDUP+MAPOFFSET
 _ROT:	.byte   3
 	.ascii "ROT"
 	.p2align 2 	
@@ -1147,7 +1147,7 @@ ROT:
 //    2DROP	( w1 w2 -- )
 // 	Drop top 2 items.
 
-	.word	_ROT-MAPOFFSET
+	.word	_ROT+MAPOFFSET
 _DDROP:	.byte   5
 	.ascii "2DROP"
 	.p2align 2 	
@@ -1159,7 +1159,7 @@ DDROP:
 //    2DUP	( w1 w2 -- w1 w2 w1 w2 )
 // 	Duplicate top 2 items.
 
-	.word	_DDROP-MAPOFFSET
+	.word	_DDROP+MAPOFFSET
 _DDUP:	.byte   4
 	.ascii "2DUP"
 	.p2align 2 	
@@ -1172,7 +1172,7 @@ DDUP:
 //    D+	( d1 d2 -- d3 )
 // 	Add top 2 double numbers.
 
-	.word	_DDUP-MAPOFFSET
+	.word	_DDUP+MAPOFFSET
 _DPLUS:	.byte   2
 	.ascii "D+"
 	.p2align 2 	
@@ -1188,7 +1188,7 @@ DPLUS:
 //    NOT	 ( w -- !w )
 // 	1"s complement.
 
-	.word	_DPLUS-MAPOFFSET
+	.word	_DPLUS+MAPOFFSET
 _INVER:	.byte   3
 	.ascii "NOT"
 	.p2align 2 	
@@ -1199,7 +1199,7 @@ INVER:
 //    NEGATE	( w -- -w )
 // 	2's complement.
 
-	.word	_INVER-MAPOFFSET
+	.word	_INVER+MAPOFFSET
 _NEGAT:	.byte   6
 	.ascii "NEGATE"
 	.p2align 2 	
@@ -1210,7 +1210,7 @@ NEGAT:
 //    ABS	 ( w -- |w| )
 // 	Absolute.
 
-	.word	_NEGAT-MAPOFFSET
+	.word	_NEGAT+MAPOFFSET
 _ABSS:	.byte   3
 	.ascii "ABS"
 	.p2align 2 	
@@ -1223,7 +1223,7 @@ ABSS:
 //    =	 ( w w -- t )
 // 	Equal?
 
-	.word	_ABSS-MAPOFFSET
+	.word	_ABSS+MAPOFFSET
 _EQUAL:	.byte   1
 	.ascii "="
 	.p2align 2 	
@@ -1238,7 +1238,7 @@ EQUAL:
 //    U<	 ( w w -- t )
 // 	Unsigned equal?
 
-	.word	_EQUAL-MAPOFFSET
+	.word	_EQUAL+MAPOFFSET
 _ULESS:	.byte   2
 	.ascii "U<"
 	.p2align 2 	
@@ -1253,7 +1253,7 @@ ULESS:
 //    <	( w w -- t )
 // 	Less?
 
-	.word	_ULESS-MAPOFFSET
+	.word	_ULESS+MAPOFFSET
 _LESS:	.byte   1
 	.ascii "<"
 	.p2align 2 	
@@ -1268,7 +1268,7 @@ LESS:
 //    >	( w w -- t )
 // 	greater?
 
-	.word	_LESS-MAPOFFSET
+	.word	_LESS+MAPOFFSET
 _GREAT:	.byte   1
 	.ascii ">"
 	.p2align 2 	
@@ -1283,7 +1283,7 @@ GREAT:
 //    MAX	 ( w w -- max )
 // 	Leave maximum.
 
-	.word	_GREAT-MAPOFFSET
+	.word	_GREAT+MAPOFFSET
 _MAX:	.byte   3
 	.ascii "MAX"
 	.p2align 2 	
@@ -1297,7 +1297,7 @@ MAX:
 //    MIN	 ( w w -- min )
 // 	Leave minimum.
 
-	.word	_MAX-MAPOFFSET
+	.word	_MAX+MAPOFFSET
 _MIN:	.byte   3
 	.ascii "MIN"
 	.p2align 2 	
@@ -1311,7 +1311,7 @@ MIN:
 //    +!	 ( w a -- )
 // 	Add to memory.
 
-	.word	_MIN-MAPOFFSET
+	.word	_MIN+MAPOFFSET
 _PSTOR:	.byte   2
 	.ascii "+!"
 	.p2align 2 	
@@ -1326,7 +1326,7 @@ PSTOR:
 //    2!	 ( d a -- )
 // 	Store double number.
 
-	.word	_PSTOR-MAPOFFSET
+	.word	_PSTOR+MAPOFFSET
 _DSTOR:	.byte   2
 	.ascii "2!"
 	.p2align 2 	
@@ -1341,7 +1341,7 @@ DSTOR:
 //    2@	 ( a -- d )
 // 	Fetch double number.
 
-	.word	_DSTOR-MAPOFFSET
+	.word	_DSTOR+MAPOFFSET
 _DAT:	.byte   2
 	.ascii "2@"
 	.p2align 2 	
@@ -1354,7 +1354,7 @@ DAT:
 //    COUNT	( b -- b+1 c )
 // 	Fetch length of string.
 
-	.word	_DAT-MAPOFFSET
+	.word	_DAT+MAPOFFSET
 _COUNT:	.byte   5
 	.ascii "COUNT"
 	.p2align 2 	
@@ -1367,7 +1367,7 @@ COUNT:
 //    DNEGATE	( d -- -d )
 // 	Negate double number.
 
-	.word	_COUNT-MAPOFFSET
+	.word	_COUNT+MAPOFFSET
 _DNEGA:	.byte   7
 	.ascii "DNEGATE"
 	.p2align 2 	
@@ -1385,7 +1385,7 @@ DNEGA:
 //    doVAR	( -- a )
 // 	Run time routine for VARIABLE and CREATE.
 
-// 	.word	_DNEGA-MAPOFFSET
+// 	.word	_DNEGA+MAPOFFSET
 // _DOVAR	.byte  COMPO+5
 // 	.ascii "doVAR"
 // 	.p2align 2 	
@@ -1397,7 +1397,7 @@ DOVAR:
 //    doCON	( -- a ) 
 // 	Run time routine for CONSTANT.
 
-// 	.word	_DOVAR-MAPOFFSET
+// 	.word	_DOVAR+MAPOFFSET
 // _DOCON	.byte  COMPO+5
 // 	.ascii "doCON"
 // 	.p2align 2 	
@@ -1412,7 +1412,7 @@ DOCON:
   
 //  MSEC ( -- a)
 // return address of milliseconds counter
-  .word _DNEGA-MAPOFFSET 
+  .word _DNEGA+MAPOFFSET 
 _MSEC: .byte 4
   .ascii "MSEC"
   .p2align 2 
@@ -1422,7 +1422,7 @@ MSEC:
   _NEXT 
 
 // TIMER ( -- a )
-  .word _MSEC-MAPOFFSET
+  .word _MSEC+MAPOFFSET
 _TIMER:  .byte 5
   .ascii "TIMER"
   .p2align 2 
@@ -1434,7 +1434,7 @@ TIMER:
 //    'BOOT	 ( -- a )
 // 	Application.
 
-	.word	_TIMER-MAPOFFSET
+	.word	_TIMER+MAPOFFSET
 _TBOOT:	.byte   5
 	.ascii "'BOOT"
 	.p2align 2 	
@@ -1446,7 +1446,7 @@ TBOOT:
 //    BASE	( -- a )
 // 	Storage of the radix base for numeric I/O.
 
-	.word	_TBOOT-MAPOFFSET
+	.word	_TBOOT+MAPOFFSET
 _BASE:	.byte   4
 	.ascii "BASE"
 	.p2align 2 	
@@ -1458,7 +1458,7 @@ BASE:
 //    tmp	 ( -- a )
 // 	A temporary storage location used in parse and find.
 
-// 	.word	_BASE-MAPOFFSET
+// 	.word	_BASE+MAPOFFSET
 // _TEMP	.byte   COMPO+3
 // 	.ascii "tmp"
 // 	.p2align 2 	
@@ -1470,7 +1470,7 @@ TEMP:
 //    SPAN	( -- a )
 // 	Hold character count received by EXPECT.
 
-	.word	_BASE-MAPOFFSET
+	.word	_BASE+MAPOFFSET
 _SPAN:	.byte   4
 	.ascii "SPAN"
 	.p2align 2 	
@@ -1482,7 +1482,7 @@ SPAN:
 //    >IN	 ( -- a )
 // 	Hold the character pointer while parsing input stream.
 
-	.word	_SPAN-MAPOFFSET
+	.word	_SPAN+MAPOFFSET
 _INN:	.byte   3
 	.ascii ">IN"
 	.p2align 2 	
@@ -1494,7 +1494,7 @@ INN:
 //    #TIB	( -- a )
 // 	Hold the current count and address of the terminal input buffer.
 
-	.word	_INN-MAPOFFSET
+	.word	_INN+MAPOFFSET
 _NTIB:	.byte   4
 	.ascii "#TIB"
 	.p2align 2 	
@@ -1506,7 +1506,7 @@ NTIB:
 //    'EVAL	( -- a )
 // 	Execution vector of EVAL.
 
-	.word	_NTIB-MAPOFFSET
+	.word	_NTIB+MAPOFFSET
 _TEVAL:	.byte   5
 	.ascii "'EVAL"
 	.p2align 2 	
@@ -1518,7 +1518,7 @@ TEVAL:
 //    HLD	 ( -- a )
 // 	Hold a pointer in building a numeric output string.
 
-	.word	_TEVAL-MAPOFFSET
+	.word	_TEVAL+MAPOFFSET
 _HLD:	.byte   3
 	.ascii "HLD"
 	.p2align 2 	
@@ -1530,7 +1530,7 @@ HLD:
 //    CONTEXT	( -- a )
 // 	A area to specify vocabulary search order.
 
-	.word	_HLD-MAPOFFSET
+	.word	_HLD+MAPOFFSET
 _CNTXT:	.byte   7
 	.ascii "CONTEXT"
 	.p2align 2 	
@@ -1543,7 +1543,7 @@ CRRNT:
 //    CP	( -- a )
 // 	Point to top name in RAM vocabulary.
 
-	.word	_CNTXT-MAPOFFSET
+	.word	_CNTXT+MAPOFFSET
 _CP:	.byte   2
 	.ascii "CP"
 	.p2align 2 	
@@ -1554,7 +1554,7 @@ CPP:
 
 //   FCP ( -- a )
 //  Point ot top of Flash dictionary
-	.word _CP-MAPOFFSET
+	.word _CP+MAPOFFSET
 _FCPP: .byte 4 
 	.ascii "FCPP"
 	.p2align 2 
@@ -1566,7 +1566,7 @@ FCPP:
 //    LAST	( -- a )
 // 	Point to the last name in the name dictionary.
 
-	.word	_FCPP-MAPOFFSET
+	.word	_FCPP+MAPOFFSET
 _LAST:	.byte   4
 	.ascii "LAST"
 	.p2align 2 	
@@ -1581,7 +1581,7 @@ LAST:
 //    WITHIN	( u ul uh -- t )
 // 	Return true if u is within the range of ul and uh.
 
-	.word	_LAST-MAPOFFSET
+	.word	_LAST+MAPOFFSET
 _WITHI:	.byte   6
 	.ascii "WITHIN"
 	.p2align 2 	
@@ -1600,7 +1600,7 @@ WITHI:
 //    UM/MOD	( udl udh u -- ur uq )
 // 	Unsigned divide of a double by a single. Return mod and quotient.
 
-	.word	_WITHI-MAPOFFSET
+	.word	_WITHI+MAPOFFSET
 _UMMOD:	.byte   6
 	.ascii "UM/MOD"
 	.p2align 2 	
@@ -1631,7 +1631,7 @@ UMMOD2:
 //    M/MOD	( d n -- r q )
 // 	Signed floored divide of double by single. Return mod and quotient.
 
-	.word	_UMMOD-MAPOFFSET
+	.word	_UMMOD+MAPOFFSET
 _MSMOD:	.byte  5
 	.ascii "M/MOD"
 	.p2align 2 	
@@ -1642,7 +1642,7 @@ MSMOD:
 	BL	DUPP
 	BL	TOR
 	BL	QBRAN
-	.word	MMOD1-MAPOFFSET
+	.word	MMOD1+MAPOFFSET
 	BL	NEGAT
 	BL	TOR
 	BL	DNEGA
@@ -1652,7 +1652,7 @@ MMOD1:
 	BL	DUPP
 	BL	ZLESS
 	BL	QBRAN
-	.word	MMOD2-MAPOFFSET
+	.word	MMOD2+MAPOFFSET
 	BL	RAT
 	BL	PLUS
 MMOD2:
@@ -1660,7 +1660,7 @@ MMOD2:
 	BL	UMMOD
 	BL	RFROM
 	BL	QBRAN
-	.word	MMOD3-MAPOFFSET
+	.word	MMOD3+MAPOFFSET
 	BL	SWAP
 	BL	NEGAT
 	BL	SWAP
@@ -1670,7 +1670,7 @@ MMOD3:
 //    /MOD	( n n -- r q )
 // 	Signed divide. Return mod and quotient.
 
-	.word	_MSMOD-MAPOFFSET
+	.word	_MSMOD+MAPOFFSET
 _SLMOD:	.byte   4
 	.ascii "/MOD"
 	.p2align 2 	
@@ -1685,7 +1685,7 @@ SLMOD:
 //    MOD	 ( n n -- r )
 // 	Signed divide. Return mod only.
 
-	.word	_SLMOD-MAPOFFSET
+	.word	_SLMOD+MAPOFFSET
 _MODD:	.byte  3
 	.ascii "MOD"
 	.p2align 2 	
@@ -1698,7 +1698,7 @@ MODD:
 //    /	   ( n n -- q )
 // 	Signed divide. Return quotient only.
 
-	.word	_MODD-MAPOFFSET
+	.word	_MODD+MAPOFFSET
 _SLASH:	.byte  1
 	.ascii "/"
 	.p2align 2 	
@@ -1712,7 +1712,7 @@ SLASH:
 //    */MOD	( n1 n2 n3 -- r q )
 // 	Multiply n1 and n2, then divide by n3. Return mod and quotient.
 
-	.word	_SLASH-MAPOFFSET
+	.word	_SLASH+MAPOFFSET
 _SSMOD:	.byte  5
 	.ascii "*/MOD"
 	.p2align 2 	
@@ -1727,7 +1727,7 @@ SSMOD:
 //    */	  ( n1 n2 n3 -- q )
 // 	Multiply n1 by n2, then divide by n3. Return quotient only.
 
-	.word	_SSMOD-MAPOFFSET
+	.word	_SSMOD+MAPOFFSET
 _STASL:	.byte  2
 	.ascii "*/"
 	.p2align 2 	
@@ -1744,7 +1744,7 @@ STASL:
 //    ALIGNED	( b -- a )
 // 	Align address to the cell boundary.
 
-	.word	_STASL-MAPOFFSET
+	.word	_STASL+MAPOFFSET
 _ALGND:	.byte   7
 	.ascii "ALIGNED"
 	.p2align 2 	
@@ -1757,7 +1757,7 @@ ALGND:
 //    >CHAR	( c -- c )
 // 	Filter non-printing characters.
 
-	.word	_ALGND-MAPOFFSET
+	.word	_ALGND+MAPOFFSET
 _TCHAR:	.byte  5
 	.ascii ">CHAR"
 	.p2align 2 	
@@ -1773,7 +1773,7 @@ TCHAR:
 	BL	WITHI	// check for printable
 	BL	INVER
 	BL	QBRAN
-	.word	TCHA1-MAPOFFSET
+	.word	TCHA1+MAPOFFSET
 	BL	DROP
 	_DOLIT
 	.word	'_'	// replace non-printables
@@ -1783,7 +1783,7 @@ TCHA1:
 //    DEPTH	( -- n )
 // 	Return the depth of the data stack.
 
-	.word	_TCHAR-MAPOFFSET
+	.word	_TCHAR+MAPOFFSET
 _DEPTH:	.byte  5
 	.ascii "DEPTH"
 	.p2align 2 	
@@ -1799,7 +1799,7 @@ DEPTH:
 //    PICK	( ... +n -- ... w )
 // 	Copy the nth stack item to tos.
 
-	.word	_DEPTH-MAPOFFSET
+	.word	_DEPTH+MAPOFFSET
 _PICK:	.byte  4
 	.ascii "PICK"
 	.p2align 2 	
@@ -1818,7 +1818,7 @@ PICK:
 //    HERE	( -- a )
 // 	Return the top of the code dictionary.
 
-	.word	_PICK-MAPOFFSET
+	.word	_PICK+MAPOFFSET
 _HERE:	.byte  4
 	.ascii "HERE"
 	.p2align 2 	
@@ -1831,7 +1831,7 @@ HERE:
 //    PAD	 ( -- a )
 // 	Return the address of a temporary buffer.
 
-	.word	_HERE-MAPOFFSET
+	.word	_HERE+MAPOFFSET
 _PAD:	.byte  3
 	.ascii "PAD"
 	.p2align 2 	
@@ -1844,7 +1844,7 @@ PAD:
 //    TIB	 ( -- a )
 // 	Return the address of the terminal input buffer.
 
-	.word	_PAD-MAPOFFSET
+	.word	_PAD+MAPOFFSET
 _TIB:	.byte  3
 	.ascii "TIB"
 	.p2align 2 	
@@ -1856,7 +1856,7 @@ TIB:
 //    @EXECUTE	( a -- )
 // 	Execute vector stored in address a.
 
-	.word	_TIB-MAPOFFSET
+	.word	_TIB+MAPOFFSET
 _ATEXE:	.byte   8
 	.ascii "@EXECUTE"
 	.p2align 2 	
@@ -1872,7 +1872,7 @@ ATEXE:
 //    CMOVE	( b1 b2 u -- )
 // 	Copy u bytes from b1 to b2.
 
-	.word	_ATEXE-MAPOFFSET
+	.word	_ATEXE+MAPOFFSET
 _CMOVE:	.byte   5
 	.ascii "CMOVE"
 	.p2align 2 	
@@ -1895,7 +1895,7 @@ CMOV2:
 //    MOVE	( a1 a2 u -- )
 // 	Copy u words from a1 to a2.
 
-	.word	_CMOVE-MAPOFFSET
+	.word	_CMOVE+MAPOFFSET
 _MOVE:	.byte   4
 	.ascii "MOVE"
 	.p2align 2 	
@@ -1919,7 +1919,7 @@ MOVE2:
 //    FILL	( b u c -- )
 // 	Fill u bytes of character c to area beginning at b.
 
-	.word	_MOVE-MAPOFFSET
+	.word	_MOVE+MAPOFFSET
 _FILL:	.byte   4
 	.ascii "FILL"
 	.p2align 2 	
@@ -1942,7 +1942,7 @@ FILL2:
 //    PACK$	( b u a -- a )
 // 	Build a counted word with u characters from b. Null fill.
 
-	.word	_FILL-MAPOFFSET
+	.word	_FILL+MAPOFFSET
 _PACKS:	.byte  5
 	.ascii "PACK$$"
 	.p2align 2 	
@@ -1976,7 +1976,7 @@ PACKS:
 //    DIGIT	( u -- c )
 // 	Convert digit u to a character.
 
-	.word	_PACKS-MAPOFFSET
+	.word	_PACKS+MAPOFFSET
 _DIGIT:	.byte  5
 	.ascii "DIGIT"
 	.p2align 2 	
@@ -1994,7 +1994,7 @@ DIGIT:
 //    EXTRACT	( n base -- n c )
 // 	Extract the least significant digit from n.
 
-	.word	_DIGIT-MAPOFFSET
+	.word	_DIGIT+MAPOFFSET
 _EXTRC:	.byte  7
 	.ascii "EXTRACT"
 	.p2align 2 	
@@ -2011,7 +2011,7 @@ EXTRC:
 //    <#	  ( -- )
 // 	Initiate the numeric output process.
 
-	.word	_EXTRC-MAPOFFSET
+	.word	_EXTRC+MAPOFFSET
 _BDIGS:	.byte  2
 	.ascii "<#"
 	.p2align 2 	
@@ -2025,7 +2025,7 @@ BDIGS:
 //    HOLD	( c -- )
 // 	Insert a character into the numeric output string.
 
-	.word	_BDIGS-MAPOFFSET
+	.word	_BDIGS+MAPOFFSET
 _HOLD:	.byte  4
 	.ascii "HOLD"
 	.p2align 2 	
@@ -2043,7 +2043,7 @@ HOLD:
 //    #	   ( u -- u )
 // 	Extract one digit from u and append the digit to output string.
 
-	.word	_HOLD-MAPOFFSET
+	.word	_HOLD+MAPOFFSET
 _DIG:	.byte  1
 	.ascii "#"
 	.p2align 2 	
@@ -2058,7 +2058,7 @@ DIG:
 //    #S	  ( u -- 0 )
 // 	Convert u until all digits are added to the output string.
 
-	.word	_DIG-MAPOFFSET
+	.word	_DIG+MAPOFFSET
 _DIGS:	.byte  2
 	.ascii "#S"
 	.p2align 2 	
@@ -2068,7 +2068,7 @@ DIGS1:
     BL	DIG
 	BL	DUPP
 	BL	QBRAN
-	.word	DIGS2-MAPOFFSET
+	.word	DIGS2+MAPOFFSET
 	B	DIGS1
 DIGS2:
 	  _UNNEST
@@ -2076,7 +2076,7 @@ DIGS2:
 //    SIGN	( n -- )
 // 	Add a minus sign to the numeric output string.
 
-	.word	_DIGS-MAPOFFSET
+	.word	_DIGS+MAPOFFSET
 _SIGN:	.byte  4
 	.ascii "SIGN"
 	.p2align 2 	
@@ -2084,7 +2084,7 @@ SIGN:
 	_NEST
 	BL	ZLESS
 	BL	QBRAN
-	.word	SIGN1-MAPOFFSET
+	.word	SIGN1+MAPOFFSET
 	_DOLIT
 	.word	'-'
 	BL	HOLD
@@ -2094,7 +2094,7 @@ SIGN1:
 //    #>	  ( w -- b u )
 // 	Prepare the outputDCB to be TYPE'd.
 
-	.word	_SIGN-MAPOFFSET
+	.word	_SIGN+MAPOFFSET
 _EDIGS:	.byte  2
 	.ascii "#>"
 	.p2align 2 	
@@ -2111,7 +2111,7 @@ EDIGS:
 //    str	 ( n -- b u )
 // 	Convert a signed integer to a numeric string.
 
-// 	.word	_EDIGS-MAPOFFSET
+// 	.word	_EDIGS+MAPOFFSET
 // _STRR	.byte  3
 // 	.ascii "str"
 // 	.p2align 2 	
@@ -2130,7 +2130,7 @@ STRR:
 //    HEX	 ( -- )
 // 	Use radix 16 as base for numeric conversions.
 
-	.word	_EDIGS-MAPOFFSET
+	.word	_EDIGS+MAPOFFSET
 _HEX:	.byte  3
 	.ascii "HEX"
 	.p2align 2 	
@@ -2145,7 +2145,7 @@ HEX:
 //    DECIMAL	( -- )
 // 	Use radix 10 as base for numeric conversions.
 
-	.word	_HEX-MAPOFFSET
+	.word	_HEX+MAPOFFSET
 _DECIM:	.byte  7
 	.ascii "DECIMAL"
 	.p2align 2 	
@@ -2163,7 +2163,7 @@ DECIM:
 //    DIGIT?	( c base -- u t )
 // 	Convert a character to its numeric value. A flag indicates success.
 
-	.word	_DECIM-MAPOFFSET
+	.word	_DECIM+MAPOFFSET
 _DIGTQ:	.byte  6
 	.ascii "DIGIT?"
 	.p2align 2 	
@@ -2178,7 +2178,7 @@ DIGTQ:
 	BL	OVER
 	BL	LESS
 	BL	QBRAN
-	.word	DGTQ1-MAPOFFSET
+	.word	DGTQ1+MAPOFFSET
 	_DOLIT
 	.word	7
 	BL	SUBB
@@ -2194,9 +2194,9 @@ DGTQ1:
 	_UNNEST
 
 //    NUMBER?	( a -- n T | a F )
-// 	Convert a numberDCB to integer. Push a flag on tos.
+// 	Convert a number word to integer. Push a flag on tos.
 
-	.word	_DIGTQ-MAPOFFSET
+	.word	_DIGTQ+MAPOFFSET
 _NUMBQ:	.byte  7
 	.ascii "NUMBER?"
 	.p2align 2 	
@@ -2212,17 +2212,17 @@ NUMBQ:
 	BL	OVER
 	BL	CAT
 	_DOLIT
-	.word	'_'
+	.word	'$'
 	BL	EQUAL
 	BL	QBRAN
-	.word	NUMQ1-MAPOFFSET
+	.word	NUMQ1+MAPOFFSET
 	BL	HEX
 	BL	SWAP
 	BL	ONEP
 	BL	SWAP
 	BL	ONEM
 NUMQ1:
-  BL	OVER
+	BL	OVER
 	BL	CAT
 	_DOLIT
 	.word	'-'
@@ -2236,18 +2236,18 @@ NUMQ1:
 	BL	PLUS
 	BL	QDUP
 	BL	QBRAN
-	.word	NUMQ6-MAPOFFSET
+	.word	NUMQ6+MAPOFFSET
 	BL	ONEM
 	BL	TOR
 NUMQ2:
-  BL	DUPP
+	BL	DUPP
 	BL	TOR
 	BL	CAT
 	BL	BASE
 	BL	AT
 	BL	DIGTQ
 	BL	QBRAN
-	.word	NUMQ4-MAPOFFSET
+	.word	NUMQ4+MAPOFFSET
 	BL	SWAP
 	BL	BASE
 	BL	AT
@@ -2256,27 +2256,27 @@ NUMQ2:
 	BL	RFROM
 	BL	ONEP
 	BL	DONXT
-	.word	NUMQ2-MAPOFFSET
+	.word	NUMQ2+MAPOFFSET
 	BL	RAT
 	BL	SWAP
 	BL	DROP
 	BL	QBRAN
-	.word	NUMQ3-MAPOFFSET
+	.word	NUMQ3+MAPOFFSET
 	BL	NEGAT
 NUMQ3:
-  BL	SWAP
+	BL	SWAP
 	B.W	NUMQ5
 NUMQ4:
-  BL	RFROM
+	BL	RFROM
 	BL	RFROM
 	BL	DDROP
 	BL	DDROP
 	_DOLIT
 	.word	0
 NUMQ5:
-  BL	DUPP
+	BL	DUPP
 NUMQ6:
-  BL	RFROM
+	BL	RFROM
 	BL	DDROP
 	BL	RFROM
 	BL	BASE
@@ -2289,7 +2289,7 @@ NUMQ6:
 //    KEY	 ( -- c )
 // 	Wait for and return an input character.
 
-	.word	_NUMBQ-MAPOFFSET
+	.word	_NUMBQ+MAPOFFSET
 _KEY:	.byte  3
 	.ascii "KEY"
 	.p2align 2 	
@@ -2298,7 +2298,7 @@ KEY:
 KEY1:
 	BL	QRX
 	BL	QBRAN
-	.word	KEY1-MAPOFFSET
+	.word	KEY1+MAPOFFSET
 // CTRL-C reboot
 	BL DUPP 
 	BL DOLIT 
@@ -2306,13 +2306,13 @@ KEY1:
 	BL EQUAL 
 	BL INVER
 	BL QBRAN
-	.word REBOOT-MAPOFFSET 
+	.word REBOOT+MAPOFFSET 
 	_UNNEST
 
 //    SPACE	( -- )
 // 	Send the blank character to the output device.
 
-	.word	_KEY-MAPOFFSET
+	.word	_KEY+MAPOFFSET
 _SPACE:	.byte  5
 	.ascii "SPACE"
 	.p2align 2 	
@@ -2325,7 +2325,7 @@ SPACE:
 //    SPACES	( +n -- )
 // 	Send n spaces to the output device.
 
-	.word	_SPACE-MAPOFFSET
+	.word	_SPACE+MAPOFFSET
 _SPACS:	.byte  6
 	.ascii "SPACES"
 	.p2align 2 	
@@ -2340,13 +2340,13 @@ CHAR1:
 	BL	SPACE
 CHAR2:
 	BL	DONXT
-	.word	CHAR1-MAPOFFSET
+	.word	CHAR1+MAPOFFSET
 	_UNNEST
 
 //    TYPE	( b u -- )
 // 	Output u characters from b.
 
-	.word	_SPACS-MAPOFFSET
+	.word	_SPACS+MAPOFFSET
 _TYPEE:	.byte	4
 	.ascii "TYPE"
 	.p2align 2 	
@@ -2360,14 +2360,14 @@ TYPE1:
 	BL	EMIT
 TYPE2:  
 	BL  DONXT  
-	.word	TYPE1-MAPOFFSET
+	.word	TYPE1+MAPOFFSET
 	BL	DROP
 	_UNNEST
 
 //    CR	  ( -- )
 // 	Output a carriage return and a line feed.
 
-	.word	_TYPEE-MAPOFFSET
+	.word	_TYPEE+MAPOFFSET
 _CR:	.byte  2
 	.ascii "CR"
 	.p2align 2 	
@@ -2385,7 +2385,7 @@ CR:
 // 	Return the address of a compiled string.
 //  adjust return address to skip over it.
 
-// 	.word	_CR-MAPOFFSET
+// 	.word	_CR+MAPOFFSET
 // _DOSTR	.byte  COMPO+3
 // 	.ascii "do$$"
 // 	.p2align 2 	
@@ -2408,7 +2408,7 @@ DOSTR:
 //    $"|	( -- a )
 // 	Run time routine compiled by _". Return address of a compiled string.
 
-// 	.word	_DOSTR-MAPOFFSET
+// 	.word	_DOSTR+MAPOFFSET
 // _STRQP	.byte  COMPO+3
 // 	.ascii "$\"|"
 // 	.p2align 2 	
@@ -2420,7 +2420,7 @@ STRQP:
 //    .$	( a -- )
 // 	Run time routine of ." . Output a compiled string.
 
-// 	.word	_STRQP-MAPOFFSET
+// 	.word	_STRQP+MAPOFFSET
 // _DOTST	.byte  COMPO+2
 // 	.ascii ".$$"
 // 	.p2align 2 	
@@ -2433,7 +2433,7 @@ DOTST:
 //    ."|	( -- )
 // 	Run time routine of ." . Output a compiled string.
 
-// 	.word	_DOTST-MAPOFFSET
+// 	.word	_DOTST+MAPOFFSET
 // _DOTQP	.byte  COMPO+3
 // 	.ascii ".""|"
 // 	.p2align 2 	
@@ -2446,7 +2446,7 @@ DOTQP:
 //    .R	  ( n +n -- )
 // 	Display an integer in a field of n columns, right justified.
 
-	.word	_CR-MAPOFFSET
+	.word	_CR+MAPOFFSET
 _DOTR:	.byte  2
 	.ascii ".R"
 	.p2align 2 	
@@ -2464,7 +2464,7 @@ DOTR:
 //    U.R	 ( u +n -- )
 // 	Display an unsigned integer in n column, right justified.
 
-	.word	_DOTR-MAPOFFSET
+	.word	_DOTR+MAPOFFSET
 _UDOTR:	.byte  3
 	.ascii "U.R"
 	.p2align 2 	
@@ -2484,7 +2484,7 @@ UDOTR:
 //    U.	  ( u -- )
 // 	Display an unsigned integer in free format.
 
-	.word	_UDOTR-MAPOFFSET
+	.word	_UDOTR+MAPOFFSET
 _UDOT:	.byte  2
 	.ascii "U."
 	.p2align 2 	
@@ -2500,7 +2500,7 @@ UDOT:
 //    .	   ( w -- )
 // 	Display an integer in free format, preceeded by a space.
 
-	.word	_UDOT-MAPOFFSET
+	.word	_UDOT+MAPOFFSET
 _DOT:	.byte  1
 	.ascii "."
 	.p2align 2 	
@@ -2512,7 +2512,7 @@ DOT:
 	.word	10
 	BL	XORR			// ?decimal
 	BL	QBRAN
-	.word	DOT1-MAPOFFSET
+	.word	DOT1+MAPOFFSET
 	BL	UDOT
 	_UNNEST			// no,display unsigned
 DOT1:
@@ -2524,7 +2524,7 @@ DOT1:
 //    ?	   ( a -- )
 // 	Display the contents in a memory cell.
 
-	.word	_DOT-MAPOFFSET
+	.word	_DOT+MAPOFFSET
 _QUEST:	.byte  1
 	.ascii "?"
 	.p2align 2 	
@@ -2540,7 +2540,7 @@ QUEST:
 //    parse	( b u c -- b u delta //  string> )
 // 	Scan word delimited by c. Return found string and its offset.
 
-// 	.word	_QUEST-MAPOFFSET
+// 	.word	_QUEST+MAPOFFSET
 // _PARS	.byte  5
 // 	.ascii "parse"
 // 	.p2align 2 	
@@ -2552,14 +2552,14 @@ PARS:
 	BL	TOR
 	BL	DUPP
 	BL	QBRAN
-	.word	PARS8-MAPOFFSET
+	.word	PARS8+MAPOFFSET
 	BL	ONEM
 	BL	TEMP
 	BL	AT
 	BL	BLANK
 	BL	EQUAL
 	BL	QBRAN
-	.word	PARS3-MAPOFFSET
+	.word	PARS3+MAPOFFSET
 	BL	TOR
 PARS1:
 	BL	BLANK
@@ -2569,10 +2569,10 @@ PARS1:
 	BL	ZLESS
 	BL	INVER
 	BL	QBRAN
-	.word	PARS2-MAPOFFSET
+	.word	PARS2+MAPOFFSET
 	BL	ONEP
 	BL	DONXT
-	.word	PARS1-MAPOFFSET
+	.word	PARS1+MAPOFFSET
 	BL	RFROM
 	BL	DROP
 	_DOLIT
@@ -2596,14 +2596,14 @@ PARS4:
 	BL	BLANK
 	BL	EQUAL
 	BL	QBRAN
-	.word	PARS5-MAPOFFSET
+	.word	PARS5+MAPOFFSET
 	BL	ZLESS
 PARS5:
 	BL	QBRAN
-	.word	PARS6-MAPOFFSET
+	.word	PARS6+MAPOFFSET
 	BL	ONEP
 	BL	DONXT
-	.word	PARS4-MAPOFFSET
+	.word	PARS4+MAPOFFSET
 	BL	DUPP
 	BL	TOR
 	B	PARS7
@@ -2629,7 +2629,7 @@ PARS8:
 //    PARSE	( c -- b u //  string> )
 // 	Scan input stream and return counted string delimited by c.
 
-	.word	_QUEST-MAPOFFSET
+	.word	_QUEST+MAPOFFSET
 _PARSE:	.byte  5
 	.ascii "PARSE"
 	.p2align 2 	
@@ -2654,7 +2654,7 @@ PARSE:
 //    .(	  ( -- )
 // 	Output following string up to next ) .
 
-	.word	_PARSE-MAPOFFSET
+	.word	_PARSE+MAPOFFSET
 _DOTPR:	.byte  IMEDD+2
 	.ascii ".("
 	.p2align 2 	
@@ -2669,7 +2669,7 @@ DOTPR:
 //    (	   ( -- )
 // 	Ignore following string up to next ) . A comment.
 
-	.word	_DOTPR-MAPOFFSET
+	.word	_DOTPR+MAPOFFSET
 _PAREN:	.byte  IMEDD+1
 	.ascii "("
 	.p2align 2 	
@@ -2684,7 +2684,7 @@ PAREN:
 //    \	   ( -- )
 // 	Ignore following text till the end of line.
 
-	.word	_PAREN-MAPOFFSET
+	.word	_PAREN+MAPOFFSET
 _BKSLA:	.byte  IMEDD+1
 	.byte	'\'
 	.p2align 2 	
@@ -2699,7 +2699,7 @@ BKSLA:
 //    CHAR	( -- c )
 // 	Parse next word and return its first character.
 
-	.word	_BKSLA-MAPOFFSET
+	.word	_BKSLA+MAPOFFSET
 _CHAR:	.byte  4
 	.ascii "CHAR"
 	.p2align 2 	
@@ -2714,7 +2714,7 @@ CHAR:
 //    WORD	( c -- a //  string> )
 // 	Parse a word from input stream and copy it to code dictionary.
 
-	.word	_CHAR-MAPOFFSET
+	.word	_CHAR+MAPOFFSET
 _WORDD:	.byte  4
 	.ascii "WORD"
 	.p2align 2 	
@@ -2729,7 +2729,7 @@ WORDD:
 //    TOKEN	( -- a //  string> )
 // 	Parse a word from input stream and copy it to name dictionary.
 
-	.word	_WORDD-MAPOFFSET
+	.word	_WORDD+MAPOFFSET
 _TOKEN:	.byte  5
 	.ascii "TOKEN"
 	.p2align 2 	
@@ -2745,7 +2745,7 @@ TOKEN:
 //    NAME>	( na -- ca )
 // 	Return a code address given a name address.
 
-	.word	_TOKEN-MAPOFFSET
+	.word	_TOKEN+MAPOFFSET
 _NAMET:	.byte  5
 	.ascii "NAME>"
 	.p2align 2 	
@@ -2767,7 +2767,7 @@ NAMET:
 // 		doesn't fill with zero's I had to change the "SAME?" and "FIND" 
 // 		words  to do a byte by byte comparison. 
 //
-	.word	_NAMET-MAPOFFSET
+	.word	_NAMET+MAPOFFSET
 _SAMEQ:	.byte  5
 	.ascii "SAME?"
 	.p2align 2	
@@ -2787,13 +2787,13 @@ SAME1:
 	BL	SUBB  
 	BL	QDUP
 	BL	QBRAN
-	.word	SAME2-MAPOFFSET
+	.word	SAME2+MAPOFFSET
 	BL	RFROM
 	BL	DROP
 	_UNNEST	// strings not equal
 SAME2:
 	BL	DONXT
-	.word	SAME1-MAPOFFSET
+	.word	SAME1+MAPOFFSET
 	_DOLIT
 	.word	0
 	_UNNEST	// strings equal
@@ -2804,7 +2804,7 @@ SAME2:
 //  Picatout 2020-12-01,  
 //		Modified from original. See comment for word "SAME?" 
 
-// 	.word	_SAMEQ-MAPOFFSET
+// 	.word	_SAMEQ+MAPOFFSET
 // _FIND	.byte  4
 // 	.ascii "find"
 // 	.p2align 2 	
@@ -2820,7 +2820,7 @@ FIND:
 FIND1:
 	BL	DUPP			// a+1 na na
 	BL	QBRAN
-	.word	FIND6-MAPOFFSET	// end of vocabulary
+	.word	FIND6+MAPOFFSET	// end of vocabulary
 	BL	DUPP			// a+1 na na
 	BL	CAT			// a+1 na name1
 	_DOLIT
@@ -2829,7 +2829,7 @@ FIND1:
 	BL	RAT			// a+1 na name1 count 
 	BL	XORR			// a+1 na,  same length?
 	BL	QBRAN
-	.word	FIND2-MAPOFFSET
+	.word	FIND2+MAPOFFSET
 	BL	CELLM			// a+1 la
 	BL	AT			// a+1 next_na
 	B.w	FIND1			// try next word
@@ -2849,7 +2849,7 @@ FIND6:
 	_UNNEST			// return without a match
 FIND4:	
 	BL	QBRAN			// a+1 na+1
-	.word	FIND5-MAPOFFSET	// found a match
+	.word	FIND5+MAPOFFSET	// found a match
 	BL	ONEM			// a+1 na
 	BL	CELLM			// a+4 la
 	BL	AT			// a+1 next_na
@@ -2868,7 +2868,7 @@ FIND5:
 //    NAME?	( a -- ca na | a F )
 // 	Search all context vocabularies for a string.
 
-	.word	_SAMEQ-MAPOFFSET
+	.word	_SAMEQ+MAPOFFSET
 _NAMEQ:	.byte  5
 	.ascii "NAME?"
 	.p2align 2 	
@@ -2885,7 +2885,7 @@ NAMEQ:
 //    	  ( bot eot cur -- bot eot cur )
 // 	Backup the cursor by one character.
 
-// 	.word	_NAMEQ-MAPOFFSET
+// 	.word	_NAMEQ+MAPOFFSET
 // _BKSP	.byte  2
 // 	.ascii "^H"
 // 	.p2align 2 	
@@ -2898,7 +2898,7 @@ BKSP:
 	BL	OVER
 	BL	XORR
 	BL	QBRAN
-	.word	BACK1-MAPOFFSET
+	.word	BACK1+MAPOFFSET
 	_DOLIT
 	.word	BKSPP
 	BL	TECHO
@@ -2917,7 +2917,7 @@ BACK1:
 //    TAP	 ( bot eot cur c -- bot eot cur )
 // 	Accept and echo the key stroke and bump the cursor.
 
-// 	.word	_BKSP-MAPOFFSET
+// 	.word	_BKSP+MAPOFFSET
 // _TAP	.byte  3
 // 	.ascii "TAP"
 // 	.p2align 2 	
@@ -2934,7 +2934,7 @@ TAP:
 //    kTAP	( bot eot cur c -- bot eot cur )
 // 	Process a key stroke, CR or backspace.
 
-// 	.word	_TAP-MAPOFFSET
+// 	.word	_TAP+MAPOFFSET
 // _KTAP	.byte  4
 // 	.ascii "kTAP"
 // 	.p2align 2 	
@@ -2946,12 +2946,12 @@ TTAP:
 	.word	CRR
 	BL	XORR
 	BL	QBRAN
-	.word	KTAP2-MAPOFFSET
+	.word	KTAP2+MAPOFFSET
 	_DOLIT
 	.word	BKSPP
 	BL	XORR
 	BL	QBRAN
-	.word	KTAP1-MAPOFFSET
+	.word	KTAP1+MAPOFFSET
 	BL	BLANK
 	BL	TAP
 	_UNNEST
@@ -2969,7 +2969,7 @@ KTAP2:
 //    ACCEPT	( b u -- b u )
 // 	Accept characters to input buffer. Return with actual count.
 
-	.word	_NAMEQ-MAPOFFSET
+	.word	_NAMEQ+MAPOFFSET
 _ACCEP:	.byte  6
 	.ascii "ACCEPT"
 	.p2align 2 	
@@ -2982,7 +2982,7 @@ ACCP1:
   BL	DDUP
 	BL	XORR
 	BL	QBRAN
-	.word	ACCP4-MAPOFFSET
+	.word	ACCP4+MAPOFFSET
 	BL	KEY
 	BL	DUPP
 	BL	BLANK
@@ -2990,7 +2990,7 @@ ACCP1:
 	.word	127
 	BL	WITHI
 	BL	QBRAN
-	.word	ACCP2-MAPOFFSET
+	.word	ACCP2+MAPOFFSET
 	BL	TAP
 	B	ACCP3
 ACCP2:
@@ -3007,7 +3007,7 @@ ACCP4:
 //    QUERY	( -- )
 // 	Accept input stream to terminal input buffer.
 
-	.word	_ACCEP-MAPOFFSET
+	.word	_ACCEP+MAPOFFSET
 _QUERY:	.byte  5
 	.ascii "QUERY"
 	.p2align 2 	
@@ -3032,7 +3032,7 @@ QUERY:
 //    ABORT	( a -- )
 // 	Reset data stack and jump to QUIT.
 
-	.word	_QUERY-MAPOFFSET
+	.word	_QUERY+MAPOFFSET
 _ABORT:	.byte  5
 	.ascii "ABORT"
 	.p2align 2 	
@@ -3051,14 +3051,14 @@ ABORT:
 //    _abort"	( f -- )
 // 	Run time routine of ABORT" . Abort with a message.
 
-// 	.word	_ABORT-MAPOFFSET
+// 	.word	_ABORT+MAPOFFSET
 // _ABORQ	.byte  COMPO+6
 // 	.ascii "abort\""
 // 	.p2align 2 	
 ABORQ:
 	_NEST
 	BL	QBRAN
-	.word	ABOR1-MAPOFFSET	// text flag
+	.word	ABOR1+MAPOFFSET	// text flag
 	BL	DOSTR
 	BL	COUNT
 	BL	TYPEE
@@ -3075,7 +3075,7 @@ ABOR1:
 //    $INTERPRET  ( a -- )
 // 	Interpret a word. If failed, try to convert it to an integer.
 
-	.word	_ABORT-MAPOFFSET
+	.word	_ABORT+MAPOFFSET
 _INTER:	.byte  10
 	.ascii "$$INTERPRET"
 	.p2align 2 	
@@ -3084,7 +3084,7 @@ INTER:
 	BL	NAMEQ
 	BL	QDUP	// ?defined
 	BL	QBRAN
-	.word	INTE1-MAPOFFSET
+	.word	INTE1+MAPOFFSET
 	BL	AT
 	_DOLIT
 	.word	COMPO
@@ -3098,7 +3098,7 @@ INTER:
 INTE1:
   BL	NUMBQ
 	BL	QBRAN
-	.word	INTE2-MAPOFFSET
+	.word	INTE2+MAPOFFSET
 	_UNNEST
 INTE2:
   B.W	ABORT	// error
@@ -3106,14 +3106,14 @@ INTE2:
 //    [	   ( -- )
 // 	Start the text interpreter.
 
-	.word	_INTER-MAPOFFSET
+	.word	_INTER+MAPOFFSET
 _LBRAC:	.byte  IMEDD+1
 	.ascii "["
 	.p2align 2 	
 LBRAC:
 	_NEST
 	_DOLIT
-	.word	INTER-MAPOFFSET
+	.word	INTER+MAPOFFSET
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
@@ -3121,19 +3121,19 @@ LBRAC:
 //    .OK	 ( -- )
 // 	Display "ok" only while interpreting.
 
-	.word	_LBRAC-MAPOFFSET
+	.word	_LBRAC+MAPOFFSET
 _DOTOK:	.byte  3
 	.ascii ".OK"
 	.p2align 2 	
 DOTOK:
 	_NEST
 	_DOLIT
-	.word	INTER-MAPOFFSET
+	.word	INTER+MAPOFFSET
 	BL	TEVAL
 	BL	AT
 	BL	EQUAL
 	BL	QBRAN
-	.word	DOTO1-MAPOFFSET
+	.word	DOTO1+MAPOFFSET
 	BL	DOTQP
 	.byte	3
 	.ascii " ok"
@@ -3144,7 +3144,7 @@ DOTO1:
 //    ?STACK	( -- )
 // 	Abort if the data stack underflows.
 
-	.word	_DOTOK-MAPOFFSET
+	.word	_DOTOK+MAPOFFSET
 _QSTAC:	.byte  6
 	.ascii "?STACK"
 	.p2align 2 	
@@ -3161,7 +3161,7 @@ QSTAC:
 //    EVAL	( -- )
 // 	Interpret the input stream.
 
-	.word	_QSTAC-MAPOFFSET
+	.word	_QSTAC+MAPOFFSET
 _EVAL:	.byte  4
 	.ascii "EVAL"
 	.p2align 2 	
@@ -3172,7 +3172,7 @@ EVAL1:
 	BL	DUPP
 	BL	CAT	// ?input stream empty
 	BL	QBRAN
-	.word	EVAL2-MAPOFFSET
+	.word	EVAL2+MAPOFFSET
 	BL	TEVAL
 	BL	ATEXE
 	BL	QSTAC	// evaluate input, check stack
@@ -3185,7 +3185,7 @@ EVAL2:
 //    PRESET	( -- )
 // 	Reset data stack pointer and the terminal input buffer.
 
-	.word	_EVAL-MAPOFFSET
+	.word	_EVAL+MAPOFFSET
 _PRESE:	.byte  6
 	.ascii "PRESET"
 	.p2align 2 	
@@ -3200,7 +3200,7 @@ PRESE:
 //    QUIT	( -- )
 // 	Reset return stack pointer and start text interpreter.
 
-	.word	_PRESE-MAPOFFSET
+	.word	_PRESE+MAPOFFSET
 _QUIT:	.byte  4
 	.ascii "QUIT"
 	.p2align 2 	
@@ -3214,12 +3214,28 @@ QUIT2:
 	BL	QUERY			// get input
 	BL	EVAL
 	BL	BRAN
-	.word	QUIT2-MAPOFFSET	// continue till error
+	.word	QUIT2+MAPOFFSET	// continue till error
 
 /***************************
 //  Flash memory interface
 ***************************/
+// UNLOCK ( T|F -- )
+// lock or unlock FLASH write 
+
+	.word _QUIT+MAPOFFSET  
+_UNLOCK: .byte 6
+	.ascii "UNLOCK"
+	.p2align 2  
 UNLOCK:	//  unlock flash memory	
+	BL QBRAN 
+	.word UNLOCK1+MAPOFFSET 
+LOCK: // lock flash memory 
+	ldr r0,=FLASH_BASE_ADR 
+	ldr r4,[r0,#FLASH_CR]
+	orr r4,#(1<<7)
+	str r4,[r0,#FLASH_CR]
+	_NEXT 
+UNLOCK1:
 	ldr	r0, =FLASH_BASE_ADR
 	ldr	r4, =FLASH_KEY1
 	str	r4, [r0, #FLASH_KEYR]
@@ -3231,6 +3247,7 @@ UNLOCK:	//  unlock flash memory
 	ldr	r4, =FLASH_KEY2
 	str	r4, [r0, #FLASH_OPTKEYR]
 	_NEXT
+
 WAIT_BSY:
 	ldr	r0,=FLASH_BASE_ADR
 WAIT1:
@@ -3239,18 +3256,12 @@ WAIT1:
 	bne	WAIT1
 	_NEXT
 
-LOCK: // lock flash memory 
-	ldr r0,=FLASH_BASE_ADR 
-	ldr r4,[r0,#FLASH_CR]
-	orr r4,#(1<<7)
-	str r4,[r0,#FLASH_CR]
-	_NEXT 
 
 
 //    ERASE_SECTOR	   ( sector -- )
 // 	  Erase one sector of flash memory.  Sector=0 to 11
 
-	.word	_QUIT-MAPOFFSET
+	.word	_UNLOCK+MAPOFFSET
 _ESECT:	.byte  12
 	.ascii "ERASE_SECTOR"
 	.p2align 2 	
@@ -3273,7 +3284,7 @@ ESECT: 	//  sector --
 //    I!	   ( data address -- )
 // 	   Write one word into flash memory
 
-	.word	_ESECT-MAPOFFSET
+	.word	_ESECT+MAPOFFSET
 _ISTOR:	.byte  2
 	.ascii "I!"
 	.p2align 2 	
@@ -3294,13 +3305,13 @@ ISTOR:	//  data address --
 //    TURNKEY	( -- )
 // 	Copy dictionary from RAM to flash.
 
-	.word	_ISTOR-MAPOFFSET
+	.word	_ISTOR+MAPOFFSET
 _TURN:	.byte   7
 	.ascii "TURNKEY"
 	.p2align 2 
 TURN:	_NEST
 	_DOLIT			//  save user area
-	.word	0XFF00
+	.word	RAMOFFSET
 	_DOLIT
 	.word	0xC0			//  to boot array
 	_DOLIT
@@ -3309,7 +3320,7 @@ TURN:	_NEST
 	_DOLIT
 	.word	0
 	_DOLIT
-	.word	0x8000000
+	.word	FLASHOFFSET
 	BL	CPP
 	BL	AT
 	BL	CELLSL
@@ -3324,7 +3335,7 @@ TURN1:
 	BL	SWAP
 	BL	CELLP
 	BL	DONXT
-	.word	TURN1-MAPOFFSET
+	.word	TURN1+MAPOFFSET
 	BL	DDROP
 	_UNNEST
 
@@ -3334,7 +3345,7 @@ TURN1:
 //    '	   ( -- ca )
 // 	Search context vocabularies for the next word in input stream.
 
-	.word	_TURN-MAPOFFSET
+	.word	_TURN+MAPOFFSET
 _TICK:	.byte  1
 	.ascii "'"
 	.p2align 2 	
@@ -3343,14 +3354,14 @@ TICK:
 	BL	TOKEN
 	BL	NAMEQ	// ?defined
 	BL	QBRAN
-	.word	TICK1-MAPOFFSET
+	.word	TICK1+MAPOFFSET
 	_UNNEST	// yes, push code address
 TICK1:	B.W	ABORT	// no, error
 
 //    ALLOT	( n -- )
 // 	Allocate n bytes to the ram area.
 
-	.word	_TICK-MAPOFFSET
+	.word	_TICK+MAPOFFSET
 _ALLOT:	.byte  5
 	.ascii "ALLOT"
 	.p2align 2 	
@@ -3363,7 +3374,7 @@ ALLOT:
 //    ,	   ( w -- )
 // 	Compile an integer into the code dictionary.
 
-	.word	_ALLOT-MAPOFFSET
+	.word	_ALLOT+MAPOFFSET
 _COMMA:	.byte  1,','
 	.p2align 2 	
 COMMA:
@@ -3379,7 +3390,7 @@ COMMA:
 //    [COMPILE]   ( -- //  string> )
 // 	Compile the next immediate word into code dictionary.
 
-	.word	_COMMA-MAPOFFSET
+	.word	_COMMA+MAPOFFSET
 _BCOMP:	.byte  IMEDD+9
 	.ascii "[COMPILE]"
 	.p2align 2 	
@@ -3392,7 +3403,7 @@ BCOMP:
 //    COMPILE	( -- )
 // 	Compile the next address in colon list to code dictionary.
 
-	.word	_BCOMP-MAPOFFSET
+	.word	_BCOMP+MAPOFFSET
 _COMPI:	.byte  COMPO+7
 	.ascii "COMPILE"
 	.p2align 2 	
@@ -3411,21 +3422,21 @@ COMPI:
 //    LITERAL	( w -- )
 // 	Compile tos to code dictionary as an integer literal.
 
-	.word	_COMPI-MAPOFFSET
+	.word	_COMPI+MAPOFFSET
 _LITER:	.byte  IMEDD+7
 	.ascii "LITERAL"
 	.p2align 2 	
 LITER:
 	_NEST
 	BL	COMPI
-	.word	DOLIT-MAPOFFSET
+	.word	DOLIT+MAPOFFSET
 	BL	COMMA
 	_UNNEST
 
 //    $,"	( -- )
 // 	Compile a literal string up to next " .
 
-// 	.word	_LITER-MAPOFFSET
+// 	.word	_LITER+MAPOFFSET
 // _STRCQ	.byte  3
 // 	.ascii "$$,"""
 // 	.p2align 2 	
@@ -3451,21 +3462,21 @@ STRCQ:
 //    FOR	 ( -- a )
 // 	Start a FOR-NEXT loop structure in a colon definition.
 
-	.word	_LITER-MAPOFFSET
+	.word	_LITER+MAPOFFSET
 _FOR:	.byte  IMEDD+3
 	.ascii "FOR"
 	.p2align 2 	
 FOR:
 	_NEST
 	BL	COMPI
-	.word	TOR-MAPOFFSET
+	.word	TOR+MAPOFFSET
 	BL	HERE
 	_UNNEST
 
 //    BEGIN	( -- a )
 // 	Start an infinite or indefinite loop structure.
 
-	.word	_FOR-MAPOFFSET
+	.word	_FOR+MAPOFFSET
 _BEGIN:	.byte  IMEDD+5
 	.ascii "BEGIN"
 	.p2align 2 	
@@ -3477,56 +3488,56 @@ BEGIN:
 //    NEXT	( a -- )
 // 	Terminate a FOR-NEXT loop structure.
 
-	.word	_BEGIN-MAPOFFSET
+	.word	_BEGIN+MAPOFFSET
 _NEXT:	.byte  IMEDD+4
 	.ascii "NEXT"
 	.p2align 2 	
 NEXT:
 	_NEST
 	BL	COMPI
-	.word	DONXT-MAPOFFSET
+	.word	DONXT+MAPOFFSET
 	BL	COMMA
 	_UNNEST
 
 //    UNTIL	( a -- )
 // 	Terminate a BEGIN-UNTIL indefinite loop structure.
 
-	.word	_NEXT-MAPOFFSET
+	.word	_NEXT+MAPOFFSET
 _UNTIL:	.byte  IMEDD+5
 	.ascii "UNTIL"
 	.p2align 2 	
 UNTIL:
 	_NEST
 	BL	COMPI
-	.word	QBRAN-MAPOFFSET
+	.word	QBRAN+MAPOFFSET
 	BL	COMMA
 	_UNNEST
 
 //    AGAIN	( a -- )
 // 	Terminate a BEGIN-AGAIN infinite loop structure.
 
-	.word	_UNTIL-MAPOFFSET
+	.word	_UNTIL+MAPOFFSET
 _AGAIN:	.byte  IMEDD+5
 	.ascii "AGAIN"
 	.p2align 2 	
 AGAIN:
 	_NEST
 	BL	COMPI
-	.word	BRAN-MAPOFFSET
+	.word	BRAN+MAPOFFSET
 	BL	COMMA
 	_UNNEST
 
 //    IF	  ( -- A )
 // 	Begin a conditional branch structure.
 
-	.word	_AGAIN-MAPOFFSET
+	.word	_AGAIN+MAPOFFSET
 _IFF:	.byte  IMEDD+2
 	.ascii "IF"
 	.p2align 2 	
 IFF:
 	_NEST
 	BL	COMPI
-	.word	QBRAN-MAPOFFSET
+	.word	QBRAN+MAPOFFSET
 	BL	HERE
 	_DOLIT
 	.word	4
@@ -3537,14 +3548,14 @@ IFF:
 //    AHEAD	( -- A )
 // 	Compile a forward branch instruction.
 
-	.word	_IFF-MAPOFFSET
+	.word	_IFF+MAPOFFSET
 _AHEAD:	.byte  IMEDD+5
 	.ascii "AHEAD"
 	.p2align 2 	
 AHEAD:
 	_NEST
 	BL	COMPI
-	.word	BRAN-MAPOFFSET
+	.word	BRAN+MAPOFFSET
 	BL	HERE
 	_DOLIT
 	.word	4
@@ -3555,7 +3566,7 @@ AHEAD:
 //    REPEAT	( A a -- )
 // 	Terminate a BEGIN-WHILE-REPEAT indefinite loop.
 
-	.word	_AHEAD-MAPOFFSET
+	.word	_AHEAD+MAPOFFSET
 _REPEA:	.byte  IMEDD+6
 	.ascii "REPEAT"
 	.p2align 2 	
@@ -3570,7 +3581,7 @@ REPEA:
 //    THEN	( A -- )
 // 	Terminate a conditional branch structure.
 
-	.word	_REPEA-MAPOFFSET
+	.word	_REPEA+MAPOFFSET
 _THENN:	.byte  IMEDD+4
 	.ascii "THEN"
 	.p2align 2 	
@@ -3584,7 +3595,7 @@ THENN:
 //    AFT	 ( a -- a A )
 // 	Jump to THEN in a FOR-AFT-THEN-NEXT loop the first time through.
 
-	.word	_THENN-MAPOFFSET
+	.word	_THENN+MAPOFFSET
 _AFT:	.byte  IMEDD+3
 	.ascii "AFT"
 	.p2align 2 	
@@ -3599,7 +3610,7 @@ AFT:
 //    ELSE	( A -- A )
 // 	Start the false clause in an IF-ELSE-THEN structure.
 
-	.word	_AFT-MAPOFFSET
+	.word	_AFT+MAPOFFSET
 _ELSEE:	.byte  IMEDD+4
 	.ascii "ELSE"
 	.p2align 2 	
@@ -3613,7 +3624,7 @@ ELSEE:
 //    WHILE	( a -- A a )
 // 	Conditional branch out of a BEGIN-WHILE-REPEAT loop.
 
-	.word	_ELSEE-MAPOFFSET
+	.word	_ELSEE+MAPOFFSET
 _WHILE:	.byte  IMEDD+5
 	.ascii "WHILE"
 	.p2align 2 	
@@ -3626,42 +3637,42 @@ WHILE:
 //    ABORT"	( -- //  string> )
 // 	Conditional abort with an error message.
 
-	.word	_WHILE-MAPOFFSET
+	.word	_WHILE+MAPOFFSET
 _ABRTQ:	.byte  IMEDD+6
 	.ascii "ABORT\""
 	.p2align 2 	
 ABRTQ:
 	_NEST
 	BL	COMPI
-	.word	ABORQ-MAPOFFSET
+	.word	ABORQ+MAPOFFSET
 	BL	STRCQ
 	_UNNEST
 
 //    $"	( -- //  string> )
 // 	Compile an inlineDCB literal.
 
-	.word	_ABRTQ-MAPOFFSET
+	.word	_ABRTQ+MAPOFFSET
 _STRQ:	.byte  IMEDD+2
 	.byte	'$','"'
 	.p2align 2 	
 STRQ:
 	_NEST
 	BL	COMPI
-	.word	STRQP-MAPOFFSET
+	.word	STRQP+MAPOFFSET
 	BL	STRCQ
 	_UNNEST
 
 //    ."	( -- //  string> )
 // 	Compile an inlineDCB literal to be typed out at run time.
 
-	.word	_STRQ-MAPOFFSET
+	.word	_STRQ+MAPOFFSET
 _DOTQ:	.byte  IMEDD+2
 	.byte	'.','"'
 	.p2align 2 	
 DOTQ:
 	_NEST
 	BL	COMPI
-	.word	DOTQP-MAPOFFSET
+	.word	DOTQP+MAPOFFSET
 	BL	STRCQ
 	_UNNEST
 
@@ -3671,7 +3682,7 @@ DOTQ:
 //    ?UNIQUE	( a -- a )
 // 	Display a warning message if the word already exists.
 
-	.word	_DOTQ-MAPOFFSET
+	.word	_DOTQ+MAPOFFSET
 _UNIQU:	.byte  7
 	.ascii "?UNIQUE"
 	.p2align 2 	
@@ -3680,7 +3691,7 @@ UNIQU:
 	BL	DUPP
 	BL	NAMEQ			// ?name exists
 	BL	QBRAN
-	.word	UNIQ1-MAPOFFSET	// redefinitions are OK
+	.word	UNIQ1+MAPOFFSET	// redefinitions are OK
 	BL	DOTQP
 	.byte	7
 	.ascii " reDef "		// but warn the user
@@ -3695,7 +3706,7 @@ UNIQ1:
 //    $,n	 ( na -- )
 // 	Build a new dictionary name using the data at na.
 
-// 	.word	_UNIQU-MAPOFFSET
+// 	.word	_UNIQU+MAPOFFSET
 // _SNAME	.byte  3
 // 	.ascii "$$,n"
 // 	.p2align 2 	
@@ -3704,7 +3715,7 @@ SNAME:
 	BL	DUPP			//  na na
 	BL	CAT			//  ?null input
 	BL	QBRAN
-	.word	SNAM1-MAPOFFSET
+	.word	SNAM1+MAPOFFSET
 	BL	UNIQU			//  na
 	BL	LAST			//  na last
 	BL	AT			//  na la
@@ -3727,7 +3738,7 @@ SNAM1:
 //    $COMPILE	( a -- )
 // 	Compile next word to code dictionary as a token or literal.
 
-	.word	_UNIQU-MAPOFFSET
+	.word	_UNIQU+MAPOFFSET
 _SCOMP:	.byte  8
 	.ascii "$$COMPILE"
 	.p2align 2 	
@@ -3736,13 +3747,13 @@ SCOMP:
 	BL	NAMEQ
 	BL	QDUP	// defined?
 	BL	QBRAN
-	.word	SCOM2-MAPOFFSET
+	.word	SCOM2+MAPOFFSET
 	BL	AT
 	_DOLIT
 	.word	IMEDD
 	BL	ANDD	// immediate?
 	BL	QBRAN
-	.word	SCOM1-MAPOFFSET
+	.word	SCOM1+MAPOFFSET
 	BL	EXECU
 	_UNNEST			// it's immediate, execute
 SCOM1:
@@ -3751,7 +3762,7 @@ SCOM1:
 SCOM2:
 	BL	NUMBQ
 	BL	QBRAN
-	.word	SCOM3-MAPOFFSET
+	.word	SCOM3+MAPOFFSET
 	BL	LITER
 	_UNNEST			// compile number as integer
 SCOM3:
@@ -3760,7 +3771,7 @@ SCOM3:
 //    OVERT	( -- )
 // 	Link a new word into the current vocabulary.
 
-	.word	_SCOMP-MAPOFFSET
+	.word	_SCOMP+MAPOFFSET
 _OVERT:	.byte  5
 	.ascii "OVERT"
 	.p2align 2 	
@@ -3775,7 +3786,7 @@ OVERT:
 //    ; 	   ( -- )
 // 	Terminate a colon definition.
 
-	.word	_OVERT-MAPOFFSET
+	.word	_OVERT+MAPOFFSET
 _SEMIS:	.byte  IMEDD+COMPO+1
 	.ascii ";"
 	.p2align 2 	
@@ -3791,14 +3802,14 @@ SEMIS:
 //    ]	   ( -- )
 // 	Start compiling the words in the input stream.
 
-	.word	_SEMIS-MAPOFFSET
+	.word	_SEMIS+MAPOFFSET
 _RBRAC:	.byte  1
 	.ascii "]"
 	.p2align 2 	
 RBRAC:
 	_NEST
 	_DOLIT
-	.word	SCOMP-MAPOFFSET
+	.word	SCOMP+MAPOFFSET
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
@@ -3807,7 +3818,7 @@ RBRAC:
 // 	Assemble a branch-link long instruction to ca.
 // 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
 
-// 	.word	_RBRAC-MAPOFFSET
+// 	.word	_RBRAC+MAPOFFSET
 // _CALLC	.byte  5
 // 	.ascii "call,"
 // 	.p2align 2 	
@@ -3832,7 +3843,7 @@ CALLC:
 // 	:	( -- //  string> )
 // 	Start a new colon definition using next word as its name.
 
-	.word	_RBRAC-MAPOFFSET
+	.word	_RBRAC+MAPOFFSET
 _COLON:	.byte  1
 	.ascii ":"
 	.p2align 2 	
@@ -3849,7 +3860,7 @@ COLON:
 //    IMMEDIATE   ( -- )
 // 	Make the last compiled word an immediate word.
 
-	.word	_COLON-MAPOFFSET
+	.word	_COLON+MAPOFFSET
 _IMMED:	.byte  9
 	.ascii "IMMEDIATE"
 	.p2align 2 	
@@ -3872,7 +3883,7 @@ IMMED:
 //    CONSTANT	( u -- //  string> )
 // 	Compile a new constant.
 
-	.word	_IMMED-MAPOFFSET
+	.word	_IMMED+MAPOFFSET
 _CONST:	.byte  8
 	.ascii "CONSTANT"
 	.p2align 2 	
@@ -3885,7 +3896,7 @@ CONST:
 	_NEST
 	BL	COMMA
 	_DOLIT
-	.word	DOCON-MAPOFFSET
+	.word	DOCON+MAPOFFSET
 	BL	CALLC
 	BL	COMMA
 	_UNNEST
@@ -3893,7 +3904,7 @@ CONST:
 //    CREATE	( -- //  string> )
 // 	Compile a new array entry without allocating code space.
 
-	.word	_CONST-MAPOFFSET
+	.word	_CONST+MAPOFFSET
 _CREAT:	.byte  6
 	.ascii "CREATE"
 	.p2align 2 	
@@ -3906,14 +3917,14 @@ CREAT:
 	_NEST
 	BL	COMMA
 	_DOLIT
-	.word	DOVAR-MAPOFFSET
+	.word	DOVAR+MAPOFFSET
 	BL	CALLC
 	_UNNEST
 
 //    VARIABLE	( -- //  string> )
 // 	Compile a new variable initialized to 0.
 
-	.word	_CREAT-MAPOFFSET
+	.word	_CREAT+MAPOFFSET
 _VARIA:	.byte  8
 	.ascii "VARIABLE"
 	.p2align 2 	
@@ -3931,7 +3942,7 @@ VARIA:
 //    dm+	 ( a u -- a )
 // 	Dump u bytes from , leaving a+u on the stack.
 
-// 	.word	_VARIA-MAPOFFSET
+// 	.word	_VARIA+MAPOFFSET
 // _DMP	.byte  3
 // 	.ascii "dm+"
 // 	.p2align 2 	
@@ -3953,13 +3964,13 @@ PDUM1:
 	BL	ONEP			// increment address
 PDUM2:
   BL	DONXT
-	.word	PDUM1-MAPOFFSET	// loop till done
+	.word	PDUM1+MAPOFFSET	// loop till done
 	_UNNEST
 	.p2align 2 
 //    DUMP	( a u -- )
 // 	Dump u bytes from a, in a formatted manner.
 
-	.word	_VARIA-MAPOFFSET
+	.word	_VARIA+MAPOFFSET
 _DUMP:	.byte  4
 	.ascii "DUMP"
 	.p2align 2 	
@@ -3987,7 +3998,7 @@ DUMP1:
 	BL	TYPEE			// display printable characters
 DUMP4:
   BL	DONXT
-	.word	DUMP1-MAPOFFSET	// loop till done
+	.word	DUMP1+MAPOFFSET	// loop till done
 DUMP3:
   BL	DROP
 	BL	RFROM
@@ -3998,7 +4009,7 @@ DUMP3:
 //    .S	  ( ... -- ... )
 // 	Display the contents of the data stack.
 
-	.word	_DUMP-MAPOFFSET
+	.word	_DUMP+MAPOFFSET
 _DOTS:
 	.byte  2
 	.ascii ".S"
@@ -4015,14 +4026,14 @@ DOTS1:
 	BL	DOT			// index stack, display contents
 DOTS2:
 	BL	DONXT
-	.word	DOTS1-MAPOFFSET	// loop till done
+	.word	DOTS1+MAPOFFSET	// loop till done
 	BL	SPACE
 	_UNNEST
 
 //    >NAME	( ca -- na | F )
 // 	Convert code address to a name address.
 
-	.word	_DOTS-MAPOFFSET
+	.word	_DOTS+MAPOFFSET
 _TNAME:	.byte  5
 	.ascii ">NAME"
 	.p2align 2 	
@@ -4034,13 +4045,13 @@ TNAME:
 TNAM1:
 	BL	DUPP			//  na na
 	BL	QBRAN
-	.word	TNAM2-MAPOFFSET	//  vocabulary end, no match
+	.word	TNAM2+MAPOFFSET	//  vocabulary end, no match
 	BL	DUPP			//  na na
 	BL	NAMET			//  na ca
 	BL	RAT			//  na ca code
 	BL	XORR			//  na f --
 	BL	QBRAN
-	.word	TNAM2-MAPOFFSET
+	.word	TNAM2+MAPOFFSET
 	BL	CELLM			//  la 
 	BL	AT			//  next_na
 	B.W	TNAM1
@@ -4052,7 +4063,7 @@ TNAM2:
 //    .ID	 ( na -- )
 // 	Display the name at address.
 
-	.word	_TNAME-MAPOFFSET
+	.word	_TNAME+MAPOFFSET
 _DOTID:	.byte  3
 	.ascii ".ID"
 	.p2align 2 	
@@ -4060,7 +4071,7 @@ DOTID:
 	_NEST
 	BL	QDUP			// if zero no name
 	BL	QBRAN
-	.word	DOTI1-MAPOFFSET
+	.word	DOTI1+MAPOFFSET
 	BL	COUNT
 	_DOLIT
 	.word	0x1F
@@ -4077,7 +4088,7 @@ DOTI1:
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
 
-	.word	_DOTID-MAPOFFSET
+	.word	_DOTID+MAPOFFSET
 _SEE:	.byte  3
 	.ascii "SEE"
 	.p2align 2 	
@@ -4093,14 +4104,14 @@ SEE1:
 	BL	DUPP			//  a a
 	BL	DECOMP		//  a
 	BL	DONXT
-	.word	SEE1-MAPOFFSET
+	.word	SEE1+MAPOFFSET
 	BL	DROP
 	_UNNEST
 
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
 
-	.word	_SEE-MAPOFFSET
+	.word	_SEE+MAPOFFSET
 _DECOM:	.byte  9
 	.ascii "DECOMPILE"
 	.p2align 2 
@@ -4118,7 +4129,7 @@ DECOMP:
 	.word	0xF800F000
 	BL	EQUAL			//  a code ?
 	BL	QBRAN
-	.word	DECOM2-MAPOFFSET	//  not a command
+	.word	DECOM2+MAPOFFSET	//  not a command
 	//  a valid_code --, extract address and display name
 	MOVW	R0,#0xFFE
 	MOV	R4,R5
@@ -4134,7 +4145,7 @@ DECOMP:
 	BL	TNAME			//  a na/0 --, is it a name?
 	BL	QDUP			//  name address or zero
 	BL	QBRAN
-	.word	DECOM1-MAPOFFSET
+	.word	DECOM1+MAPOFFSET
 	BL	SPACE			//  a na
 	BL	DOTID			//  a --, display name
 // 	BL	RFROM			//  a
@@ -4153,7 +4164,7 @@ DECOM2:
 //    WORDS	( -- )
 // 	Display the names in the context vocabulary.
 
-	.word	_DECOM-MAPOFFSET
+	.word	_DECOM+MAPOFFSET
 _WORDS:	.byte  5
 	.ascii "WORDS"
 	.p2align 2 	
@@ -4165,7 +4176,7 @@ WORDS:
 WORS1:
 	BL	QDUP			// ?at end of list
 	BL	QBRAN
-	.word	WORS2-MAPOFFSET
+	.word	WORS2+MAPOFFSET
 	BL	DUPP
 	BL	SPACE
 	BL	DOTID			// display a name
@@ -4181,7 +4192,7 @@ WORS2:
 //    VER	 ( -- n )
 // 	Return the version number of this implementation.
 
-// 	.word	_WORDS-MAPOFFSET
+// 	.word	_WORDS+MAPOFFSET
 // _VERSN	.byte  3
 // 	.ascii "VER"
 // 	.p2align 2 	
@@ -4194,7 +4205,7 @@ VERSN:
 //    hi	  ( -- )
 // 	Display the sign-on message of eForth.
 
-	.word	_WORDS-MAPOFFSET
+	.word	_WORDS+MAPOFFSET
 _HI:	.byte  2
 	.ascii "HI"
 	.p2align 2 	
@@ -4226,7 +4237,7 @@ HI:
 //    COLD	( -- )
 // 	The high level cold start sequence.
 
-	.word	_HI-MAPOFFSET
+	.word	_HI+MAPOFFSET
 LASTN:	.byte  4
 	.ascii "COLD"
 	.p2align 2,0	
@@ -4244,7 +4255,7 @@ COLD1:
 	.word 0 
 	BL ULED // turn off user LED 
 	_DOLIT
-	.word	UZERO-MAPOFFSET
+	.word	UZERO
 	_DOLIT
 	.word	UPP
 	_DOLIT
@@ -4253,6 +4264,11 @@ COLD1:
 	BL	PRESE			// initialize stack and TIB
 	BL	TBOOT
 	BL	ATEXE			// application boot
+	BL	CPP 
+	BL	AT 
+	BL  ALGND 
+	BL	CPP 
+	BL	STORE 
 	BL	OVERT
 	B.W	QUIT			// start interpretation
 COLD2:	

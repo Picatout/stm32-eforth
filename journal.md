@@ -1,5 +1,16 @@
 ### 2020-12-02
 
+#### session 2
+
+* J'ai opté pour la solution qui consiste à copier le système Forth en mémoire RAM parce que c'était le plus simple.
+  Il reste
+
+* Tradionnellement les nombres hexadécimal étaient indiqués lors de la saisie par un signe **$** au début. Hors dans le fichier original **stm32eForth720.s** Il a été remplacé par le caractère **_**. J'ai remis le **$** traditionnel.
+
+* La base numérique par défaut était **16**  je l'ai mise à **10** dans i.e voir **.equ BASEE, 10**.
+
+#### session 1
+
 * Je ne connais pas le jeux d'instructions **thumb v2**. J'apprends donc en travaillant sur ce projet et ça réserve des surprises.  Ainsi le modèle *subroutine threaded* du **stm32eforth720** utilise l'instruction **BL** pour appeller les sous-routines composants un mot. Hors l'instruction **BL** est **pc relative** et le déplacement est limité à *21 bits signés.*  Au départ j'avais choisi d'exécuter les mots du système eForth à partir de la mémoire flash et de définir les mots utilisateurs dans la mémorie RAM. Le problème est que la distance est trop grandes entre la mémoire RAM qui débute à l'adresse **0x20000000** et la mémoire flash qui débute elle à **0x8000000** ou à **0** pour son alias pour faire des appel *pc relative* entre les 2 zones.  Il  ne me reste que 3 options:
 
     * revenir au modèle initial, qui consiste à copier le système Forth en RAM et tout exécuter en mémoire RAM. Ce système a été conçu pour une carte **STM32F407VB explorer** qui possède 196Ko de mémoire RAM alors que la blue-pill n'en possède que 20Ko. Le système prendrait donc plus de 50% de la mémore RAM. 
