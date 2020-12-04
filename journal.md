@@ -1,13 +1,22 @@
+### 2020-12-03
+
+* Mis dans un bloc **.if** les mots **SEE** et **DECOMPILE**, pas très utile.
+
+* Ajout du mot **0=**. 
+
+* Renommer le mot **ERASE_SECTOR** en **ERASE_PAGE**  le stm32f103 n'a pas de secteurs. La mémore flash est organisée 
+en page de 1024 octets. On ne peut qu'effacer une page et écrire que des mots de 16 bits un à la fois. 
+
 ### 2020-12-02
 
 #### session 2
 
 * J'ai opté pour la solution qui consiste à copier le système Forth en mémoire RAM parce que c'était le plus simple.
-  Il reste
+  Il reste 11468 octets RAM libres.
 
 * Tradionnellement les nombres hexadécimal étaient indiqués lors de la saisie par un signe **$** au début. Hors dans le fichier original **stm32eForth720.s** Il a été remplacé par le caractère **_**. J'ai remis le **$** traditionnel.
 
-* La base numérique par défaut était **16**  je l'ai mise à **10** dans i.e voir **.equ BASEE, 10**.
+* La base numérique par défaut était **16**  je l'ai mise à **10**,  voir **.equ BASEE, 10**.
 
 #### session 1
 

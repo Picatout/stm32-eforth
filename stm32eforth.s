@@ -248,21 +248,20 @@ isr_vectors:
   .p2align 2 
   .global default_handler
 default_handler:
-	ldr r0,cr_adr
-	orr r0,r0,#1 
-	blx	r0	// new line
-	ldr r0,dotqp_adr 
-	orr r0,r0,#1 
-	blx	r0
-	.byte	16
-	.ascii " exception halt!"	
-	.p2align 2 
+	ldr r7,exception_msg 
+	ldrb r0,[r7],#1 
+1:	_PUSH 
+	ldrb r5,[r7],#1
+	bl EMIT 
+	subs r0,r0,#1 
+	bne 1b 	
 	b reset_handler   
   .size  default_handler, .-default_handler
-cr_adr:
-	.word CR-MAPOFFSET
-dotqp_adr:
-	.word DOTQP-MAPOFFSET 
+exception_msg:
+	.word .+4 
+	.byte 18
+	.ascii "\n\rexeption reboot!"
+	.p2align 2
 
 /*********************************
 	system milliseconds counter
@@ -1220,10 +1219,24 @@ ABSS:
     RSBNE   R5,R5,#0
 	_NEXT
 
+//  0= ( w -- f )
+// TOS==0?
+
+	.word _ABSS+MAPOFFSET
+_ZEQUAL: .byte 2
+	.ascii "0="
+	.p2align 2
+ZEQUAL:
+	cbnz r5,1f
+	mov r5,#-1
+	_NEXT 
+1:  eor r5,r5,r5  
+	_NEXT 	
+
 //    =	 ( w w -- t )
 // 	Equal?
 
-	.word	_ABSS+MAPOFFSET
+	.word	_ZEQUAL+MAPOFFSET
 _EQUAL:	.byte   1
 	.ascii "="
 	.p2align 2 	
@@ -3065,7 +3078,7 @@ ABORQ:
 	BL	CR
 	B.W	QUIT
 ABOR1:
-  BL	DOSTR
+	BL	DOSTR
 	BL	DROP
 	_UNNEST			// drop error
 
@@ -3227,64 +3240,111 @@ _UNLOCK: .byte 6
 	.ascii "UNLOCK"
 	.p2align 2  
 UNLOCK:	//  unlock flash memory	
-	BL QBRAN 
-	.word UNLOCK1+MAPOFFSET 
-LOCK: // lock flash memory 
-	ldr r0,=FLASH_BASE_ADR 
+	_NEST 
+	BL QBRAN
+	.word LOCK-MAPOFFSET
+UNLOCK1:
+	ldr	r0, flash_regs 
+	ldr r4, [r0, #FLASH_SR]
+	orr r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+	str r4,[r0,#FLASH_SR]
+	ldr r4,[r0,#FLASH_CR]
+	tst r4,#(1<<7)
+	bne 1f
+	ldr	r4, flash_regs+4 // key1
+	str	r4, [r0, #FLASH_KEYR]
+	ldr	r4, flash_regs+8 // key2 
+	str	r4, [r0, #FLASH_KEYR]
+	/* unlock option registers */
+/*
+	ldr	r4, flash_regs+4 
+	str	r4, [r0, #FLASH_OPTKEYR]
+	ldr	r4, flash_regs+8
+	str	r4, [r0, #FLASH_OPTKEYR]
+*/ 
+1:	_UNNEST
+ // lock flash memory
+LOCK: 
+	ldr r0,flash_regs  
 	ldr r4,[r0,#FLASH_CR]
 	orr r4,#(1<<7)
 	str r4,[r0,#FLASH_CR]
-	_NEXT 
-UNLOCK1:
-	ldr	r0, =FLASH_BASE_ADR
-	ldr	r4, =FLASH_KEY1
-	str	r4, [r0, #FLASH_KEYR]
-	ldr	r4, =FLASH_KEY2 
-	str	r4, [r0, #FLASH_KEYR]
-	/* unlock option registers */
-	ldr	r4, =FLASH_KEY1
-	str	r4, [r0, #FLASH_OPTKEYR]
-	ldr	r4, =FLASH_KEY2
-	str	r4, [r0, #FLASH_OPTKEYR]
-	_NEXT
+	_UNNEST  
 
 WAIT_BSY:
-	ldr	r0,=FLASH_BASE_ADR
+	ldr	r0,flash_regs
 WAIT1:
 	ldr	r4, [r0, #FLASH_SR]	//  FLASH_SR
 	ands	r4, #0x1	//  BSY
 	bne	WAIT1
 	_NEXT
 
-
-
-//    ERASE_SECTOR	   ( sector -- )
-// 	  Erase one sector of flash memory.  Sector=0 to 11
+//    ERASE_PAGE	   ( page -- )
+// 	  Erase one page of flash memory.
+//    stm32f103 page size is 1024 bytes 
 
 	.word	_UNLOCK+MAPOFFSET
-_ESECT:	.byte  12
-	.ascii "ERASE_SECTOR"
+_EPAGE:	.byte  10
+	.ascii "ERASE_PAGE"
 	.p2align 2 	
 
-ESECT: 	//  sector --
+EPAGE: 	//  page --
 	_NEST
 	bl	WAIT_BSY
+	_DOLIT 
+	.word 1 
+	bl  UNLOCK 
+	mov r4,#FLASH_ADR
+	lsl r5,r5,#10
+	add r5,r5,r4 
+	ldr r0,flash_regs 	 
+	str r5,[r0,#FLASH_AR] // page address 
 	ldr	r4,[r0, #FLASH_CR]	
-	bic	r4,r4,#0x78	//  clear SNB
-	lsl	R5,R5,#3		//  align sector #
-	orr	r4,r4,r5		//  put in sector #
-	orr	R4,R4,#0x10000	//  set STRT bit
-	orr	R4,R4,#0x200	//  PSIZE=32
-	orr	R4,R4,#2		//  set SER bit, enable erase
-	str	r4,[r0, #0x10]	//  start erasing
-// 	bl	WAIT_BSY
+	bic	r4,r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)	// clear OPTWRE|OPTER|OPTPG|MER   
+	orr	R4,R4,#(1<<1)|(1<<6)	//  set STRT|PER  
+	str	r4,[r0, #FLASH_CR]	//  start erasing
+1: 	bl	WAIT_BSY
+	_DOLIT 
+	.word 0 
+	bl	UNLOCK  // lock flash write 
+	ldr r5,[r0,#FLASH_SR] // check for errors 
+	and r5,r5,#(5<<2)
+	bl ABORQ 
+	.byte 13
+	.ascii " erase error!"
+	.p2align 2
 	_POP
 	_UNNEST
 
+// store 16 bit word
+// expect flash unlocked  
+HWORD_WRITE: // ( hword address -- )
+	_NEST
+	ldr	r4, [r0, #FLASH_CR]	//  FLASH_CR
+//	bic r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)|(1<<1) //  clear OPTWRE|OPTER|OPTPG|MER|PER
+	mov r4,#1 // set PG 
+	str r4,[r0,#FLASH_CR]
+	mov r6,r5 
+	_POP 
+	strh r5,[r6] 
+	bl WAIT_BSY 
+	ldr r5,[r0,#FLASH_SR]
+	and r5,r5,#(5<<2) 
+	bl QBRAN
+	.word 1f 
+	bl ABORQ
+	.byte 13
+	.ascii " write error!"
+	.p2align 2
+1:	 
+	_UNNEST 
+
+
 //    I!	   ( data address -- )
 // 	   Write one word into flash memory
+//	   address must even 
 
-	.word	_ESECT+MAPOFFSET
+	.word	_EPAGE+MAPOFFSET
 _ISTOR:	.byte  2
 	.ascii "I!"
 	.p2align 2 	
@@ -3292,14 +3352,21 @@ _ISTOR:	.byte  2
 ISTOR:	//  data address --
 	_NEST
 	bl	WAIT_BSY
-	ldr	r4, [r0, #0x10]	//  FLASH_CR
-	orr	r4,R4,#0x1		//  PG
-	str	r4, [r0, #0x10]	//  enable programming
-	bl	STORE
-	bl	WAIT_BSY
-	ldr	r4, [r0, #0x10]	//  FLASH_CR
-	bic	r4,R4,#0x1		//  PG
-	str	r4, [r0, #0x10]	//  disable programming
+	_DOLIT 
+	.word 1 
+	bl  UNLOCK 
+	BL DDUP 
+	BL TOR 
+	BL TOR 
+	BL HWORD_WRITE
+	BL RFROM 
+	ror r5,r5,#16
+	BL RFROM 
+	add r5,r5,#2 
+	BL HWORD_WRITE 
+	_DOLIT 
+	.word 0
+	bl UNLOCK 
 	_UNNEST
 
 //    TURNKEY	( -- )
@@ -3338,6 +3405,11 @@ TURN1:
 	.word	TURN1+MAPOFFSET
 	BL	DDROP
 	_UNNEST
+
+flash_regs:
+	.word FLASH_BASE_ADR // 0 
+	.word FLASH_KEY1   // 4 
+	.word FLASH_KEY2   // 8
 
 // **************************************************************************
 //  The compiler
@@ -3448,7 +3520,7 @@ STRCQ:
 	BL	PSTOR
 	_DOLIT
 	.word	'\"'
-	BL	WORDD			// moveDCB to code dictionary
+	BL	WORDD			// move word to code dictionary
 	BL	COUNT
 	BL	PLUS
 	BL	ALGND			// calculate aligned end of string
@@ -3463,7 +3535,7 @@ STRCQ:
 // 	Start a FOR-NEXT loop structure in a colon definition.
 
 	.word	_LITER+MAPOFFSET
-_FOR:	.byte  IMEDD+3
+_FOR:	.byte  COMPO+IMEDD+3
 	.ascii "FOR"
 	.p2align 2 	
 FOR:
@@ -3477,7 +3549,7 @@ FOR:
 // 	Start an infinite or indefinite loop structure.
 
 	.word	_FOR+MAPOFFSET
-_BEGIN:	.byte  IMEDD+5
+_BEGIN:	.byte  COMPO+IMEDD+5
 	.ascii "BEGIN"
 	.p2align 2 	
 BEGIN:
@@ -3489,7 +3561,7 @@ BEGIN:
 // 	Terminate a FOR-NEXT loop structure.
 
 	.word	_BEGIN+MAPOFFSET
-_NEXT:	.byte  IMEDD+4
+_NEXT:	.byte  COMPO+IMEDD+4
 	.ascii "NEXT"
 	.p2align 2 	
 NEXT:
@@ -3503,7 +3575,7 @@ NEXT:
 // 	Terminate a BEGIN-UNTIL indefinite loop structure.
 
 	.word	_NEXT+MAPOFFSET
-_UNTIL:	.byte  IMEDD+5
+_UNTIL:	.byte  COMPO+IMEDD+5
 	.ascii "UNTIL"
 	.p2align 2 	
 UNTIL:
@@ -3517,7 +3589,7 @@ UNTIL:
 // 	Terminate a BEGIN-AGAIN infinite loop structure.
 
 	.word	_UNTIL+MAPOFFSET
-_AGAIN:	.byte  IMEDD+5
+_AGAIN:	.byte  COMPO+IMEDD+5
 	.ascii "AGAIN"
 	.p2align 2 	
 AGAIN:
@@ -3531,7 +3603,7 @@ AGAIN:
 // 	Begin a conditional branch structure.
 
 	.word	_AGAIN+MAPOFFSET
-_IFF:	.byte  IMEDD+2
+_IFF:	.byte  COMPO+IMEDD+2
 	.ascii "IF"
 	.p2align 2 	
 IFF:
@@ -3549,7 +3621,7 @@ IFF:
 // 	Compile a forward branch instruction.
 
 	.word	_IFF+MAPOFFSET
-_AHEAD:	.byte  IMEDD+5
+_AHEAD:	.byte  COMPO+IMEDD+5
 	.ascii "AHEAD"
 	.p2align 2 	
 AHEAD:
@@ -3567,7 +3639,7 @@ AHEAD:
 // 	Terminate a BEGIN-WHILE-REPEAT indefinite loop.
 
 	.word	_AHEAD+MAPOFFSET
-_REPEA:	.byte  IMEDD+6
+_REPEA:	.byte  COMPO+IMEDD+6
 	.ascii "REPEAT"
 	.p2align 2 	
 REPEA:
@@ -3582,7 +3654,7 @@ REPEA:
 // 	Terminate a conditional branch structure.
 
 	.word	_REPEA+MAPOFFSET
-_THENN:	.byte  IMEDD+4
+_THENN:	.byte  COMPO+IMEDD+4
 	.ascii "THEN"
 	.p2align 2 	
 THENN:
@@ -3596,7 +3668,7 @@ THENN:
 // 	Jump to THEN in a FOR-AFT-THEN-NEXT loop the first time through.
 
 	.word	_THENN+MAPOFFSET
-_AFT:	.byte  IMEDD+3
+_AFT:	.byte  COMPO+IMEDD+3
 	.ascii "AFT"
 	.p2align 2 	
 AFT:
@@ -3611,7 +3683,7 @@ AFT:
 // 	Start the false clause in an IF-ELSE-THEN structure.
 
 	.word	_AFT+MAPOFFSET
-_ELSEE:	.byte  IMEDD+4
+_ELSEE:	.byte  COMPO+IMEDD+4
 	.ascii "ELSE"
 	.p2align 2 	
 ELSEE:
@@ -3625,7 +3697,7 @@ ELSEE:
 // 	Conditional branch out of a BEGIN-WHILE-REPEAT loop.
 
 	.word	_ELSEE+MAPOFFSET
-_WHILE:	.byte  IMEDD+5
+_WHILE:	.byte  COMPO+IMEDD+5
 	.ascii "WHILE"
 	.p2align 2 	
 WHILE:
@@ -3663,10 +3735,10 @@ STRQ:
 	_UNNEST
 
 //    ."	( -- //  string> )
-// 	Compile an inlineDCB literal to be typed out at run time.
+// 	Compile an inline word  literal to be typed out at run time.
 
 	.word	_STRQ+MAPOFFSET
-_DOTQ:	.byte  IMEDD+2
+_DOTQ:	.byte  IMEDD+COMPO+2
 	.byte	'.','"'
 	.p2align 2 	
 DOTQ:
@@ -4079,12 +4151,14 @@ DOTID:
 	BL	TYPEE
 	_UNNEST			// display name string
 DOTI1:
-  BL	DOTQP
+	BL	DOTQP
 	.byte	9
 	.ascii " {noName}"
 	.p2align 2 	
 	_UNNEST
 
+	.equ WANT_SEE, 0  // set to 1 if you want SEE 
+.if WANT_SEE 
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
 
@@ -4123,11 +4197,12 @@ DECOMP:
 	BL	AT			//  a code
 	BL	DUPP			//  a code code
 	_DOLIT
-	.word	0xF800F800
+	.word	0xF800D000 //0xF800F800
 	BL	ANDD
 	_DOLIT
-	.word	0xF800F000
+	.word	0xF000D000 //0xF800F000
 	BL	EQUAL			//  a code ?
+	BL	INVER 
 	BL	QBRAN
 	.word	DECOM2+MAPOFFSET	//  not a command
 	//  a valid_code --, extract address and display name
@@ -4165,6 +4240,9 @@ DECOM2:
 // 	Display the names in the context vocabulary.
 
 	.word	_DECOM+MAPOFFSET
+.else 
+	.word _DOTID+MAPOFFSET 
+.endif 
 _WORDS:	.byte  5
 	.ascii "WORDS"
 	.p2align 2 	
