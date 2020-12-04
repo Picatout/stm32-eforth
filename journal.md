@@ -1,4 +1,8 @@
-### 2020-12-03
+### 2020-12-04
+
+* Débogué  mots **UNLOCK**, **I!** et **ERASE_PAGE**.
+
+### 2020-12-13
 
 * Mis dans un bloc **.if** les mots **SEE** et **DECOMPILE**, pas très utile.
 
