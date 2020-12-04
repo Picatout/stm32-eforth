@@ -449,7 +449,7 @@ ARM GAS  stm32eforth.s 			page 1
  298 000a 40F00100 		orr r0,#1
  299 000e 0047     		bx r0 
  300              	forth_entry:
- 301 0010 80180018 		.word COLD+MAPOFFSET 
+ 301 0010 70180018 		.word COLD+MAPOFFSET 
  302              	
  303              	  .type init_devices, %function
  304              	  .p2align 2 
@@ -562,7 +562,7 @@ ARM GAS  stm32eforth.s 			page 1
  405              	remap:
  406 00e4 DFF83400 		ldr r0,remap_dest  
  407 00e8 0B49     		ldr r1,remap_src 
- 408 00ea 42F2EA02 		mov r2,#CTOP-UZERO 
+ 408 00ea 42F2DA02 		mov r2,#CTOP-UZERO 
  409 00ee 02F10302 		add r2,r2,#3
  410 00f2 22F00302 		and r2,r2,#~3 
  411 00f6 51F8043B 	1:	ldr r3,[r1],#4 
@@ -636,7 +636,7 @@ ARM GAS  stm32eforth.s 			page 1
  472 0400 00000000 		.word 0  			/*Reserved */
  473 0404 00000000 		.word 0      /* system Ticks */
  474 0408 00000000 	    .word 0     /* delay timer */
- 475 040c 0C180018 		.word HI+MAPOFFSET  	/*'BOOT */
+ 475 040c FC170018 		.word HI+MAPOFFSET  	/*'BOOT */
  476 0410 0A000000 		.word BASEE 	/*BASE */
  477 0414 00000000 		.word 0			/*tmp */
  478 0418 00000000 		.word 0			/*SPAN */
@@ -645,10 +645,10 @@ ARM GAS  stm32eforth.s 			page 1
  481 0424 804E0020 		.word TIBB	/*TIB */
  482 0428 540D0018 		.word INTER+MAPOFFSET	/*'EVAL */
  483 042c 00000000 		.word 0			/*HLD */
- 484 0430 78180018 		.word LASTN+MAPOFFSET	/*CONTEXT */
- 485 0434 EA180018 		.word CTOP+MAPOFFSET	/*end of dictionnary */
- 486 0438 EA180018 		.word CTOP+MAPOFFSET	/* end of RAM dictionary RAM */
- 487 043c 78180018 		.word LASTN+MAPOFFSET	/*LAST word in dictionary */
+ 484 0430 68180018 		.word LASTN+MAPOFFSET	/*CONTEXT */
+ 485 0434 DA180018 		.word CTOP+MAPOFFSET	/*end of dictionnary */
+ 486 0438 DA180018 		.word CTOP+MAPOFFSET	/* end of RAM dictionary RAM */
+ 487 043c 68180018 		.word LASTN+MAPOFFSET	/*LAST word in dictionary */
  488 0440 00000000 		.word 0,0			/*reserved */
  488      00000000 
  489              	ULAST:
@@ -3609,1218 +3609,1215 @@ ARM GAS  stm32eforth.s 			page 1
  3242              	UNLOCK:	//  unlock flash memory	
  3243 1abc 42F804ED 		_NEST 
  3244 1ac0 FEF754FD 		BL QBRAN
- 3245 1ac4 E62600E8 		.word LOCK-MAPOFFSET
- 3246              	UNLOCK1:
- 3247 1ac8 6B48     		ldr	r0, flash_regs 
- 3248 1aca C468     		ldr r4, [r0, #FLASH_SR]
- 3249 1acc 44F03404 		orr r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
- 3250 1ad0 C460     		str r4,[r0,#FLASH_SR]
- 3251 1ad2 0469     		ldr r4,[r0,#FLASH_CR]
- 3252 1ad4 14F0800F 		tst r4,#(1<<7)
- 3253 1ad8 03D1     		bne 1f
- 3254 1ada 684C     		ldr	r4, flash_regs+4 // key1
- 3255 1adc 4460     		str	r4, [r0, #FLASH_KEYR]
- 3256 1ade 684C     		ldr	r4, flash_regs+8 // key2 
- 3257 1ae0 4460     		str	r4, [r0, #FLASH_KEYR]
- 3258              		/* unlock option registers */
- 3259              	/*
- 3260              		ldr	r4, flash_regs+4 
+ 3245 1ac4 E40E0018 		.word LOCK+MAPOFFSET
+ 3246 1ac8 6748     		ldr	r0, flash_regs 
+ 3247 1aca 4FF03404 		mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+ 3248 1ace C460     		str r4,[r0,#FLASH_SR]
+ 3249 1ad0 0469     		ldr r4,[r0,#FLASH_CR]
+ 3250 1ad2 14F0800F 		tst r4,#(1<<7)
+ 3251 1ad6 03D0     		beq 1f 
+ 3252 1ad8 644C     		ldr	r4, flash_regs+4 // key1
+ 3253 1ada 4460     		str	r4, [r0, #FLASH_KEYR]
+ 3254 1adc 644C     		ldr	r4, flash_regs+8 // key2 
+ 3255 1ade 4460     		str	r4, [r0, #FLASH_KEYR]
+ 3256              		/* unlock option registers */
+ 3257              	/*
+ 3258              		ldr	r4, flash_regs+4 
+ 3259              		str	r4, [r0, #FLASH_OPTKEYR]
+ 3260              		ldr	r4, flash_regs+8
  3261              		str	r4, [r0, #FLASH_OPTKEYR]
- 3262              		ldr	r4, flash_regs+8
- 3263              		str	r4, [r0, #FLASH_OPTKEYR]
- 3264              	*/ 
- 3265 1ae2 52F804FB 	1:	_UNNEST
- 3266              	 // lock flash memory
- 3267              	LOCK: 
- 3268 1ae6 6448     		ldr r0,flash_regs  
- 3269 1ae8 0469     		ldr r4,[r0,#FLASH_CR]
- 3270 1aea 44F08004 		orr r4,#(1<<7)
- 3271 1aee 0461     		str r4,[r0,#FLASH_CR]
- 3272 1af0 52F804FB 		_UNNEST  
- 3273              	
- 3274              	WAIT_BSY:
- 3275 1af4 6048     		ldr	r0,flash_regs
- 3276              	WAIT1:
- 3277 1af6 C468     		ldr	r4, [r0, #FLASH_SR]	//  FLASH_SR
- 3278 1af8 14F00104 		ands	r4, #0x1	//  BSY
- 3279 1afc FBD1     		bne	WAIT1
- 3280 1afe 7047     		_NEXT
- 3281              	
- 3282              	//    ERASE_PAGE	   ( page -- )
- 3283              	// 	  Erase one page of flash memory.
- 3284              	//    stm32f103 page size is 1024 bytes 
+ 3262              	*/ 
+ 3263              	1:
+ 3264 1ae0 52F804FB 		_UNNEST
+ 3265              	 // lock flash memory
+ 3266              	LOCK: 
+ 3267 1ae4 6048     		ldr r0,flash_regs  
+ 3268              	//	ldr r4,[r0,#FLASH_CR]
+ 3269 1ae6 4FF08004 		mov r4,#(1<<7)
+ 3270 1aea 0461     		str r4,[r0,#FLASH_CR]
+ 3271 1aec 52F804FB 		_UNNEST  
+ 3272              	
+ 3273              	WAIT_BSY:
+ 3274 1af0 5D48     		ldr	r0,flash_regs
+ 3275              	WAIT1:
+ 3276 1af2 C468     		ldr	r4, [r0, #FLASH_SR]	//  FLASH_SR
+ 3277 1af4 14F00104 		ands	r4, #0x1	//  BSY
+ 3278 1af8 FBD1     		bne	WAIT1
+ 3279 1afa 7047     		_NEXT
+ 3280              	
+ 3281              	//    ERASE_PAGE	   ( adr -- )
+ 3282              	// 	  Erase one page of flash memory.
+ 3283              	//    stm32f103 page size is 1024 bytes 
+ 3284              	//    adr is any address inside page to erase 
  3285              	
- 3286 1b00 B40E0018 		.word	_UNLOCK+MAPOFFSET
- 3287 1b04 0A       	_EPAGE:	.byte  10
- 3288 1b05 45524153 		.ascii "ERASE_PAGE"
+ 3286 1afc B40E0018 		.word	_UNLOCK+MAPOFFSET
+ 3287 1b00 0A       	_EPAGE:	.byte  10
+ 3288 1b01 45524153 		.ascii "ERASE_PAGE"
  3288      455F5041 
  3288      4745
- 3289 1b0f 00       		.p2align 2 	
+ 3289 1b0b 00       		.p2align 2 	
  3290              	
  3291              	EPAGE: 	//  page --
 ARM GAS  stm32eforth.s 			page 62
 
 
- 3292 1b10 42F804ED 		_NEST
- 3293 1b14 FFF7EEFF 		bl	WAIT_BSY
- 3294 1b18 FEF705FD 		_DOLIT 
- 3295 1b1c 01000000 		.word 1 
- 3296 1b20 FFF7CCFF 		bl  UNLOCK 
- 3297 1b24 4FF00064 		mov r4,#FLASH_ADR
- 3298 1b28 4FEA8525 		lsl r5,r5,#10
- 3299 1b2c 2544     		add r5,r5,r4 
- 3300 1b2e 5248     		ldr r0,flash_regs 	 
- 3301 1b30 4561     		str r5,[r0,#FLASH_AR] // page address 
- 3302 1b32 0469     		ldr	r4,[r0, #FLASH_CR]	
- 3303 1b34 24F40D74 		bic	r4,r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)	// clear OPTWRE|OPTER|OPTPG|MER   
- 3304 1b38 44F04204 		orr	R4,R4,#(1<<1)|(1<<6)	//  set STRT|PER  
- 3305 1b3c 0461     		str	r4,[r0, #FLASH_CR]	//  start erasing
- 3306 1b3e FFF7D9FF 	1: 	bl	WAIT_BSY
- 3307 1b42 FEF7F0FC 		_DOLIT 
- 3308 1b46 00000000 		.word 0 
- 3309 1b4a FFF7B7FF 		bl	UNLOCK  // lock flash write 
- 3310 1b4e C568     		ldr r5,[r0,#FLASH_SR] // check for errors 
- 3311 1b50 05F01405 		and r5,r5,#(5<<2)
- 3312 1b54 FFF7E0FE 		bl ABORQ 
- 3313 1b58 0D       		.byte 13
- 3314 1b59 20657261 		.ascii " erase error!"
- 3314      73652065 
- 3314      72726F72 
- 3314      21
- 3315 1b66 00BF     		.p2align 2
- 3316 1b68 51F8045B 		_POP
- 3317 1b6c 52F804FB 		_UNNEST
- 3318              	
- 3319              	// store 16 bit word
- 3320              	// expect flash unlocked  
- 3321              	HWORD_WRITE: // ( hword address -- )
- 3322 1b70 42F804ED 		_NEST
- 3323 1b74 0469     		ldr	r4, [r0, #FLASH_CR]	//  FLASH_CR
- 3324              	//	bic r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)|(1<<1) //  clear OPTWRE|OPTER|OPTPG|MER|PER
- 3325 1b76 4FF00104 		mov r4,#1 // set PG 
- 3326 1b7a 0461     		str r4,[r0,#FLASH_CR]
- 3327 1b7c 2E46     		mov r6,r5 
- 3328 1b7e 51F8045B 		_POP 
- 3329 1b82 3580     		strh r5,[r6] 
- 3330 1b84 FFF7B6FF 		bl WAIT_BSY 
- 3331 1b88 C568     		ldr r5,[r0,#FLASH_SR]
- 3332 1b8a 05F01405 		and r5,r5,#(5<<2) 
- 3333 1b8e FEF7EDFC 		bl QBRAN
- 3334 1b92 A81B0000 		.word 1f 
- 3335 1b96 FFF7BFFE 		bl ABORQ
- 3336 1b9a 0D       		.byte 13
- 3337 1b9b 20777269 		.ascii " write error!"
- 3337      74652065 
- 3337      72726F72 
- 3337      21
- 3338              		.p2align 2
- 3339              	1:	 
- 3340 1ba8 52F804FB 		_UNNEST 
- 3341              	
- 3342              	
+ 3292 1b0c 42F804ED 		_NEST
+ 3293 1b10 FFF7EEFF 		bl	WAIT_BSY
+ 3294 1b14 FEF707FD 		_DOLIT 
+ 3295 1b18 01000000 		.word 1 
+ 3296 1b1c FFF7CEFF 		bl  UNLOCK 
+ 3297 1b20 5148     		ldr r0,flash_regs 	 
+ 3298 1b22 4FF00204 		mov r4,#2 // set PER bit 
+ 3299 1b26 0461     		str r4,[r0,#FLASH_CR]
+ 3300 1b28 4561     		str r5,[r0,#FLASH_AR] // page to erase address 
+ 3301 1b2a 0469     		ldr	r4,[r0, #FLASH_CR]	
+ 3302 1b2c 44F04004 		orr	R4,#0x40	//  set STRT bit   
+ 3303 1b30 0461     		str	r4,[r0, #FLASH_CR]	//  start erasing
+ 3304 1b32 FFF7DDFF 	 	bl	WAIT_BSY // wait until done
+ 3305 1b36 FEF7F6FC 		_DOLIT 
+ 3306 1b3a 00000000 		.word 0 
+ 3307 1b3e FFF7BDFF 		bl	UNLOCK  // lock flash write 
+ 3308 1b42 C568     		ldr r5,[r0,#FLASH_SR] // check for errors 
+ 3309 1b44 05F01405 		and r5,r5,#(5<<2)
+ 3310 1b48 FFF7E6FE 		bl ABORQ 
+ 3311 1b4c 0D       		.byte 13
+ 3312 1b4d 20657261 		.ascii " erase error!"
+ 3312      73652065 
+ 3312      72726F72 
+ 3312      21
+ 3313 1b5a 00BF     		.p2align 2
+ 3314 1b5c 52F804FB 		_UNNEST
+ 3315              	
+ 3316              	// store 16 bit word
+ 3317              	// expect flash unlocked  
+ 3318              	HWORD_WRITE: // ( hword address -- )
+ 3319 1b60 42F804ED 		_NEST
+ 3320 1b64 0469     		ldr	r4, [r0, #FLASH_CR]	//  FLASH_CR
+ 3321              	//	bic r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)|(1<<1) //  clear OPTWRE|OPTER|OPTPG|MER|PER
+ 3322 1b66 4FF00104 		mov r4,#1 // set PG 
+ 3323 1b6a 0461     		str r4,[r0,#FLASH_CR]
+ 3324 1b6c 2E46     		mov r6,r5 
+ 3325 1b6e 51F8045B 		_POP 
+ 3326 1b72 3580     		strh r5,[r6] 
+ 3327 1b74 FFF7BCFF 		bl WAIT_BSY 
+ 3328 1b78 C568     		ldr r5,[r0,#FLASH_SR]
+ 3329 1b7a 05F01405 		and r5,r5,#(5<<2) 
+ 3330 1b7e FEF7F5FC 		bl QBRAN
+ 3331 1b82 980F0018 		.word 1f+MAPOFFSET 
+ 3332 1b86 FFF7C7FE 		bl ABORQ
+ 3333 1b8a 0D       		.byte 13
+ 3334 1b8b 20777269 		.ascii " write error!"
+ 3334      74652065 
+ 3334      72726F72 
+ 3334      21
+ 3335              		.p2align 2
+ 3336              	1:	 
+ 3337 1b98 52F804FB 		_UNNEST 
+ 3338              	
+ 3339              	
+ 3340              	//    I!	   ( data address -- )
+ 3341              	// 	   Write one word into flash memory
+ 3342              	//	   address must even 
 ARM GAS  stm32eforth.s 			page 63
 
 
- 3343              	//    I!	   ( data address -- )
- 3344              	// 	   Write one word into flash memory
- 3345              	//	   address must even 
- 3346              	
- 3347 1bac 040F0018 		.word	_EPAGE+MAPOFFSET
- 3348 1bb0 02       	_ISTOR:	.byte  2
- 3349 1bb1 4921     		.ascii "I!"
- 3350 1bb3 00       		.p2align 2 	
- 3351              	
- 3352              	ISTOR:	//  data address --
- 3353 1bb4 42F804ED 		_NEST
- 3354 1bb8 FFF79CFF 		bl	WAIT_BSY
- 3355 1bbc FEF7B3FC 		_DOLIT 
- 3356 1bc0 01000000 		.word 1 
- 3357 1bc4 FFF77AFF 		bl  UNLOCK 
- 3358 1bc8 FEF744FE 		BL DDUP 
- 3359 1bcc FEF71CFD 		BL TOR 
- 3360 1bd0 FEF71AFD 		BL TOR 
- 3361 1bd4 FFF7CCFF 		BL HWORD_WRITE
- 3362 1bd8 FEF704FD 		BL RFROM 
- 3363 1bdc 4FEA3545 		ror r5,r5,#16
- 3364 1be0 FEF700FD 		BL RFROM 
- 3365 1be4 05F10205 		add r5,r5,#2 
- 3366 1be8 FFF7C2FF 		BL HWORD_WRITE 
- 3367 1bec FEF79BFC 		_DOLIT 
- 3368 1bf0 00000000 		.word 0
- 3369 1bf4 FFF762FF 		bl UNLOCK 
- 3370 1bf8 52F804FB 		_UNNEST
+ 3343              	
+ 3344 1b9c 000F0018 		.word	_EPAGE+MAPOFFSET
+ 3345 1ba0 02       	_ISTOR:	.byte  2
+ 3346 1ba1 4921     		.ascii "I!"
+ 3347 1ba3 00       		.p2align 2 	
+ 3348              	
+ 3349              	ISTOR:	//  data address --
+ 3350 1ba4 42F804ED 		_NEST
+ 3351 1ba8 FFF7A2FF 		bl	WAIT_BSY
+ 3352 1bac FEF7BBFC 		_DOLIT 
+ 3353 1bb0 01000000 		.word 1 
+ 3354 1bb4 FFF782FF 		bl  UNLOCK 
+ 3355 1bb8 FEF74CFE 		BL DDUP 
+ 3356 1bbc FEF724FD 		BL TOR 
+ 3357 1bc0 FEF722FD 		BL TOR 
+ 3358 1bc4 FFF7CCFF 		BL HWORD_WRITE
+ 3359 1bc8 FEF70CFD 		BL RFROM 
+ 3360 1bcc 4FEA3545 		ror r5,r5,#16
+ 3361 1bd0 FEF708FD 		BL RFROM 
+ 3362 1bd4 05F10205 		add r5,r5,#2 
+ 3363 1bd8 FFF7C2FF 		BL HWORD_WRITE 
+ 3364 1bdc FEF7A3FC 		_DOLIT 
+ 3365 1be0 00000000 		.word 0
+ 3366 1be4 FFF76AFF 		bl UNLOCK 
+ 3367 1be8 52F804FB 		_UNNEST
+ 3368              	
+ 3369              	//    TURNKEY	( -- )
+ 3370              	// 	Copy dictionary from RAM to flash.
  3371              	
- 3372              	//    TURNKEY	( -- )
- 3373              	// 	Copy dictionary from RAM to flash.
- 3374              	
- 3375 1bfc B00F0018 		.word	_ISTOR+MAPOFFSET
- 3376 1c00 07       	_TURN:	.byte   7
- 3377 1c01 5455524E 		.ascii "TURNKEY"
- 3377      4B4559
- 3378              		.p2align 2 
- 3379 1c08 42F804ED 	TURN:	_NEST
- 3380 1c0c FEF78BFC 		_DOLIT			//  save user area
- 3381 1c10 00000020 		.word	RAMOFFSET
- 3382 1c14 FEF787FC 		_DOLIT
- 3383 1c18 C0000000 		.word	0xC0			//  to boot array
- 3384 1c1c FEF783FC 		_DOLIT
- 3385 1c20 40000000 		.word	0x40
- 3386 1c24 FFF7C8F8 		BL	MOVE
- 3387 1c28 FEF77DFC 		_DOLIT
- 3388 1c2c 00000000 		.word	0
- 3389 1c30 FEF779FC 		_DOLIT
- 3390 1c34 000C0008 		.word	FLASHOFFSET
- 3391 1c38 FEF744FF 		BL	CPP
- 3392 1c3c FEF7BCFC 		BL	AT
- 3393 1c40 FEF7D2FD 		BL	CELLSL
- 3394 1c44 FEF7E0FC 		BL	TOR
- 3395              	TURN1:
- 3396 1c48 FEF70CFD 		BL	OVER
- 3397 1c4c FEF7B4FC 		BL	AT
- 3398 1c50 FEF708FD 		BL	OVER
+ 3372 1bec A00F0018 		.word	_ISTOR+MAPOFFSET
+ 3373 1bf0 07       	_TURN:	.byte   7
+ 3374 1bf1 5455524E 		.ascii "TURNKEY"
+ 3374      4B4559
+ 3375              		.p2align 2 
+ 3376 1bf8 42F804ED 	TURN:	_NEST
+ 3377 1bfc FEF793FC 		_DOLIT			//  save user area
+ 3378 1c00 00000020 		.word	RAMOFFSET
+ 3379 1c04 FEF78FFC 		_DOLIT
+ 3380 1c08 C0000000 		.word	0xC0			//  to boot array
+ 3381 1c0c FEF78BFC 		_DOLIT
+ 3382 1c10 40000000 		.word	0x40
+ 3383 1c14 FFF7D0F8 		BL	MOVE
+ 3384 1c18 FEF785FC 		_DOLIT
+ 3385 1c1c 00000000 		.word	0
+ 3386 1c20 FEF781FC 		_DOLIT
+ 3387 1c24 000C0008 		.word	FLASHOFFSET
+ 3388 1c28 FEF74CFF 		BL	CPP
+ 3389 1c2c FEF7C4FC 		BL	AT
+ 3390 1c30 FEF7DAFD 		BL	CELLSL
+ 3391 1c34 FEF7E8FC 		BL	TOR
+ 3392              	TURN1:
+ 3393 1c38 FEF714FD 		BL	OVER
+ 3394 1c3c FEF7BCFC 		BL	AT
+ 3395 1c40 FEF710FD 		BL	OVER
+ 3396 1c44 FFF7AEFF 		BL	ISTOR
+ 3397 1c48 FEF702FD 		BL	SWAP
+ 3398 1c4c FEF7AAFD 		BL	CELLP
 ARM GAS  stm32eforth.s 			page 64
 
 
- 3399 1c54 FFF7AEFF 		BL	ISTOR
- 3400 1c58 FEF7FAFC 		BL	SWAP
- 3401 1c5c FEF7A2FD 		BL	CELLP
- 3402 1c60 FEF7F6FC 		BL	SWAP
- 3403 1c64 FEF79EFD 		BL	CELLP
- 3404 1c68 FEF771FC 		BL	DONXT
- 3405 1c6c 48100018 		.word	TURN1+MAPOFFSET
- 3406 1c70 FEF7E6FD 		BL	DDROP
- 3407 1c74 52F804FB 		_UNNEST
- 3408              	
- 3409              	flash_regs:
- 3410 1c78 00200240 		.word FLASH_BASE_ADR // 0 
- 3411 1c7c 23016745 		.word FLASH_KEY1   // 4 
- 3412 1c80 AB89EFCD 		.word FLASH_KEY2   // 8
+ 3399 1c50 FEF7FEFC 		BL	SWAP
+ 3400 1c54 FEF7A6FD 		BL	CELLP
+ 3401 1c58 FEF779FC 		BL	DONXT
+ 3402 1c5c 38100018 		.word	TURN1+MAPOFFSET
+ 3403 1c60 FEF7EEFD 		BL	DDROP
+ 3404 1c64 52F804FB 		_UNNEST
+ 3405              	
+ 3406              	flash_regs:
+ 3407 1c68 00200240 		.word FLASH_BASE_ADR // 0 
+ 3408 1c6c 23016745 		.word FLASH_KEY1   // 4 
+ 3409 1c70 AB89EFCD 		.word FLASH_KEY2   // 8
+ 3410              	
+ 3411              	// **************************************************************************
+ 3412              	//  The compiler
  3413              	
- 3414              	// **************************************************************************
- 3415              	//  The compiler
+ 3414              	//    '	   ( -- ca )
+ 3415              	// 	Search context vocabularies for the next word in input stream.
  3416              	
- 3417              	//    '	   ( -- ca )
- 3418              	// 	Search context vocabularies for the next word in input stream.
- 3419              	
- 3420 1c84 00100018 		.word	_TURN+MAPOFFSET
- 3421 1c88 01       	_TICK:	.byte  1
- 3422 1c89 27       		.ascii "'"
- 3423 1c8a 00BF     		.p2align 2 	
- 3424              	TICK:
- 3425 1c8c 42F804ED 		_NEST
- 3426 1c90 FFF7AEFC 		BL	TOKEN
- 3427 1c94 FFF766FD 		BL	NAMEQ	// ?defined
- 3428 1c98 FEF768FC 		BL	QBRAN
- 3429 1c9c A4100018 		.word	TICK1+MAPOFFSET
- 3430 1ca0 52F804FB 		_UNNEST	// yes, push code address
- 3431 1ca4 FFF724BE 	TICK1:	B.W	ABORT	// no, error
+ 3417 1c74 F00F0018 		.word	_TURN+MAPOFFSET
+ 3418 1c78 01       	_TICK:	.byte  1
+ 3419 1c79 27       		.ascii "'"
+ 3420 1c7a 00BF     		.p2align 2 	
+ 3421              	TICK:
+ 3422 1c7c 42F804ED 		_NEST
+ 3423 1c80 FFF7B6FC 		BL	TOKEN
+ 3424 1c84 FFF76EFD 		BL	NAMEQ	// ?defined
+ 3425 1c88 FEF770FC 		BL	QBRAN
+ 3426 1c8c 94100018 		.word	TICK1+MAPOFFSET
+ 3427 1c90 52F804FB 		_UNNEST	// yes, push code address
+ 3428 1c94 FFF72CBE 	TICK1:	B.W	ABORT	// no, error
+ 3429              	
+ 3430              	//    ALLOT	( n -- )
+ 3431              	// 	Allocate n bytes to the ram area.
  3432              	
- 3433              	//    ALLOT	( n -- )
- 3434              	// 	Allocate n bytes to the ram area.
- 3435              	
- 3436 1ca8 88100018 		.word	_TICK+MAPOFFSET
- 3437 1cac 05       	_ALLOT:	.byte  5
- 3438 1cad 414C4C4F 		.ascii "ALLOT"
- 3438      54
- 3439 1cb2 00BF     		.p2align 2 	
- 3440              	ALLOT:
- 3441 1cb4 42F804ED 		_NEST
- 3442 1cb8 FEF704FF 		BL	CPP
- 3443 1cbc FEF74CFE 		BL	PSTOR
- 3444 1cc0 52F804FB 		_UNNEST			// adjust code pointer
+ 3433 1c98 78100018 		.word	_TICK+MAPOFFSET
+ 3434 1c9c 05       	_ALLOT:	.byte  5
+ 3435 1c9d 414C4C4F 		.ascii "ALLOT"
+ 3435      54
+ 3436 1ca2 00BF     		.p2align 2 	
+ 3437              	ALLOT:
+ 3438 1ca4 42F804ED 		_NEST
+ 3439 1ca8 FEF70CFF 		BL	CPP
+ 3440 1cac FEF754FE 		BL	PSTOR
+ 3441 1cb0 52F804FB 		_UNNEST			// adjust code pointer
+ 3442              	
+ 3443              	//    ,	   ( w -- )
+ 3444              	// 	Compile an integer into the code dictionary.
  3445              	
- 3446              	//    ,	   ( w -- )
- 3447              	// 	Compile an integer into the code dictionary.
- 3448              	
- 3449 1cc4 AC100018 		.word	_ALLOT+MAPOFFSET
- 3450 1cc8 012C     	_COMMA:	.byte  1,','
- 3451 1cca 00BF     		.p2align 2 	
- 3452              	COMMA:
- 3453 1ccc 42F804ED 		_NEST
- 3454 1cd0 FFF72AF8 		BL	HERE
+ 3446 1cb4 9C100018 		.word	_ALLOT+MAPOFFSET
+ 3447 1cb8 012C     	_COMMA:	.byte  1,','
+ 3448 1cba 00BF     		.p2align 2 	
+ 3449              	COMMA:
+ 3450 1cbc 42F804ED 		_NEST
+ 3451 1cc0 FFF732F8 		BL	HERE
+ 3452 1cc4 FEF7BCFC 		BL	DUPP
+ 3453 1cc8 FEF76CFD 		BL	CELLP	// cell boundary
+ 3454 1ccc FEF7FAFE 		BL	CPP
 ARM GAS  stm32eforth.s 			page 65
 
 
- 3455 1cd4 FEF7B4FC 		BL	DUPP
- 3456 1cd8 FEF764FD 		BL	CELLP	// cell boundary
- 3457 1cdc FEF7F2FE 		BL	CPP
- 3458 1ce0 FEF760FC 		BL	STORE
- 3459 1ce4 FEF75EFC 		BL	STORE
- 3460 1ce8 52F804FB 		_UNNEST	// adjust code pointer, compile
- 3461              		.p2align 2 
- 3462              	//    [COMPILE]   ( -- //  string> )
- 3463              	// 	Compile the next immediate word into code dictionary.
- 3464              	
- 3465 1cec C8100018 		.word	_COMMA+MAPOFFSET
- 3466 1cf0 89       	_BCOMP:	.byte  IMEDD+9
- 3467 1cf1 5B434F4D 		.ascii "[COMPILE]"
- 3467      50494C45 
- 3467      5D
- 3468 1cfa 00BF     		.p2align 2 	
- 3469              	BCOMP:
- 3470 1cfc 42F804ED 		_NEST
- 3471 1d00 FFF7C4FF 		BL	TICK
- 3472 1d04 FFF7E2FF 		BL	COMMA
- 3473 1d08 52F804FB 		_UNNEST
+ 3455 1cd0 FEF768FC 		BL	STORE
+ 3456 1cd4 FEF766FC 		BL	STORE
+ 3457 1cd8 52F804FB 		_UNNEST	// adjust code pointer, compile
+ 3458              		.p2align 2 
+ 3459              	//    [COMPILE]   ( -- //  string> )
+ 3460              	// 	Compile the next immediate word into code dictionary.
+ 3461              	
+ 3462 1cdc B8100018 		.word	_COMMA+MAPOFFSET
+ 3463 1ce0 89       	_BCOMP:	.byte  IMEDD+9
+ 3464 1ce1 5B434F4D 		.ascii "[COMPILE]"
+ 3464      50494C45 
+ 3464      5D
+ 3465 1cea 00BF     		.p2align 2 	
+ 3466              	BCOMP:
+ 3467 1cec 42F804ED 		_NEST
+ 3468 1cf0 FFF7C4FF 		BL	TICK
+ 3469 1cf4 FFF7E2FF 		BL	COMMA
+ 3470 1cf8 52F804FB 		_UNNEST
+ 3471              	
+ 3472              	//    COMPILE	( -- )
+ 3473              	// 	Compile the next address in colon list to code dictionary.
  3474              	
- 3475              	//    COMPILE	( -- )
- 3476              	// 	Compile the next address in colon list to code dictionary.
- 3477              	
- 3478 1d0c F0100018 		.word	_BCOMP+MAPOFFSET
- 3479 1d10 47       	_COMPI:	.byte  COMPO+7
- 3480 1d11 434F4D50 		.ascii "COMPILE"
- 3480      494C45
- 3481              		.p2align 2 	
- 3482              	COMPI:
- 3483 1d18 42F804ED 		_NEST
- 3484 1d1c FEF762FC 		BL	RFROM
- 3485 1d20 25F00105 		BIC	R5,R5,#1
- 3486 1d24 FEF78CFC 		BL	DUPP
- 3487 1d28 FEF746FC 		BL	AT
- 3488 1d2c 00F0DAF9 		BL	CALLC			// compile BL instruction
- 3489 1d30 FEF738FD 		BL	CELLP
- 3490 1d34 45F00105 		ORR	R5,R5,#1
- 3491 1d38 FEF766FC 		BL	TOR
- 3492 1d3c 52F804FB 		_UNNEST			// adjust return address
+ 3475 1cfc E0100018 		.word	_BCOMP+MAPOFFSET
+ 3476 1d00 47       	_COMPI:	.byte  COMPO+7
+ 3477 1d01 434F4D50 		.ascii "COMPILE"
+ 3477      494C45
+ 3478              		.p2align 2 	
+ 3479              	COMPI:
+ 3480 1d08 42F804ED 		_NEST
+ 3481 1d0c FEF76AFC 		BL	RFROM
+ 3482 1d10 25F00105 		BIC	R5,R5,#1
+ 3483 1d14 FEF794FC 		BL	DUPP
+ 3484 1d18 FEF74EFC 		BL	AT
+ 3485 1d1c 00F0DAF9 		BL	CALLC			// compile BL instruction
+ 3486 1d20 FEF740FD 		BL	CELLP
+ 3487 1d24 45F00105 		ORR	R5,R5,#1
+ 3488 1d28 FEF76EFC 		BL	TOR
+ 3489 1d2c 52F804FB 		_UNNEST			// adjust return address
+ 3490              	
+ 3491              	//    LITERAL	( w -- )
+ 3492              	// 	Compile tos to code dictionary as an integer literal.
  3493              	
- 3494              	//    LITERAL	( w -- )
- 3495              	// 	Compile tos to code dictionary as an integer literal.
- 3496              	
- 3497 1d40 10110018 		.word	_COMPI+MAPOFFSET
- 3498 1d44 87       	_LITER:	.byte  IMEDD+7
- 3499 1d45 4C495445 		.ascii "LITERAL"
- 3499      52414C
- 3500              		.p2align 2 	
- 3501              	LITER:
- 3502 1d4c 42F804ED 		_NEST
- 3503 1d50 FFF7E2FF 		BL	COMPI
- 3504 1d54 26F9FF17 		.word	DOLIT+MAPOFFSET
- 3505 1d58 FFF7B8FF 		BL	COMMA
- 3506 1d5c 52F804FB 		_UNNEST
+ 3494 1d30 00110018 		.word	_COMPI+MAPOFFSET
+ 3495 1d34 87       	_LITER:	.byte  IMEDD+7
+ 3496 1d35 4C495445 		.ascii "LITERAL"
+ 3496      52414C
+ 3497              		.p2align 2 	
+ 3498              	LITER:
+ 3499 1d3c 42F804ED 		_NEST
+ 3500 1d40 FFF7E2FF 		BL	COMPI
+ 3501 1d44 26F9FF17 		.word	DOLIT+MAPOFFSET
+ 3502 1d48 FFF7B8FF 		BL	COMMA
+ 3503 1d4c 52F804FB 		_UNNEST
+ 3504              	
+ 3505              	//    $,"	( -- )
+ 3506              	// 	Compile a literal string up to next " .
  3507              	
 ARM GAS  stm32eforth.s 			page 66
 
 
- 3508              	//    $,"	( -- )
- 3509              	// 	Compile a literal string up to next " .
- 3510              	
- 3511              	// 	.word	_LITER+MAPOFFSET
- 3512              	// _STRCQ	.byte  3
- 3513              	// 	.ascii "$$,"""
- 3514              	// 	.p2align 2 	
- 3515              	STRCQ:
- 3516 1d60 42F804ED 		_NEST
- 3517 1d64 FEF7DFFB 		_DOLIT
- 3518 1d68 FCFFFFFF 		.word	-4
- 3519 1d6c FEF7AAFE 		BL	CPP
- 3520 1d70 FEF7F2FD 		BL	PSTOR
- 3521 1d74 FEF7D7FB 		_DOLIT
- 3522 1d78 22000000 		.word	'\"'
- 3523 1d7c FFF726FC 		BL	WORDD			// move word to code dictionary
- 3524 1d80 FEF70EFE 		BL	COUNT
- 3525 1d84 FEF7C0FC 		BL	PLUS
- 3526 1d88 FEF776FF 		BL	ALGND			// calculate aligned end of string
- 3527 1d8c FEF79AFE 		BL	CPP
- 3528 1d90 FEF708FC 		BL	STORE
- 3529 1d94 52F804FB 		_UNNEST 			// adjust the code pointer
+ 3508              	// 	.word	_LITER+MAPOFFSET
+ 3509              	// _STRCQ	.byte  3
+ 3510              	// 	.ascii "$$,"""
+ 3511              	// 	.p2align 2 	
+ 3512              	STRCQ:
+ 3513 1d50 42F804ED 		_NEST
+ 3514 1d54 FEF7E7FB 		_DOLIT
+ 3515 1d58 FCFFFFFF 		.word	-4
+ 3516 1d5c FEF7B2FE 		BL	CPP
+ 3517 1d60 FEF7FAFD 		BL	PSTOR
+ 3518 1d64 FEF7DFFB 		_DOLIT
+ 3519 1d68 22000000 		.word	'\"'
+ 3520 1d6c FFF72EFC 		BL	WORDD			// move word to code dictionary
+ 3521 1d70 FEF716FE 		BL	COUNT
+ 3522 1d74 FEF7C8FC 		BL	PLUS
+ 3523 1d78 FEF77EFF 		BL	ALGND			// calculate aligned end of string
+ 3524 1d7c FEF7A2FE 		BL	CPP
+ 3525 1d80 FEF710FC 		BL	STORE
+ 3526 1d84 52F804FB 		_UNNEST 			// adjust the code pointer
+ 3527              	
+ 3528              	// **************************************************************************
+ 3529              	//  Structures
  3530              	
- 3531              	// **************************************************************************
- 3532              	//  Structures
+ 3531              	//    FOR	 ( -- a )
+ 3532              	// 	Start a FOR-NEXT loop structure in a colon definition.
  3533              	
- 3534              	//    FOR	 ( -- a )
- 3535              	// 	Start a FOR-NEXT loop structure in a colon definition.
- 3536              	
- 3537 1d98 44110018 		.word	_LITER+MAPOFFSET
- 3538 1d9c C3       	_FOR:	.byte  COMPO+IMEDD+3
- 3539 1d9d 464F52   		.ascii "FOR"
- 3540              		.p2align 2 	
- 3541              	FOR:
- 3542 1da0 42F804ED 		_NEST
- 3543 1da4 FFF7B8FF 		BL	COMPI
- 3544 1da8 08FAFF17 		.word	TOR+MAPOFFSET
- 3545 1dac FEF7BCFF 		BL	HERE
- 3546 1db0 52F804FB 		_UNNEST
+ 3534 1d88 34110018 		.word	_LITER+MAPOFFSET
+ 3535 1d8c C3       	_FOR:	.byte  COMPO+IMEDD+3
+ 3536 1d8d 464F52   		.ascii "FOR"
+ 3537              		.p2align 2 	
+ 3538              	FOR:
+ 3539 1d90 42F804ED 		_NEST
+ 3540 1d94 FFF7B8FF 		BL	COMPI
+ 3541 1d98 08FAFF17 		.word	TOR+MAPOFFSET
+ 3542 1d9c FEF7C4FF 		BL	HERE
+ 3543 1da0 52F804FB 		_UNNEST
+ 3544              	
+ 3545              	//    BEGIN	( -- a )
+ 3546              	// 	Start an infinite or indefinite loop structure.
  3547              	
- 3548              	//    BEGIN	( -- a )
- 3549              	// 	Start an infinite or indefinite loop structure.
- 3550              	
- 3551 1db4 9C110018 		.word	_FOR+MAPOFFSET
- 3552 1db8 C5       	_BEGIN:	.byte  COMPO+IMEDD+5
- 3553 1db9 42454749 		.ascii "BEGIN"
- 3553      4E
- 3554 1dbe 00BF     		.p2align 2 	
- 3555              	BEGIN:
- 3556 1dc0 42F804ED 		_NEST
- 3557 1dc4 FEF7B0FF 		BL	HERE
- 3558 1dc8 52F804FB 		_UNNEST
- 3559              		.p2align 2 
- 3560              	//    NEXT	( a -- )
- 3561              	// 	Terminate a FOR-NEXT loop structure.
- 3562              	
- 3563 1dcc B8110018 		.word	_BEGIN+MAPOFFSET
+ 3548 1da4 8C110018 		.word	_FOR+MAPOFFSET
+ 3549 1da8 C5       	_BEGIN:	.byte  COMPO+IMEDD+5
+ 3550 1da9 42454749 		.ascii "BEGIN"
+ 3550      4E
+ 3551 1dae 00BF     		.p2align 2 	
+ 3552              	BEGIN:
+ 3553 1db0 42F804ED 		_NEST
+ 3554 1db4 FEF7B8FF 		BL	HERE
+ 3555 1db8 52F804FB 		_UNNEST
+ 3556              		.p2align 2 
+ 3557              	//    NEXT	( a -- )
+ 3558              	// 	Terminate a FOR-NEXT loop structure.
+ 3559              	
+ 3560 1dbc A8110018 		.word	_BEGIN+MAPOFFSET
+ 3561 1dc0 C4       	_NEXT:	.byte  COMPO+IMEDD+4
+ 3562 1dc1 4E455854 		.ascii "NEXT"
+ 3563 1dc5 0000BF   		.p2align 2 	
 ARM GAS  stm32eforth.s 			page 67
 
 
- 3564 1dd0 C4       	_NEXT:	.byte  COMPO+IMEDD+4
- 3565 1dd1 4E455854 		.ascii "NEXT"
- 3566 1dd5 0000BF   		.p2align 2 	
- 3567              	NEXT:
- 3568 1dd8 42F804ED 		_NEST
- 3569 1ddc FFF79CFF 		BL	COMPI
- 3570 1de0 4EF9FF17 		.word	DONXT+MAPOFFSET
- 3571 1de4 FFF772FF 		BL	COMMA
- 3572 1de8 52F804FB 		_UNNEST
+ 3564              	NEXT:
+ 3565 1dc8 42F804ED 		_NEST
+ 3566 1dcc FFF79CFF 		BL	COMPI
+ 3567 1dd0 4EF9FF17 		.word	DONXT+MAPOFFSET
+ 3568 1dd4 FFF772FF 		BL	COMMA
+ 3569 1dd8 52F804FB 		_UNNEST
+ 3570              	
+ 3571              	//    UNTIL	( a -- )
+ 3572              	// 	Terminate a BEGIN-UNTIL indefinite loop structure.
  3573              	
- 3574              	//    UNTIL	( a -- )
- 3575              	// 	Terminate a BEGIN-UNTIL indefinite loop structure.
- 3576              	
- 3577 1dec D0110018 		.word	_NEXT+MAPOFFSET
- 3578 1df0 C5       	_UNTIL:	.byte  COMPO+IMEDD+5
- 3579 1df1 554E5449 		.ascii "UNTIL"
- 3579      4C
- 3580 1df6 00BF     		.p2align 2 	
- 3581              	UNTIL:
- 3582 1df8 42F804ED 		_NEST
- 3583 1dfc FFF78CFF 		BL	COMPI
- 3584 1e00 6CF9FF17 		.word	QBRAN+MAPOFFSET
- 3585 1e04 FFF762FF 		BL	COMMA
- 3586 1e08 52F804FB 		_UNNEST
+ 3574 1ddc C0110018 		.word	_NEXT+MAPOFFSET
+ 3575 1de0 C5       	_UNTIL:	.byte  COMPO+IMEDD+5
+ 3576 1de1 554E5449 		.ascii "UNTIL"
+ 3576      4C
+ 3577 1de6 00BF     		.p2align 2 	
+ 3578              	UNTIL:
+ 3579 1de8 42F804ED 		_NEST
+ 3580 1dec FFF78CFF 		BL	COMPI
+ 3581 1df0 6CF9FF17 		.word	QBRAN+MAPOFFSET
+ 3582 1df4 FFF762FF 		BL	COMMA
+ 3583 1df8 52F804FB 		_UNNEST
+ 3584              	
+ 3585              	//    AGAIN	( a -- )
+ 3586              	// 	Terminate a BEGIN-AGAIN infinite loop structure.
  3587              	
- 3588              	//    AGAIN	( a -- )
- 3589              	// 	Terminate a BEGIN-AGAIN infinite loop structure.
- 3590              	
- 3591 1e0c F0110018 		.word	_UNTIL+MAPOFFSET
- 3592 1e10 C5       	_AGAIN:	.byte  COMPO+IMEDD+5
- 3593 1e11 41474149 		.ascii "AGAIN"
- 3593      4E
- 3594 1e16 00BF     		.p2align 2 	
- 3595              	AGAIN:
- 3596 1e18 42F804ED 		_NEST
- 3597 1e1c FFF77CFF 		BL	COMPI
- 3598 1e20 84F9FF17 		.word	BRAN+MAPOFFSET
- 3599 1e24 FFF752FF 		BL	COMMA
- 3600 1e28 52F804FB 		_UNNEST
+ 3588 1dfc E0110018 		.word	_UNTIL+MAPOFFSET
+ 3589 1e00 C5       	_AGAIN:	.byte  COMPO+IMEDD+5
+ 3590 1e01 41474149 		.ascii "AGAIN"
+ 3590      4E
+ 3591 1e06 00BF     		.p2align 2 	
+ 3592              	AGAIN:
+ 3593 1e08 42F804ED 		_NEST
+ 3594 1e0c FFF77CFF 		BL	COMPI
+ 3595 1e10 84F9FF17 		.word	BRAN+MAPOFFSET
+ 3596 1e14 FFF752FF 		BL	COMMA
+ 3597 1e18 52F804FB 		_UNNEST
+ 3598              	
+ 3599              	//    IF	  ( -- A )
+ 3600              	// 	Begin a conditional branch structure.
  3601              	
- 3602              	//    IF	  ( -- A )
- 3603              	// 	Begin a conditional branch structure.
- 3604              	
- 3605 1e2c 10120018 		.word	_AGAIN+MAPOFFSET
- 3606 1e30 C2       	_IFF:	.byte  COMPO+IMEDD+2
- 3607 1e31 4946     		.ascii "IF"
- 3608 1e33 00       		.p2align 2 	
- 3609              	IFF:
- 3610 1e34 42F804ED 		_NEST
- 3611 1e38 FFF76EFF 		BL	COMPI
- 3612 1e3c 6CF9FF17 		.word	QBRAN+MAPOFFSET
- 3613 1e40 FEF772FF 		BL	HERE
- 3614 1e44 FEF76FFB 		_DOLIT
- 3615 1e48 04000000 		.word	4
- 3616 1e4c FEF73AFE 		BL	CPP
- 3617 1e50 FEF782FD 		BL	PSTOR
- 3618 1e54 52F804FB 		_UNNEST
+ 3602 1e1c 00120018 		.word	_AGAIN+MAPOFFSET
+ 3603 1e20 C2       	_IFF:	.byte  COMPO+IMEDD+2
+ 3604 1e21 4946     		.ascii "IF"
+ 3605 1e23 00       		.p2align 2 	
+ 3606              	IFF:
+ 3607 1e24 42F804ED 		_NEST
+ 3608 1e28 FFF76EFF 		BL	COMPI
+ 3609 1e2c 6CF9FF17 		.word	QBRAN+MAPOFFSET
+ 3610 1e30 FEF77AFF 		BL	HERE
+ 3611 1e34 FEF777FB 		_DOLIT
+ 3612 1e38 04000000 		.word	4
+ 3613 1e3c FEF742FE 		BL	CPP
+ 3614 1e40 FEF78AFD 		BL	PSTOR
+ 3615 1e44 52F804FB 		_UNNEST
+ 3616              	
+ 3617              	//    AHEAD	( -- A )
+ 3618              	// 	Compile a forward branch instruction.
 ARM GAS  stm32eforth.s 			page 68
 
 
  3619              	
- 3620              	//    AHEAD	( -- A )
- 3621              	// 	Compile a forward branch instruction.
- 3622              	
- 3623 1e58 30120018 		.word	_IFF+MAPOFFSET
- 3624 1e5c C5       	_AHEAD:	.byte  COMPO+IMEDD+5
- 3625 1e5d 41484541 		.ascii "AHEAD"
- 3625      44
- 3626 1e62 00BF     		.p2align 2 	
- 3627              	AHEAD:
- 3628 1e64 42F804ED 		_NEST
- 3629 1e68 FFF756FF 		BL	COMPI
- 3630 1e6c 84F9FF17 		.word	BRAN+MAPOFFSET
- 3631 1e70 FEF75AFF 		BL	HERE
- 3632 1e74 FEF757FB 		_DOLIT
- 3633 1e78 04000000 		.word	4
- 3634 1e7c FEF722FE 		BL	CPP
- 3635 1e80 FEF76AFD 		BL	PSTOR
- 3636 1e84 52F804FB 		_UNNEST
+ 3620 1e48 20120018 		.word	_IFF+MAPOFFSET
+ 3621 1e4c C5       	_AHEAD:	.byte  COMPO+IMEDD+5
+ 3622 1e4d 41484541 		.ascii "AHEAD"
+ 3622      44
+ 3623 1e52 00BF     		.p2align 2 	
+ 3624              	AHEAD:
+ 3625 1e54 42F804ED 		_NEST
+ 3626 1e58 FFF756FF 		BL	COMPI
+ 3627 1e5c 84F9FF17 		.word	BRAN+MAPOFFSET
+ 3628 1e60 FEF762FF 		BL	HERE
+ 3629 1e64 FEF75FFB 		_DOLIT
+ 3630 1e68 04000000 		.word	4
+ 3631 1e6c FEF72AFE 		BL	CPP
+ 3632 1e70 FEF772FD 		BL	PSTOR
+ 3633 1e74 52F804FB 		_UNNEST
+ 3634              	
+ 3635              	//    REPEAT	( A a -- )
+ 3636              	// 	Terminate a BEGIN-WHILE-REPEAT indefinite loop.
  3637              	
- 3638              	//    REPEAT	( A a -- )
- 3639              	// 	Terminate a BEGIN-WHILE-REPEAT indefinite loop.
- 3640              	
- 3641 1e88 5C120018 		.word	_AHEAD+MAPOFFSET
- 3642 1e8c C6       	_REPEA:	.byte  COMPO+IMEDD+6
- 3643 1e8d 52455045 		.ascii "REPEAT"
- 3643      4154
- 3644 1e93 00       		.p2align 2 	
- 3645              	REPEA:
- 3646 1e94 42F804ED 		_NEST
- 3647 1e98 FFF7BEFF 		BL	AGAIN
- 3648 1e9c FEF744FF 		BL	HERE
- 3649 1ea0 FEF7D6FB 		BL	SWAP
- 3650 1ea4 FEF77EFB 		BL	STORE
- 3651 1ea8 52F804FB 		_UNNEST
+ 3638 1e78 4C120018 		.word	_AHEAD+MAPOFFSET
+ 3639 1e7c C6       	_REPEA:	.byte  COMPO+IMEDD+6
+ 3640 1e7d 52455045 		.ascii "REPEAT"
+ 3640      4154
+ 3641 1e83 00       		.p2align 2 	
+ 3642              	REPEA:
+ 3643 1e84 42F804ED 		_NEST
+ 3644 1e88 FFF7BEFF 		BL	AGAIN
+ 3645 1e8c FEF74CFF 		BL	HERE
+ 3646 1e90 FEF7DEFB 		BL	SWAP
+ 3647 1e94 FEF786FB 		BL	STORE
+ 3648 1e98 52F804FB 		_UNNEST
+ 3649              	
+ 3650              	//    THEN	( A -- )
+ 3651              	// 	Terminate a conditional branch structure.
  3652              	
- 3653              	//    THEN	( A -- )
- 3654              	// 	Terminate a conditional branch structure.
- 3655              	
- 3656 1eac 8C120018 		.word	_REPEA+MAPOFFSET
- 3657 1eb0 C4       	_THENN:	.byte  COMPO+IMEDD+4
- 3658 1eb1 5448454E 		.ascii "THEN"
- 3659 1eb5 0000BF   		.p2align 2 	
- 3660              	THENN:
- 3661 1eb8 42F804ED 		_NEST
- 3662 1ebc FEF734FF 		BL	HERE
- 3663 1ec0 FEF7C6FB 		BL	SWAP
- 3664 1ec4 FEF76EFB 		BL	STORE
- 3665 1ec8 52F804FB 		_UNNEST
+ 3653 1e9c 7C120018 		.word	_REPEA+MAPOFFSET
+ 3654 1ea0 C4       	_THENN:	.byte  COMPO+IMEDD+4
+ 3655 1ea1 5448454E 		.ascii "THEN"
+ 3656 1ea5 0000BF   		.p2align 2 	
+ 3657              	THENN:
+ 3658 1ea8 42F804ED 		_NEST
+ 3659 1eac FEF73CFF 		BL	HERE
+ 3660 1eb0 FEF7CEFB 		BL	SWAP
+ 3661 1eb4 FEF776FB 		BL	STORE
+ 3662 1eb8 52F804FB 		_UNNEST
+ 3663              	
+ 3664              	//    AFT	 ( a -- a A )
+ 3665              	// 	Jump to THEN in a FOR-AFT-THEN-NEXT loop the first time through.
  3666              	
- 3667              	//    AFT	 ( a -- a A )
- 3668              	// 	Jump to THEN in a FOR-AFT-THEN-NEXT loop the first time through.
- 3669              	
- 3670 1ecc B0120018 		.word	_THENN+MAPOFFSET
- 3671 1ed0 C3       	_AFT:	.byte  COMPO+IMEDD+3
- 3672 1ed1 414654   		.ascii "AFT"
- 3673              		.p2align 2 	
+ 3667 1ebc A0120018 		.word	_THENN+MAPOFFSET
+ 3668 1ec0 C3       	_AFT:	.byte  COMPO+IMEDD+3
+ 3669 1ec1 414654   		.ascii "AFT"
+ 3670              		.p2align 2 	
+ 3671              	AFT:
+ 3672 1ec4 42F804ED 		_NEST
+ 3673 1ec8 FEF7B2FB 		BL	DROP
 ARM GAS  stm32eforth.s 			page 69
 
 
- 3674              	AFT:
- 3675 1ed4 42F804ED 		_NEST
- 3676 1ed8 FEF7AAFB 		BL	DROP
- 3677 1edc FFF7C2FF 		BL	AHEAD
- 3678 1ee0 FFF76EFF 		BL	BEGIN
- 3679 1ee4 FEF7B4FB 		BL	SWAP
- 3680 1ee8 52F804FB 		_UNNEST
+ 3674 1ecc FFF7C2FF 		BL	AHEAD
+ 3675 1ed0 FFF76EFF 		BL	BEGIN
+ 3676 1ed4 FEF7BCFB 		BL	SWAP
+ 3677 1ed8 52F804FB 		_UNNEST
+ 3678              	
+ 3679              	//    ELSE	( A -- A )
+ 3680              	// 	Start the false clause in an IF-ELSE-THEN structure.
  3681              	
- 3682              	//    ELSE	( A -- A )
- 3683              	// 	Start the false clause in an IF-ELSE-THEN structure.
- 3684              	
- 3685 1eec D0120018 		.word	_AFT+MAPOFFSET
- 3686 1ef0 C4       	_ELSEE:	.byte  COMPO+IMEDD+4
- 3687 1ef1 454C5345 		.ascii "ELSE"
- 3688 1ef5 0000BF   		.p2align 2 	
- 3689              	ELSEE:
- 3690 1ef8 42F804ED 		_NEST
- 3691 1efc FFF7B2FF 		BL	AHEAD
- 3692 1f00 FEF7A6FB 		BL	SWAP
- 3693 1f04 FFF7D8FF 		BL	THENN
- 3694 1f08 52F804FB 		_UNNEST
+ 3682 1edc C0120018 		.word	_AFT+MAPOFFSET
+ 3683 1ee0 C4       	_ELSEE:	.byte  COMPO+IMEDD+4
+ 3684 1ee1 454C5345 		.ascii "ELSE"
+ 3685 1ee5 0000BF   		.p2align 2 	
+ 3686              	ELSEE:
+ 3687 1ee8 42F804ED 		_NEST
+ 3688 1eec FFF7B2FF 		BL	AHEAD
+ 3689 1ef0 FEF7AEFB 		BL	SWAP
+ 3690 1ef4 FFF7D8FF 		BL	THENN
+ 3691 1ef8 52F804FB 		_UNNEST
+ 3692              	
+ 3693              	//    WHILE	( a -- A a )
+ 3694              	// 	Conditional branch out of a BEGIN-WHILE-REPEAT loop.
  3695              	
- 3696              	//    WHILE	( a -- A a )
- 3697              	// 	Conditional branch out of a BEGIN-WHILE-REPEAT loop.
- 3698              	
- 3699 1f0c F0120018 		.word	_ELSEE+MAPOFFSET
- 3700 1f10 C5       	_WHILE:	.byte  COMPO+IMEDD+5
- 3701 1f11 5748494C 		.ascii "WHILE"
- 3701      45
- 3702 1f16 00BF     		.p2align 2 	
- 3703              	WHILE:
- 3704 1f18 42F804ED 		_NEST
- 3705 1f1c FFF78AFF 		BL	IFF
- 3706 1f20 FEF796FB 		BL	SWAP
- 3707 1f24 52F804FB 		_UNNEST
+ 3696 1efc E0120018 		.word	_ELSEE+MAPOFFSET
+ 3697 1f00 C5       	_WHILE:	.byte  COMPO+IMEDD+5
+ 3698 1f01 5748494C 		.ascii "WHILE"
+ 3698      45
+ 3699 1f06 00BF     		.p2align 2 	
+ 3700              	WHILE:
+ 3701 1f08 42F804ED 		_NEST
+ 3702 1f0c FFF78AFF 		BL	IFF
+ 3703 1f10 FEF79EFB 		BL	SWAP
+ 3704 1f14 52F804FB 		_UNNEST
+ 3705              	
+ 3706              	//    ABORT"	( -- //  string> )
+ 3707              	// 	Conditional abort with an error message.
  3708              	
- 3709              	//    ABORT"	( -- //  string> )
- 3710              	// 	Conditional abort with an error message.
- 3711              	
- 3712 1f28 10130018 		.word	_WHILE+MAPOFFSET
- 3713 1f2c 86       	_ABRTQ:	.byte  IMEDD+6
- 3714 1f2d 41424F52 		.ascii "ABORT\""
- 3714      5422
- 3715 1f33 00       		.p2align 2 	
- 3716              	ABRTQ:
- 3717 1f34 42F804ED 		_NEST
- 3718 1f38 FFF7EEFE 		BL	COMPI
- 3719 1f3c 180D0018 		.word	ABORQ+MAPOFFSET
- 3720 1f40 FFF70EFF 		BL	STRCQ
- 3721 1f44 52F804FB 		_UNNEST
+ 3709 1f18 00130018 		.word	_WHILE+MAPOFFSET
+ 3710 1f1c 86       	_ABRTQ:	.byte  IMEDD+6
+ 3711 1f1d 41424F52 		.ascii "ABORT\""
+ 3711      5422
+ 3712 1f23 00       		.p2align 2 	
+ 3713              	ABRTQ:
+ 3714 1f24 42F804ED 		_NEST
+ 3715 1f28 FFF7EEFE 		BL	COMPI
+ 3716 1f2c 180D0018 		.word	ABORQ+MAPOFFSET
+ 3717 1f30 FFF70EFF 		BL	STRCQ
+ 3718 1f34 52F804FB 		_UNNEST
+ 3719              	
+ 3720              	//    $"	( -- //  string> )
+ 3721              	// 	Compile an inlineDCB literal.
  3722              	
- 3723              	//    $"	( -- //  string> )
- 3724              	// 	Compile an inlineDCB literal.
- 3725              	
- 3726 1f48 2C130018 		.word	_ABRTQ+MAPOFFSET
- 3727 1f4c 82       	_STRQ:	.byte  IMEDD+2
- 3728 1f4d 2422     		.byte	'$','"'
+ 3723 1f38 1C130018 		.word	_ABRTQ+MAPOFFSET
+ 3724 1f3c 82       	_STRQ:	.byte  IMEDD+2
+ 3725 1f3d 2422     		.byte	'$','"'
+ 3726 1f3f 00       		.p2align 2 	
+ 3727              	STRQ:
+ 3728 1f40 42F804ED 		_NEST
 ARM GAS  stm32eforth.s 			page 70
 
 
- 3729 1f4f 00       		.p2align 2 	
- 3730              	STRQ:
- 3731 1f50 42F804ED 		_NEST
- 3732 1f54 FFF7E0FE 		BL	COMPI
- 3733 1f58 CC060018 		.word	STRQP+MAPOFFSET
- 3734 1f5c FFF700FF 		BL	STRCQ
- 3735 1f60 52F804FB 		_UNNEST
+ 3729 1f44 FFF7E0FE 		BL	COMPI
+ 3730 1f48 CC060018 		.word	STRQP+MAPOFFSET
+ 3731 1f4c FFF700FF 		BL	STRCQ
+ 3732 1f50 52F804FB 		_UNNEST
+ 3733              	
+ 3734              	//    ."	( -- //  string> )
+ 3735              	// 	Compile an inline word  literal to be typed out at run time.
  3736              	
- 3737              	//    ."	( -- //  string> )
- 3738              	// 	Compile an inline word  literal to be typed out at run time.
- 3739              	
- 3740 1f64 4C130018 		.word	_STRQ+MAPOFFSET
- 3741 1f68 C2       	_DOTQ:	.byte  IMEDD+COMPO+2
- 3742 1f69 2E22     		.byte	'.','"'
- 3743 1f6b 00       		.p2align 2 	
- 3744              	DOTQ:
- 3745 1f6c 42F804ED 		_NEST
- 3746 1f70 FFF7D2FE 		BL	COMPI
- 3747 1f74 E8060018 		.word	DOTQP+MAPOFFSET
- 3748 1f78 FFF7F2FE 		BL	STRCQ
- 3749 1f7c 52F804FB 		_UNNEST
+ 3737 1f54 3C130018 		.word	_STRQ+MAPOFFSET
+ 3738 1f58 C2       	_DOTQ:	.byte  IMEDD+COMPO+2
+ 3739 1f59 2E22     		.byte	'.','"'
+ 3740 1f5b 00       		.p2align 2 	
+ 3741              	DOTQ:
+ 3742 1f5c 42F804ED 		_NEST
+ 3743 1f60 FFF7D2FE 		BL	COMPI
+ 3744 1f64 E8060018 		.word	DOTQP+MAPOFFSET
+ 3745 1f68 FFF7F2FE 		BL	STRCQ
+ 3746 1f6c 52F804FB 		_UNNEST
+ 3747              	
+ 3748              	// **************************************************************************
+ 3749              	//  Name compiler
  3750              	
- 3751              	// **************************************************************************
- 3752              	//  Name compiler
+ 3751              	//    ?UNIQUE	( a -- a )
+ 3752              	// 	Display a warning message if the word already exists.
  3753              	
- 3754              	//    ?UNIQUE	( a -- a )
- 3755              	// 	Display a warning message if the word already exists.
- 3756              	
- 3757 1f80 68130018 		.word	_DOTQ+MAPOFFSET
- 3758 1f84 07       	_UNIQU:	.byte  7
- 3759 1f85 3F554E49 		.ascii "?UNIQUE"
- 3759      515545
- 3760              		.p2align 2 	
- 3761              	UNIQU:
- 3762 1f8c 42F804ED 		_NEST
- 3763 1f90 FEF756FB 		BL	DUPP
- 3764 1f94 FFF7E6FB 		BL	NAMEQ			// ?name exists
- 3765 1f98 FEF7E8FA 		BL	QBRAN
- 3766 1f9c B8130018 		.word	UNIQ1+MAPOFFSET	// redefinitions are OK
- 3767 1fa0 FFF7A2F9 		BL	DOTQP
- 3768 1fa4 07       		.byte	7
- 3769 1fa5 20726544 		.ascii " reDef "		// but warn the user
- 3769      656620
- 3770              		.p2align 2 	
- 3771 1fac FEF75AFB 		BL	OVER
- 3772 1fb0 FEF7F6FC 		BL	COUNT
- 3773 1fb4 FFF748F9 		BL	TYPEE			// just in case its not planned
- 3774              	UNIQ1:
- 3775 1fb8 FEF73AFB 		BL	DROP
- 3776 1fbc 52F804FB 		_UNNEST
+ 3754 1f70 58130018 		.word	_DOTQ+MAPOFFSET
+ 3755 1f74 07       	_UNIQU:	.byte  7
+ 3756 1f75 3F554E49 		.ascii "?UNIQUE"
+ 3756      515545
+ 3757              		.p2align 2 	
+ 3758              	UNIQU:
+ 3759 1f7c 42F804ED 		_NEST
+ 3760 1f80 FEF75EFB 		BL	DUPP
+ 3761 1f84 FFF7EEFB 		BL	NAMEQ			// ?name exists
+ 3762 1f88 FEF7F0FA 		BL	QBRAN
+ 3763 1f8c A8130018 		.word	UNIQ1+MAPOFFSET	// redefinitions are OK
+ 3764 1f90 FFF7AAF9 		BL	DOTQP
+ 3765 1f94 07       		.byte	7
+ 3766 1f95 20726544 		.ascii " reDef "		// but warn the user
+ 3766      656620
+ 3767              		.p2align 2 	
+ 3768 1f9c FEF762FB 		BL	OVER
+ 3769 1fa0 FEF7FEFC 		BL	COUNT
+ 3770 1fa4 FFF750F9 		BL	TYPEE			// just in case its not planned
+ 3771              	UNIQ1:
+ 3772 1fa8 FEF742FB 		BL	DROP
+ 3773 1fac 52F804FB 		_UNNEST
+ 3774              	
+ 3775              	//    $,n	 ( na -- )
+ 3776              	// 	Build a new dictionary name using the data at na.
  3777              	
- 3778              	//    $,n	 ( na -- )
- 3779              	// 	Build a new dictionary name using the data at na.
- 3780              	
- 3781              	// 	.word	_UNIQU+MAPOFFSET
- 3782              	// _SNAME	.byte  3
- 3783              	// 	.ascii "$$,n"
+ 3778              	// 	.word	_UNIQU+MAPOFFSET
+ 3779              	// _SNAME	.byte  3
+ 3780              	// 	.ascii "$$,n"
+ 3781              	// 	.p2align 2 	
+ 3782              	SNAME:
+ 3783 1fb0 42F804ED 		_NEST
 ARM GAS  stm32eforth.s 			page 71
 
 
- 3784              	// 	.p2align 2 	
- 3785              	SNAME:
- 3786 1fc0 42F804ED 		_NEST
- 3787 1fc4 FEF73CFB 		BL	DUPP			//  na na
- 3788 1fc8 FEF706FB 		BL	CAT			//  ?null input
- 3789 1fcc FEF7CEFA 		BL	QBRAN
- 3790 1fd0 08140018 		.word	SNAM1+MAPOFFSET
- 3791 1fd4 FFF7DAFF 		BL	UNIQU			//  na
- 3792 1fd8 FEF788FD 		BL	LAST			//  na last
- 3793 1fdc FEF7ECFA 		BL	AT			//  na la
- 3794 1fe0 FFF774FE 		BL	COMMA			//  na
- 3795 1fe4 FEF72CFB 		BL	DUPP			//  na na
- 3796 1fe8 FEF780FD 		BL	LAST			//  na na last
- 3797 1fec FEF7DAFA 		BL	STORE			//  na , save na for vocabulary link
- 3798 1ff0 FEF7D6FC 		BL	COUNT			//  na+1 count
- 3799 1ff4 FEF788FB 		BL	PLUS			//  na+1+count
- 3800 1ff8 FEF73EFE 		BL	ALGND			//  word boundary
- 3801 1ffc FEF762FD 		BL	CPP
- 3802 2000 FEF7D0FA 		BL	STORE			//  top of dictionary now
- 3803 2004 52F804FB 		_UNNEST
- 3804              	SNAM1:
- 3805 2008 FFF760F9 		BL	STRQP
- 3806 200c 07       		.byte	7
- 3807 200d 206E616D 		.ascii " name? "
- 3807      653F20
- 3808 2014 FFF76CBC 		B.W	ABORT
+ 3784 1fb4 FEF744FB 		BL	DUPP			//  na na
+ 3785 1fb8 FEF70EFB 		BL	CAT			//  ?null input
+ 3786 1fbc FEF7D6FA 		BL	QBRAN
+ 3787 1fc0 F8130018 		.word	SNAM1+MAPOFFSET
+ 3788 1fc4 FFF7DAFF 		BL	UNIQU			//  na
+ 3789 1fc8 FEF790FD 		BL	LAST			//  na last
+ 3790 1fcc FEF7F4FA 		BL	AT			//  na la
+ 3791 1fd0 FFF774FE 		BL	COMMA			//  na
+ 3792 1fd4 FEF734FB 		BL	DUPP			//  na na
+ 3793 1fd8 FEF788FD 		BL	LAST			//  na na last
+ 3794 1fdc FEF7E2FA 		BL	STORE			//  na , save na for vocabulary link
+ 3795 1fe0 FEF7DEFC 		BL	COUNT			//  na+1 count
+ 3796 1fe4 FEF790FB 		BL	PLUS			//  na+1+count
+ 3797 1fe8 FEF746FE 		BL	ALGND			//  word boundary
+ 3798 1fec FEF76AFD 		BL	CPP
+ 3799 1ff0 FEF7D8FA 		BL	STORE			//  top of dictionary now
+ 3800 1ff4 52F804FB 		_UNNEST
+ 3801              	SNAM1:
+ 3802 1ff8 FFF768F9 		BL	STRQP
+ 3803 1ffc 07       		.byte	7
+ 3804 1ffd 206E616D 		.ascii " name? "
+ 3804      653F20
+ 3805 2004 FFF774BC 		B.W	ABORT
+ 3806              	
+ 3807              	//    $COMPILE	( a -- )
+ 3808              	// 	Compile next word to code dictionary as a token or literal.
  3809              	
- 3810              	//    $COMPILE	( a -- )
- 3811              	// 	Compile next word to code dictionary as a token or literal.
- 3812              	
- 3813 2018 84130018 		.word	_UNIQU+MAPOFFSET
- 3814 201c 08       	_SCOMP:	.byte  8
- 3815 201d 2424434F 		.ascii "$$COMPILE"
- 3815      4D50494C 
- 3815      45
- 3816 2026 00BF     		.p2align 2 	
- 3817              	SCOMP:
- 3818 2028 42F804ED 		_NEST
- 3819 202c FFF79AFB 		BL	NAMEQ
- 3820 2030 FEF7F2FB 		BL	QDUP	// defined?
- 3821 2034 FEF79AFA 		BL	QBRAN
- 3822 2038 64140018 		.word	SCOM2+MAPOFFSET
- 3823 203c FEF7BCFA 		BL	AT
- 3824 2040 FEF771FA 		_DOLIT
- 3825 2044 80000000 		.word	IMEDD
- 3826 2048 FEF71EFB 		BL	ANDD	// immediate?
- 3827 204c FEF78EFA 		BL	QBRAN
- 3828 2050 5C140018 		.word	SCOM1+MAPOFFSET
- 3829 2054 FEF776FA 		BL	EXECU
- 3830 2058 52F804FB 		_UNNEST			// it's immediate, execute
- 3831              	SCOM1:
- 3832 205c 00F042F8 		BL	CALLC			// it's not immediate, compile
- 3833 2060 52F804FB 		_UNNEST	
- 3834              	SCOM2:
- 3835 2064 FFF710F8 		BL	NUMBQ
- 3836 2068 FEF780FA 		BL	QBRAN
- 3837 206c 78140018 		.word	SCOM3+MAPOFFSET
+ 3810 2008 74130018 		.word	_UNIQU+MAPOFFSET
+ 3811 200c 08       	_SCOMP:	.byte  8
+ 3812 200d 2424434F 		.ascii "$$COMPILE"
+ 3812      4D50494C 
+ 3812      45
+ 3813 2016 00BF     		.p2align 2 	
+ 3814              	SCOMP:
+ 3815 2018 42F804ED 		_NEST
+ 3816 201c FFF7A2FB 		BL	NAMEQ
+ 3817 2020 FEF7FAFB 		BL	QDUP	// defined?
+ 3818 2024 FEF7A2FA 		BL	QBRAN
+ 3819 2028 54140018 		.word	SCOM2+MAPOFFSET
+ 3820 202c FEF7C4FA 		BL	AT
+ 3821 2030 FEF779FA 		_DOLIT
+ 3822 2034 80000000 		.word	IMEDD
+ 3823 2038 FEF726FB 		BL	ANDD	// immediate?
+ 3824 203c FEF796FA 		BL	QBRAN
+ 3825 2040 4C140018 		.word	SCOM1+MAPOFFSET
+ 3826 2044 FEF77EFA 		BL	EXECU
+ 3827 2048 52F804FB 		_UNNEST			// it's immediate, execute
+ 3828              	SCOM1:
+ 3829 204c 00F042F8 		BL	CALLC			// it's not immediate, compile
+ 3830 2050 52F804FB 		_UNNEST	
+ 3831              	SCOM2:
+ 3832 2054 FFF718F8 		BL	NUMBQ
+ 3833 2058 FEF788FA 		BL	QBRAN
+ 3834 205c 68140018 		.word	SCOM3+MAPOFFSET
+ 3835 2060 FFF76CFE 		BL	LITER
+ 3836 2064 52F804FB 		_UNNEST			// compile number as integer
+ 3837              	SCOM3:
 ARM GAS  stm32eforth.s 			page 72
 
 
- 3838 2070 FFF76CFE 		BL	LITER
- 3839 2074 52F804FB 		_UNNEST			// compile number as integer
- 3840              	SCOM3:
- 3841 2078 FFF73ABC 		B.W	ABORT			// error
+ 3838 2068 FFF742BC 		B.W	ABORT			// error
+ 3839              	
+ 3840              	//    OVERT	( -- )
+ 3841              	// 	Link a new word into the current vocabulary.
  3842              	
- 3843              	//    OVERT	( -- )
- 3844              	// 	Link a new word into the current vocabulary.
- 3845              	
- 3846 207c 1C140018 		.word	_SCOMP+MAPOFFSET
- 3847 2080 05       	_OVERT:	.byte  5
- 3848 2081 4F564552 		.ascii "OVERT"
- 3848      54
- 3849 2086 00BF     		.p2align 2 	
- 3850              	OVERT:
- 3851 2088 42F804ED 		_NEST
- 3852 208c FEF72EFD 		BL	LAST
- 3853 2090 FEF792FA 		BL	AT
- 3854 2094 FEF70CFD 		BL	CNTXT
- 3855 2098 FEF784FA 		BL	STORE
- 3856 209c 52F804FB 		_UNNEST
+ 3843 206c 0C140018 		.word	_SCOMP+MAPOFFSET
+ 3844 2070 05       	_OVERT:	.byte  5
+ 3845 2071 4F564552 		.ascii "OVERT"
+ 3845      54
+ 3846 2076 00BF     		.p2align 2 	
+ 3847              	OVERT:
+ 3848 2078 42F804ED 		_NEST
+ 3849 207c FEF736FD 		BL	LAST
+ 3850 2080 FEF79AFA 		BL	AT
+ 3851 2084 FEF714FD 		BL	CNTXT
+ 3852 2088 FEF78CFA 		BL	STORE
+ 3853 208c 52F804FB 		_UNNEST
+ 3854              	
+ 3855              	//    ; 	   ( -- )
+ 3856              	// 	Terminate a colon definition.
  3857              	
- 3858              	//    ; 	   ( -- )
- 3859              	// 	Terminate a colon definition.
- 3860              	
- 3861 20a0 80140018 		.word	_OVERT+MAPOFFSET
- 3862 20a4 C1       	_SEMIS:	.byte  IMEDD+COMPO+1
- 3863 20a5 3B       		.ascii ";"
- 3864 20a6 00BF     		.p2align 2 	
- 3865              	SEMIS:
- 3866 20a8 42F804ED 		_NEST
- 3867 20ac FEF73BFA 		_DOLIT
- 3868 20b0 52F804FB 		_UNNEST
- 3869 20b4 FFF70AFE 		BL	COMMA
- 3870 20b8 FFF77AFC 		BL	LBRAC
- 3871 20bc FFF7E4FF 		BL	OVERT
- 3872 20c0 52F804FB 		_UNNEST
+ 3858 2090 70140018 		.word	_OVERT+MAPOFFSET
+ 3859 2094 C1       	_SEMIS:	.byte  IMEDD+COMPO+1
+ 3860 2095 3B       		.ascii ";"
+ 3861 2096 00BF     		.p2align 2 	
+ 3862              	SEMIS:
+ 3863 2098 42F804ED 		_NEST
+ 3864 209c FEF743FA 		_DOLIT
+ 3865 20a0 52F804FB 		_UNNEST
+ 3866 20a4 FFF70AFE 		BL	COMMA
+ 3867 20a8 FFF782FC 		BL	LBRAC
+ 3868 20ac FFF7E4FF 		BL	OVERT
+ 3869 20b0 52F804FB 		_UNNEST
+ 3870              	
+ 3871              	//    ]	   ( -- )
+ 3872              	// 	Start compiling the words in the input stream.
  3873              	
- 3874              	//    ]	   ( -- )
- 3875              	// 	Start compiling the words in the input stream.
- 3876              	
- 3877 20c4 A4140018 		.word	_SEMIS+MAPOFFSET
- 3878 20c8 01       	_RBRAC:	.byte  1
- 3879 20c9 5D       		.ascii "]"
- 3880 20ca 00BF     		.p2align 2 	
- 3881              	RBRAC:
- 3882 20cc 42F804ED 		_NEST
- 3883 20d0 FEF729FA 		_DOLIT
- 3884 20d4 28140018 		.word	SCOMP+MAPOFFSET
- 3885 20d8 FEF7D4FC 		BL	TEVAL
- 3886 20dc FEF762FA 		BL	STORE
- 3887 20e0 52F804FB 		_UNNEST
- 3888              	
- 3889              	//    BL.W	( ca -- )
- 3890              	// 	Assemble a branch-link long instruction to ca.
- 3891              	// 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
- 3892              	
- 3893              	// 	.word	_RBRAC+MAPOFFSET
+ 3874 20b4 94140018 		.word	_SEMIS+MAPOFFSET
+ 3875 20b8 01       	_RBRAC:	.byte  1
+ 3876 20b9 5D       		.ascii "]"
+ 3877 20ba 00BF     		.p2align 2 	
+ 3878              	RBRAC:
+ 3879 20bc 42F804ED 		_NEST
+ 3880 20c0 FEF731FA 		_DOLIT
+ 3881 20c4 18140018 		.word	SCOMP+MAPOFFSET
+ 3882 20c8 FEF7DCFC 		BL	TEVAL
+ 3883 20cc FEF76AFA 		BL	STORE
+ 3884 20d0 52F804FB 		_UNNEST
+ 3885              	
+ 3886              	//    BL.W	( ca -- )
+ 3887              	// 	Assemble a branch-link long instruction to ca.
+ 3888              	// 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
+ 3889              	
+ 3890              	// 	.word	_RBRAC+MAPOFFSET
+ 3891              	// _CALLC	.byte  5
+ 3892              	// 	.ascii "call,"
+ 3893              	// 	.p2align 2 	
 ARM GAS  stm32eforth.s 			page 73
 
 
- 3894              	// _CALLC	.byte  5
- 3895              	// 	.ascii "call,"
- 3896              	// 	.p2align 2 	
- 3897              	CALLC:
- 3898 20e4 42F804ED 		_NEST
- 3899 20e8 25F00105 		BIC	R5,R5,#1		//  clear b0 of address from R>
- 3900 20ec FEF71CFE 		BL	HERE
- 3901 20f0 FEF712FB 		BL	SUBB
- 3902 20f4 A5F10405 		SUB	R5,R5,#4		//  pc offset
- 3903 20f8 40F2FF70 		MOVW	R0,#0x7FF		//  11 bit mask
- 3904 20fc 2C46     		MOV	R4,R5
- 3905 20fe 4FEA1535 		LSR	R5,R5,#12		//  get bits 22-12
- 3906 2102 05EA0005 		AND	R5,R5,R0
- 3907 2106 4FEAC434 		LSL	R4,R4,#15		//  get bits 11-1
- 3908 210a 45EA0405 		ORR	R5,R5,R4
- 3909 210e 45F07845 		ORR	R5,R5,#0xF8000000
- 3910 2112 45F47045 		ORR	R5,R5,#0xF000
- 3911 2116 FFF7D9FD 		BL	COMMA			//  assemble BL.W instruction
- 3912 211a 52F804FB 		_UNNEST
- 3913              	
+ 3894              	CALLC:
+ 3895 20d4 42F804ED 		_NEST
+ 3896 20d8 25F00105 		BIC	R5,R5,#1		//  clear b0 of address from R>
+ 3897 20dc FEF724FE 		BL	HERE
+ 3898 20e0 FEF71AFB 		BL	SUBB
+ 3899 20e4 A5F10405 		SUB	R5,R5,#4		//  pc offset
+ 3900 20e8 40F2FF70 		MOVW	R0,#0x7FF		//  11 bit mask
+ 3901 20ec 2C46     		MOV	R4,R5
+ 3902 20ee 4FEA1535 		LSR	R5,R5,#12		//  get bits 22-12
+ 3903 20f2 05EA0005 		AND	R5,R5,R0
+ 3904 20f6 4FEAC434 		LSL	R4,R4,#15		//  get bits 11-1
+ 3905 20fa 45EA0405 		ORR	R5,R5,R4
+ 3906 20fe 45F07845 		ORR	R5,R5,#0xF8000000
+ 3907 2102 45F47045 		ORR	R5,R5,#0xF000
+ 3908 2106 FFF7D9FD 		BL	COMMA			//  assemble BL.W instruction
+ 3909 210a 52F804FB 		_UNNEST
+ 3910              	
+ 3911              	
+ 3912              	// 	:	( -- //  string> )
+ 3913              	// 	Start a new colon definition using next word as its name.
  3914              	
- 3915              	// 	:	( -- //  string> )
- 3916              	// 	Start a new colon definition using next word as its name.
- 3917              	
- 3918 211e C8140018 		.word	_RBRAC+MAPOFFSET
- 3919 2122 01       	_COLON:	.byte  1
- 3920 2123 3A       		.ascii ":"
- 3921              		.p2align 2 	
- 3922              	COLON:
- 3923 2124 42F804ED 		_NEST
- 3924 2128 FFF762FA 		BL	TOKEN
- 3925 212c FFF748FF 		BL	SNAME
- 3926 2130 FEF7F9F9 		_DOLIT
- 3927 2134 42F804ED 		_NEST
- 3928 2138 FFF7C8FD 		BL	COMMA
- 3929 213c FFF7C6FF 		BL	RBRAC
- 3930 2140 52F804FB 		_UNNEST
+ 3915 210e B8140018 		.word	_RBRAC+MAPOFFSET
+ 3916 2112 01       	_COLON:	.byte  1
+ 3917 2113 3A       		.ascii ":"
+ 3918              		.p2align 2 	
+ 3919              	COLON:
+ 3920 2114 42F804ED 		_NEST
+ 3921 2118 FFF76AFA 		BL	TOKEN
+ 3922 211c FFF748FF 		BL	SNAME
+ 3923 2120 FEF701FA 		_DOLIT
+ 3924 2124 42F804ED 		_NEST
+ 3925 2128 FFF7C8FD 		BL	COMMA
+ 3926 212c FFF7C6FF 		BL	RBRAC
+ 3927 2130 52F804FB 		_UNNEST
+ 3928              	
+ 3929              	//    IMMEDIATE   ( -- )
+ 3930              	// 	Make the last compiled word an immediate word.
  3931              	
- 3932              	//    IMMEDIATE   ( -- )
- 3933              	// 	Make the last compiled word an immediate word.
- 3934              	
- 3935 2144 22150018 		.word	_COLON+MAPOFFSET
- 3936 2148 09       	_IMMED:	.byte  9
- 3937 2149 494D4D45 		.ascii "IMMEDIATE"
- 3937      44494154 
- 3937      45
- 3938 2152 00BF     		.p2align 2 	
- 3939              	IMMED:
- 3940 2154 42F804ED 		_NEST
- 3941 2158 FEF7E5F9 		_DOLIT
- 3942 215c 80000000 		.word	IMEDD
- 3943 2160 FEF7C4FC 		BL	LAST
- 3944 2164 FEF728FA 		BL	AT
- 3945 2168 FEF726FA 		BL	AT
- 3946 216c FEF796FA 		BL	ORR
- 3947 2170 FEF7BCFC 		BL	LAST
- 3948 2174 FEF720FA 		BL	AT
+ 3932 2134 12150018 		.word	_COLON+MAPOFFSET
+ 3933 2138 09       	_IMMED:	.byte  9
+ 3934 2139 494D4D45 		.ascii "IMMEDIATE"
+ 3934      44494154 
+ 3934      45
+ 3935 2142 00BF     		.p2align 2 	
+ 3936              	IMMED:
+ 3937 2144 42F804ED 		_NEST
+ 3938 2148 FEF7EDF9 		_DOLIT
+ 3939 214c 80000000 		.word	IMEDD
+ 3940 2150 FEF7CCFC 		BL	LAST
+ 3941 2154 FEF730FA 		BL	AT
+ 3942 2158 FEF72EFA 		BL	AT
+ 3943 215c FEF79EFA 		BL	ORR
+ 3944 2160 FEF7C4FC 		BL	LAST
+ 3945 2164 FEF728FA 		BL	AT
+ 3946 2168 FEF71CFA 		BL	STORE
+ 3947 216c 52F804FB 		_UNNEST
+ 3948              	
 ARM GAS  stm32eforth.s 			page 74
 
 
- 3949 2178 FEF714FA 		BL	STORE
- 3950 217c 52F804FB 		_UNNEST
+ 3949              	// **************************************************************************
+ 3950              	//  Defining words
  3951              	
- 3952              	// **************************************************************************
- 3953              	//  Defining words
+ 3952              	//    CONSTANT	( u -- //  string> )
+ 3953              	// 	Compile a new constant.
  3954              	
- 3955              	//    CONSTANT	( u -- //  string> )
- 3956              	// 	Compile a new constant.
- 3957              	
- 3958 2180 48150018 		.word	_IMMED+MAPOFFSET
- 3959 2184 08       	_CONST:	.byte  8
- 3960 2185 434F4E53 		.ascii "CONSTANT"
- 3960      54414E54 
- 3961 218d 0000BF   		.p2align 2 	
- 3962              	CONST:
- 3963 2190 42F804ED 		_NEST
- 3964 2194 FFF72CFA 		BL	TOKEN
- 3965 2198 FFF712FF 		BL	SNAME
- 3966 219c FFF774FF 		BL	OVERT
- 3967 21a0 FEF7C1F9 		_DOLIT
- 3968 21a4 42F804ED 		_NEST
- 3969 21a8 FFF790FD 		BL	COMMA
- 3970 21ac FEF7BBF9 		_DOLIT
- 3971 21b0 D4FDFF17 		.word	DOCON+MAPOFFSET
- 3972 21b4 FFF796FF 		BL	CALLC
- 3973 21b8 FFF788FD 		BL	COMMA
- 3974 21bc 52F804FB 		_UNNEST
+ 3955 2170 38150018 		.word	_IMMED+MAPOFFSET
+ 3956 2174 08       	_CONST:	.byte  8
+ 3957 2175 434F4E53 		.ascii "CONSTANT"
+ 3957      54414E54 
+ 3958 217d 0000BF   		.p2align 2 	
+ 3959              	CONST:
+ 3960 2180 42F804ED 		_NEST
+ 3961 2184 FFF734FA 		BL	TOKEN
+ 3962 2188 FFF712FF 		BL	SNAME
+ 3963 218c FFF774FF 		BL	OVERT
+ 3964 2190 FEF7C9F9 		_DOLIT
+ 3965 2194 42F804ED 		_NEST
+ 3966 2198 FFF790FD 		BL	COMMA
+ 3967 219c FEF7C3F9 		_DOLIT
+ 3968 21a0 D4FDFF17 		.word	DOCON+MAPOFFSET
+ 3969 21a4 FFF796FF 		BL	CALLC
+ 3970 21a8 FFF788FD 		BL	COMMA
+ 3971 21ac 52F804FB 		_UNNEST
+ 3972              	
+ 3973              	//    CREATE	( -- //  string> )
+ 3974              	// 	Compile a new array entry without allocating code space.
  3975              	
- 3976              	//    CREATE	( -- //  string> )
- 3977              	// 	Compile a new array entry without allocating code space.
- 3978              	
- 3979 21c0 84150018 		.word	_CONST+MAPOFFSET
- 3980 21c4 06       	_CREAT:	.byte  6
- 3981 21c5 43524541 		.ascii "CREATE"
- 3981      5445
- 3982 21cb 00       		.p2align 2 	
- 3983              	CREAT:
- 3984 21cc 42F804ED 		_NEST
- 3985 21d0 FFF70EFA 		BL	TOKEN
- 3986 21d4 FFF7F4FE 		BL	SNAME
- 3987 21d8 FFF756FF 		BL	OVERT
- 3988 21dc FEF7A3F9 		_DOLIT
- 3989 21e0 42F804ED 		_NEST
- 3990 21e4 FFF772FD 		BL	COMMA
- 3991 21e8 FEF79DF9 		_DOLIT
- 3992 21ec C8FDFF17 		.word	DOVAR+MAPOFFSET
- 3993 21f0 FFF778FF 		BL	CALLC
- 3994 21f4 52F804FB 		_UNNEST
+ 3976 21b0 74150018 		.word	_CONST+MAPOFFSET
+ 3977 21b4 06       	_CREAT:	.byte  6
+ 3978 21b5 43524541 		.ascii "CREATE"
+ 3978      5445
+ 3979 21bb 00       		.p2align 2 	
+ 3980              	CREAT:
+ 3981 21bc 42F804ED 		_NEST
+ 3982 21c0 FFF716FA 		BL	TOKEN
+ 3983 21c4 FFF7F4FE 		BL	SNAME
+ 3984 21c8 FFF756FF 		BL	OVERT
+ 3985 21cc FEF7ABF9 		_DOLIT
+ 3986 21d0 42F804ED 		_NEST
+ 3987 21d4 FFF772FD 		BL	COMMA
+ 3988 21d8 FEF7A5F9 		_DOLIT
+ 3989 21dc C8FDFF17 		.word	DOVAR+MAPOFFSET
+ 3990 21e0 FFF778FF 		BL	CALLC
+ 3991 21e4 52F804FB 		_UNNEST
+ 3992              	
+ 3993              	//    VARIABLE	( -- //  string> )
+ 3994              	// 	Compile a new variable initialized to 0.
  3995              	
- 3996              	//    VARIABLE	( -- //  string> )
- 3997              	// 	Compile a new variable initialized to 0.
- 3998              	
- 3999 21f8 C4150018 		.word	_CREAT+MAPOFFSET
- 4000 21fc 08       	_VARIA:	.byte  8
- 4001 21fd 56415249 		.ascii "VARIABLE"
- 4001      41424C45 
- 4002 2205 0000BF   		.p2align 2 	
+ 3996 21e8 B4150018 		.word	_CREAT+MAPOFFSET
+ 3997 21ec 08       	_VARIA:	.byte  8
+ 3998 21ed 56415249 		.ascii "VARIABLE"
+ 3998      41424C45 
+ 3999 21f5 0000BF   		.p2align 2 	
+ 4000              	VARIA:
+ 4001 21f8 42F804ED 		_NEST
+ 4002 21fc FFF7DEFF 		BL	CREAT
 ARM GAS  stm32eforth.s 			page 75
 
 
- 4003              	VARIA:
- 4004 2208 42F804ED 		_NEST
- 4005 220c FFF7DEFF 		BL	CREAT
- 4006 2210 FEF789F9 		_DOLIT
- 4007 2214 00000000 		.word	0
- 4008 2218 FFF758FD 		BL	COMMA
- 4009 221c 52F804FB 		_UNNEST
+ 4003 2200 FEF791F9 		_DOLIT
+ 4004 2204 00000000 		.word	0
+ 4005 2208 FFF758FD 		BL	COMMA
+ 4006 220c 52F804FB 		_UNNEST
+ 4007              	
+ 4008              	// **************************************************************************
+ 4009              	//  Tools
  4010              	
- 4011              	// **************************************************************************
- 4012              	//  Tools
+ 4011              	//    dm+	 ( a u -- a )
+ 4012              	// 	Dump u bytes from , leaving a+u on the stack.
  4013              	
- 4014              	//    dm+	 ( a u -- a )
- 4015              	// 	Dump u bytes from , leaving a+u on the stack.
- 4016              	
- 4017              	// 	.word	_VARIA+MAPOFFSET
- 4018              	// _DMP	.byte  3
- 4019              	// 	.ascii "dm+"
- 4020              	// 	.p2align 2 	
- 4021              	DMP:
- 4022 2220 42F804ED 		_NEST
- 4023 2224 FEF71EFA 		BL	OVER
- 4024 2228 FEF77DF9 		_DOLIT
- 4025 222c 04000000 		.word	4
- 4026 2230 FFF77CF8 		BL	UDOTR			// display address
- 4027 2234 FEF7E0FF 		BL	SPACE
- 4028 2238 FEF7E6F9 		BL	TOR			// start count down loop
- 4029 223c 00F00CB8 		B.W	PDUM2			// skip first pass
- 4030              	PDUM1:
- 4031 2240 FEF7FEF9 	  BL	DUPP
- 4032 2244 FEF7C8F9 		BL	CAT
- 4033 2248 FEF76DF9 		_DOLIT
- 4034 224c 03000000 		.word	3
- 4035 2250 FFF76CF8 		BL	UDOTR			// display numeric data
- 4036 2254 FEF786FA 		BL	ONEP			// increment address
- 4037              	PDUM2:
- 4038 2258 FEF779F9 	  BL	DONXT
- 4039 225c 40160018 		.word	PDUM1+MAPOFFSET	// loop till done
- 4040 2260 52F804FB 		_UNNEST
- 4041              		.p2align 2 
- 4042              	//    DUMP	( a u -- )
- 4043              	// 	Dump u bytes from a, in a formatted manner.
- 4044              	
- 4045 2264 FC150018 		.word	_VARIA+MAPOFFSET
- 4046 2268 04       	_DUMP:	.byte  4
- 4047 2269 44554D50 		.ascii "DUMP"
- 4048 226d 0000BF   		.p2align 2 	
- 4049              	DUMP:
- 4050 2270 42F804ED 		_NEST
- 4051 2274 FEF7D8FB 		BL	BASE
- 4052 2278 FEF79EF9 		BL	AT
- 4053 227c FEF7C4F9 		BL	TOR
- 4054 2280 FEF7AAFE 		BL	HEX			// save radix,set hex
- 4055 2284 FEF74FF9 		_DOLIT
- 4056 2288 10000000 		.word	16
- 4057 228c FEF7C4FC 		BL	SLASH			// change count to lines
- 4058 2290 FEF7BAF9 		BL	TOR
- 4059 2294 00F014B8 		B.W	DUMP4			// start count down loop
+ 4014              	// 	.word	_VARIA+MAPOFFSET
+ 4015              	// _DMP	.byte  3
+ 4016              	// 	.ascii "dm+"
+ 4017              	// 	.p2align 2 	
+ 4018              	DMP:
+ 4019 2210 42F804ED 		_NEST
+ 4020 2214 FEF726FA 		BL	OVER
+ 4021 2218 FEF785F9 		_DOLIT
+ 4022 221c 04000000 		.word	4
+ 4023 2220 FFF784F8 		BL	UDOTR			// display address
+ 4024 2224 FEF7E8FF 		BL	SPACE
+ 4025 2228 FEF7EEF9 		BL	TOR			// start count down loop
+ 4026 222c 00F00CB8 		B.W	PDUM2			// skip first pass
+ 4027              	PDUM1:
+ 4028 2230 FEF706FA 	  BL	DUPP
+ 4029 2234 FEF7D0F9 		BL	CAT
+ 4030 2238 FEF775F9 		_DOLIT
+ 4031 223c 03000000 		.word	3
+ 4032 2240 FFF774F8 		BL	UDOTR			// display numeric data
+ 4033 2244 FEF78EFA 		BL	ONEP			// increment address
+ 4034              	PDUM2:
+ 4035 2248 FEF781F9 	  BL	DONXT
+ 4036 224c 30160018 		.word	PDUM1+MAPOFFSET	// loop till done
+ 4037 2250 52F804FB 		_UNNEST
+ 4038              		.p2align 2 
+ 4039              	//    DUMP	( a u -- )
+ 4040              	// 	Dump u bytes from a, in a formatted manner.
+ 4041              	
+ 4042 2254 EC150018 		.word	_VARIA+MAPOFFSET
+ 4043 2258 04       	_DUMP:	.byte  4
+ 4044 2259 44554D50 		.ascii "DUMP"
+ 4045 225d 0000BF   		.p2align 2 	
+ 4046              	DUMP:
+ 4047 2260 42F804ED 		_NEST
+ 4048 2264 FEF7E0FB 		BL	BASE
+ 4049 2268 FEF7A6F9 		BL	AT
+ 4050 226c FEF7CCF9 		BL	TOR
+ 4051 2270 FEF7B2FE 		BL	HEX			// save radix,set hex
+ 4052 2274 FEF757F9 		_DOLIT
+ 4053 2278 10000000 		.word	16
+ 4054 227c FEF7CCFC 		BL	SLASH			// change count to lines
+ 4055 2280 FEF7C2F9 		BL	TOR
+ 4056 2284 00F014B8 		B.W	DUMP4			// start count down loop
+ 4057              	DUMP1:
+ 4058 2288 FEF7F6FF 	  BL	CR
+ 4059 228c FEF74BF9 		_DOLIT
 ARM GAS  stm32eforth.s 			page 76
 
 
- 4060              	DUMP1:
- 4061 2298 FEF7EEFF 	  BL	CR
- 4062 229c FEF743F9 		_DOLIT
- 4063 22a0 10000000 		.word	16
- 4064 22a4 FEF7D6FA 		BL	DDUP
- 4065 22a8 FFF7BAFF 		BL	DMP			// display numeric
- 4066 22ac FEF7BEFA 		BL	ROT
- 4067 22b0 FEF7BCFA 		BL	ROT
- 4068 22b4 FEF7A0FF 		BL	SPACE
- 4069 22b8 FEF79EFF 		BL	SPACE
- 4070 22bc FEF7C4FF 		BL	TYPEE			// display printable characters
- 4071              	DUMP4:
- 4072 22c0 FEF745F9 	  BL	DONXT
- 4073 22c4 98160018 		.word	DUMP1+MAPOFFSET	// loop till done
- 4074              	DUMP3:
- 4075 22c8 FEF7B2F9 	  BL	DROP
- 4076 22cc FEF78AF9 		BL	RFROM
- 4077 22d0 FEF7AAFB 		BL	BASE
- 4078 22d4 FEF766F9 		BL	STORE			// restore radix
- 4079 22d8 52F804FB 		_UNNEST
+ 4060 2290 10000000 		.word	16
+ 4061 2294 FEF7DEFA 		BL	DDUP
+ 4062 2298 FFF7BAFF 		BL	DMP			// display numeric
+ 4063 229c FEF7C6FA 		BL	ROT
+ 4064 22a0 FEF7C4FA 		BL	ROT
+ 4065 22a4 FEF7A8FF 		BL	SPACE
+ 4066 22a8 FEF7A6FF 		BL	SPACE
+ 4067 22ac FEF7CCFF 		BL	TYPEE			// display printable characters
+ 4068              	DUMP4:
+ 4069 22b0 FEF74DF9 	  BL	DONXT
+ 4070 22b4 88160018 		.word	DUMP1+MAPOFFSET	// loop till done
+ 4071              	DUMP3:
+ 4072 22b8 FEF7BAF9 	  BL	DROP
+ 4073 22bc FEF792F9 		BL	RFROM
+ 4074 22c0 FEF7B2FB 		BL	BASE
+ 4075 22c4 FEF76EF9 		BL	STORE			// restore radix
+ 4076 22c8 52F804FB 		_UNNEST
+ 4077              	
+ 4078              	//    .S	  ( ... -- ... )
+ 4079              	// 	Display the contents of the data stack.
  4080              	
- 4081              	//    .S	  ( ... -- ... )
- 4082              	// 	Display the contents of the data stack.
- 4083              	
- 4084 22dc 68160018 		.word	_DUMP+MAPOFFSET
- 4085              	_DOTS:
- 4086 22e0 02       		.byte  2
- 4087 22e1 2E53     		.ascii ".S"
- 4088 22e3 00       		.p2align 2 	
- 4089              	DOTS:
- 4090 22e4 42F804ED 		_NEST
- 4091 22e8 FEF786FF 		BL	SPACE
- 4092 22ec FEF7F6FC 		BL	DEPTH			// stack depth
- 4093 22f0 FEF78AF9 		BL	TOR			// start count down loop
- 4094 22f4 00F006B8 		B.W	DOTS2			// skip first pass
- 4095              	DOTS1:
- 4096 22f8 FEF77EF9 		BL	RAT
- 4097 22fc FEF700FD 		BL	PICK
- 4098 2300 FFF740F8 		BL	DOT			// index stack, display contents
- 4099              	DOTS2:
- 4100 2304 FEF723F9 		BL	DONXT
- 4101 2308 F8160018 		.word	DOTS1+MAPOFFSET	// loop till done
- 4102 230c FEF774FF 		BL	SPACE
- 4103 2310 52F804FB 		_UNNEST
+ 4081 22cc 58160018 		.word	_DUMP+MAPOFFSET
+ 4082              	_DOTS:
+ 4083 22d0 02       		.byte  2
+ 4084 22d1 2E53     		.ascii ".S"
+ 4085 22d3 00       		.p2align 2 	
+ 4086              	DOTS:
+ 4087 22d4 42F804ED 		_NEST
+ 4088 22d8 FEF78EFF 		BL	SPACE
+ 4089 22dc FEF7FEFC 		BL	DEPTH			// stack depth
+ 4090 22e0 FEF792F9 		BL	TOR			// start count down loop
+ 4091 22e4 00F006B8 		B.W	DOTS2			// skip first pass
+ 4092              	DOTS1:
+ 4093 22e8 FEF786F9 		BL	RAT
+ 4094 22ec FEF708FD 		BL	PICK
+ 4095 22f0 FFF748F8 		BL	DOT			// index stack, display contents
+ 4096              	DOTS2:
+ 4097 22f4 FEF72BF9 		BL	DONXT
+ 4098 22f8 E8160018 		.word	DOTS1+MAPOFFSET	// loop till done
+ 4099 22fc FEF77CFF 		BL	SPACE
+ 4100 2300 52F804FB 		_UNNEST
+ 4101              	
+ 4102              	//    >NAME	( ca -- na | F )
+ 4103              	// 	Convert code address to a name address.
  4104              	
- 4105              	//    >NAME	( ca -- na | F )
- 4106              	// 	Convert code address to a name address.
- 4107              	
- 4108 2314 E0160018 		.word	_DOTS+MAPOFFSET
- 4109 2318 05       	_TNAME:	.byte  5
- 4110 2319 3E4E414D 		.ascii ">NAME"
- 4110      45
- 4111 231e 00BF     		.p2align 2 	
- 4112              	TNAME:
- 4113 2320 42F804ED 		_NEST
- 4114 2324 FEF770F9 		BL	TOR			//  
- 4115 2328 FEF7C2FB 		BL	CNTXT			//  va
+ 4105 2304 D0160018 		.word	_DOTS+MAPOFFSET
+ 4106 2308 05       	_TNAME:	.byte  5
+ 4107 2309 3E4E414D 		.ascii ">NAME"
+ 4107      45
+ 4108 230e 00BF     		.p2align 2 	
+ 4109              	TNAME:
+ 4110 2310 42F804ED 		_NEST
+ 4111 2314 FEF778F9 		BL	TOR			//  
+ 4112 2318 FEF7CAFB 		BL	CNTXT			//  va
+ 4113 231c FEF74CF9 		BL	AT			//  na
+ 4114              	TNAM1:
+ 4115 2320 FEF78EF9 		BL	DUPP			//  na na
 ARM GAS  stm32eforth.s 			page 77
 
 
- 4116 232c FEF744F9 		BL	AT			//  na
- 4117              	TNAM1:
- 4118 2330 FEF786F9 		BL	DUPP			//  na na
- 4119 2334 FEF71AF9 		BL	QBRAN
- 4120 2338 60170018 		.word	TNAM2+MAPOFFSET	//  vocabulary end, no match
- 4121 233c FEF780F9 		BL	DUPP			//  na na
- 4122 2340 FFF764F9 		BL	NAMET			//  na ca
- 4123 2344 FEF758F9 		BL	RAT			//  na ca code
- 4124 2348 FEF7B2F9 		BL	XORR			//  na f --
- 4125 234c FEF70EF9 		BL	QBRAN
- 4126 2350 60170018 		.word	TNAM2+MAPOFFSET
- 4127 2354 FEF72EFA 		BL	CELLM			//  la 
- 4128 2358 FEF72EF9 		BL	AT			//  next_na
- 4129 235c FFF7E8BF 		B.W	TNAM1
- 4130              	TNAM2:	
- 4131 2360 FEF740F9 		BL	RFROM
- 4132 2364 FEF764F9 		BL	DROP			//  0|na --
- 4133 2368 52F804FB 		_UNNEST			// 0
+ 4116 2324 FEF722F9 		BL	QBRAN
+ 4117 2328 50170018 		.word	TNAM2+MAPOFFSET	//  vocabulary end, no match
+ 4118 232c FEF788F9 		BL	DUPP			//  na na
+ 4119 2330 FFF76CF9 		BL	NAMET			//  na ca
+ 4120 2334 FEF760F9 		BL	RAT			//  na ca code
+ 4121 2338 FEF7BAF9 		BL	XORR			//  na f --
+ 4122 233c FEF716F9 		BL	QBRAN
+ 4123 2340 50170018 		.word	TNAM2+MAPOFFSET
+ 4124 2344 FEF736FA 		BL	CELLM			//  la 
+ 4125 2348 FEF736F9 		BL	AT			//  next_na
+ 4126 234c FFF7E8BF 		B.W	TNAM1
+ 4127              	TNAM2:	
+ 4128 2350 FEF748F9 		BL	RFROM
+ 4129 2354 FEF76CF9 		BL	DROP			//  0|na --
+ 4130 2358 52F804FB 		_UNNEST			// 0
+ 4131              	
+ 4132              	//    .ID	 ( na -- )
+ 4133              	// 	Display the name at address.
  4134              	
- 4135              	//    .ID	 ( na -- )
- 4136              	// 	Display the name at address.
- 4137              	
- 4138 236c 18170018 		.word	_TNAME+MAPOFFSET
- 4139 2370 03       	_DOTID:	.byte  3
- 4140 2371 2E4944   		.ascii ".ID"
- 4141              		.p2align 2 	
- 4142              	DOTID:
- 4143 2374 42F804ED 		_NEST
- 4144 2378 FEF74EFA 		BL	QDUP			// if zero no name
- 4145 237c FEF7F6F8 		BL	QBRAN
- 4146 2380 9C170018 		.word	DOTI1+MAPOFFSET
- 4147 2384 FEF70CFB 		BL	COUNT
- 4148 2388 FEF7CDF8 		_DOLIT
- 4149 238c 1F000000 		.word	0x1F
- 4150 2390 FEF77AF9 		BL	ANDD			// mask lexicon bits
- 4151 2394 FEF758FF 		BL	TYPEE
- 4152 2398 52F804FB 		_UNNEST			// display name string
- 4153              	DOTI1:
- 4154 239c FEF7A4FF 		BL	DOTQP
- 4155 23a0 09       		.byte	9
- 4156 23a1 207B6E6F 		.ascii " {noName}"
- 4156      4E616D65 
- 4156      7D
- 4157 23aa 00BF     		.p2align 2 	
- 4158 23ac 52F804FB 		_UNNEST
- 4159              	
- 4160              		.equ WANT_SEE, 0  // set to 1 if you want SEE 
- 4161              	.if WANT_SEE 
- 4162              	//    SEE	 ( -- //  string> )
- 4163              	// 	A simple decompiler.
- 4164              	
- 4165              		.word	_DOTID+MAPOFFSET
- 4166              	_SEE:	.byte  3
- 4167              		.ascii "SEE"
- 4168              		.p2align 2 	
- 4169              	SEE:
- 4170              		_NEST
+ 4135 235c 08170018 		.word	_TNAME+MAPOFFSET
+ 4136 2360 03       	_DOTID:	.byte  3
+ 4137 2361 2E4944   		.ascii ".ID"
+ 4138              		.p2align 2 	
+ 4139              	DOTID:
+ 4140 2364 42F804ED 		_NEST
+ 4141 2368 FEF756FA 		BL	QDUP			// if zero no name
+ 4142 236c FEF7FEF8 		BL	QBRAN
+ 4143 2370 8C170018 		.word	DOTI1+MAPOFFSET
+ 4144 2374 FEF714FB 		BL	COUNT
+ 4145 2378 FEF7D5F8 		_DOLIT
+ 4146 237c 1F000000 		.word	0x1F
+ 4147 2380 FEF782F9 		BL	ANDD			// mask lexicon bits
+ 4148 2384 FEF760FF 		BL	TYPEE
+ 4149 2388 52F804FB 		_UNNEST			// display name string
+ 4150              	DOTI1:
+ 4151 238c FEF7ACFF 		BL	DOTQP
+ 4152 2390 09       		.byte	9
+ 4153 2391 207B6E6F 		.ascii " {noName}"
+ 4153      4E616D65 
+ 4153      7D
+ 4154 239a 00BF     		.p2align 2 	
+ 4155 239c 52F804FB 		_UNNEST
+ 4156              	
+ 4157              		.equ WANT_SEE, 0  // set to 1 if you want SEE 
+ 4158              	.if WANT_SEE 
+ 4159              	//    SEE	 ( -- //  string> )
+ 4160              	// 	A simple decompiler.
+ 4161              	
+ 4162              		.word	_DOTID+MAPOFFSET
+ 4163              	_SEE:	.byte  3
+ 4164              		.ascii "SEE"
+ 4165              		.p2align 2 	
+ 4166              	SEE:
+ 4167              		_NEST
+ 4168              		BL	TICK	//  ca --, starting address
+ 4169              		BL	CR	
+ 4170              		_DOLIT
 ARM GAS  stm32eforth.s 			page 78
 
 
- 4171              		BL	TICK	//  ca --, starting address
- 4172              		BL	CR	
- 4173              		_DOLIT
- 4174              		.word	20
- 4175              		BL	TOR
- 4176              	SEE1:
- 4177              		BL	CELLP			//  a
- 4178              		BL	DUPP			//  a a
- 4179              		BL	DECOMP		//  a
- 4180              		BL	DONXT
- 4181              		.word	SEE1+MAPOFFSET
- 4182              		BL	DROP
- 4183              		_UNNEST
+ 4171              		.word	20
+ 4172              		BL	TOR
+ 4173              	SEE1:
+ 4174              		BL	CELLP			//  a
+ 4175              		BL	DUPP			//  a a
+ 4176              		BL	DECOMP		//  a
+ 4177              		BL	DONXT
+ 4178              		.word	SEE1+MAPOFFSET
+ 4179              		BL	DROP
+ 4180              		_UNNEST
+ 4181              	
+ 4182              	// 	DECOMPILE ( a -- )
+ 4183              	// 	Convert code in a.  Display name of command or as data.
  4184              	
- 4185              	// 	DECOMPILE ( a -- )
- 4186              	// 	Convert code in a.  Display name of command or as data.
- 4187              	
- 4188              		.word	_SEE+MAPOFFSET
- 4189              	_DECOM:	.byte  9
- 4190              		.ascii "DECOMPILE"
- 4191              		.p2align 2 
- 4192              		
- 4193              	DECOMP:	
- 4194              		_NEST
- 4195              		BL	DUPP			//  a a
- 4196              	// 	BL	TOR			//  a
- 4197              		BL	AT			//  a code
- 4198              		BL	DUPP			//  a code code
+ 4185              		.word	_SEE+MAPOFFSET
+ 4186              	_DECOM:	.byte  9
+ 4187              		.ascii "DECOMPILE"
+ 4188              		.p2align 2 
+ 4189              		
+ 4190              	DECOMP:	
+ 4191              		_NEST
+ 4192              		BL	DUPP			//  a a
+ 4193              	// 	BL	TOR			//  a
+ 4194              		BL	AT			//  a code
+ 4195              		BL	DUPP			//  a code code
+ 4196              		_DOLIT
+ 4197              		.word	0xF800D000 //0xF800F800
+ 4198              		BL	ANDD
  4199              		_DOLIT
- 4200              		.word	0xF800D000 //0xF800F800
- 4201              		BL	ANDD
- 4202              		_DOLIT
- 4203              		.word	0xF000D000 //0xF800F000
- 4204              		BL	EQUAL			//  a code ?
- 4205              		BL	INVER 
- 4206              		BL	QBRAN
- 4207              		.word	DECOM2+MAPOFFSET	//  not a command
- 4208              		//  a valid_code --, extract address and display name
- 4209              		MOVW	R0,#0xFFE
- 4210              		MOV	R4,R5
- 4211              		LSL	R5,R5,#21		//  get bits 22-12
- 4212              		ASR	R5,R5,#9		//  with sign extension
- 4213              		LSR	R4,R4,#15		//  get bits 11-1
- 4214              		AND	R4,R4,R0		//  retain only bits 11-1
- 4215              		ORR	R5,R5,R4		//  get bits 22-1
- 4216              		NOP
- 4217              		BL	OVER			//  a offset a
- 4218              		BL	PLUS			//  a target-4
- 4219              		BL	CELLP			//  a target
- 4220              		BL	TNAME			//  a na/0 --, is it a name?
- 4221              		BL	QDUP			//  name address or zero
- 4222              		BL	QBRAN
- 4223              		.word	DECOM1+MAPOFFSET
- 4224              		BL	SPACE			//  a na
- 4225              		BL	DOTID			//  a --, display name
- 4226              	// 	BL	RFROM			//  a
- 4227              		BL	DROP
+ 4200              		.word	0xF000D000 //0xF800F000
+ 4201              		BL	EQUAL			//  a code ?
+ 4202              		BL	INVER 
+ 4203              		BL	QBRAN
+ 4204              		.word	DECOM2+MAPOFFSET	//  not a command
+ 4205              		//  a valid_code --, extract address and display name
+ 4206              		MOVW	R0,#0xFFE
+ 4207              		MOV	R4,R5
+ 4208              		LSL	R5,R5,#21		//  get bits 22-12
+ 4209              		ASR	R5,R5,#9		//  with sign extension
+ 4210              		LSR	R4,R4,#15		//  get bits 11-1
+ 4211              		AND	R4,R4,R0		//  retain only bits 11-1
+ 4212              		ORR	R5,R5,R4		//  get bits 22-1
+ 4213              		NOP
+ 4214              		BL	OVER			//  a offset a
+ 4215              		BL	PLUS			//  a target-4
+ 4216              		BL	CELLP			//  a target
+ 4217              		BL	TNAME			//  a na/0 --, is it a name?
+ 4218              		BL	QDUP			//  name address or zero
+ 4219              		BL	QBRAN
+ 4220              		.word	DECOM1+MAPOFFSET
+ 4221              		BL	SPACE			//  a na
+ 4222              		BL	DOTID			//  a --, display name
+ 4223              	// 	BL	RFROM			//  a
+ 4224              		BL	DROP
+ 4225              		_UNNEST
+ 4226              	DECOM1:	// BL	RFROM		//  a
+ 4227              		BL	AT			//  data
 ARM GAS  stm32eforth.s 			page 79
 
 
- 4228              		_UNNEST
- 4229              	DECOM1:	// BL	RFROM		//  a
- 4230              		BL	AT			//  data
- 4231              		BL	UDOT			//  display data
- 4232              		_UNNEST
- 4233              	DECOM2:
- 4234              		BL	UDOT
- 4235              	// 	BL	RFROM
- 4236              		BL	DROP
- 4237              		_UNNEST
+ 4228              		BL	UDOT			//  display data
+ 4229              		_UNNEST
+ 4230              	DECOM2:
+ 4231              		BL	UDOT
+ 4232              	// 	BL	RFROM
+ 4233              		BL	DROP
+ 4234              		_UNNEST
+ 4235              	
+ 4236              	//    WORDS	( -- )
+ 4237              	// 	Display the names in the context vocabulary.
  4238              	
- 4239              	//    WORDS	( -- )
- 4240              	// 	Display the names in the context vocabulary.
- 4241              	
- 4242              		.word	_DECOM+MAPOFFSET
- 4243              	.else 
- 4244 23b0 70170018 		.word _DOTID+MAPOFFSET 
- 4245              	.endif 
- 4246 23b4 05       	_WORDS:	.byte  5
- 4247 23b5 574F5244 		.ascii "WORDS"
- 4247      53
- 4248 23ba 00BF     		.p2align 2 	
- 4249              	WORDS:
- 4250 23bc 42F804ED 		_NEST
- 4251 23c0 FEF75AFF 		BL	CR
- 4252 23c4 FEF774FB 		BL	CNTXT
- 4253 23c8 FEF7F6F8 		BL	AT			// only in context
- 4254              	WORS1:
- 4255 23cc FEF724FA 		BL	QDUP			// ?at end of list
- 4256 23d0 FEF7CCF8 		BL	QBRAN
- 4257 23d4 F0170018 		.word	WORS2+MAPOFFSET
- 4258 23d8 FEF732F9 		BL	DUPP
- 4259 23dc FEF70CFF 		BL	SPACE
- 4260 23e0 FFF7C8FF 		BL	DOTID			// display a name
- 4261 23e4 FEF7E6F9 		BL	CELLM
- 4262 23e8 FEF7E6F8 		BL	AT
- 4263 23ec FFF7EEBF 		B.W	WORS1
- 4264              	WORS2:
- 4265 23f0 52F804FB 		_UNNEST
+ 4239              		.word	_DECOM+MAPOFFSET
+ 4240              	.else 
+ 4241 23a0 60170018 		.word _DOTID+MAPOFFSET 
+ 4242              	.endif 
+ 4243 23a4 05       	_WORDS:	.byte  5
+ 4244 23a5 574F5244 		.ascii "WORDS"
+ 4244      53
+ 4245 23aa 00BF     		.p2align 2 	
+ 4246              	WORDS:
+ 4247 23ac 42F804ED 		_NEST
+ 4248 23b0 FEF762FF 		BL	CR
+ 4249 23b4 FEF77CFB 		BL	CNTXT
+ 4250 23b8 FEF7FEF8 		BL	AT			// only in context
+ 4251              	WORS1:
+ 4252 23bc FEF72CFA 		BL	QDUP			// ?at end of list
+ 4253 23c0 FEF7D4F8 		BL	QBRAN
+ 4254 23c4 E0170018 		.word	WORS2+MAPOFFSET
+ 4255 23c8 FEF73AF9 		BL	DUPP
+ 4256 23cc FEF714FF 		BL	SPACE
+ 4257 23d0 FFF7C8FF 		BL	DOTID			// display a name
+ 4258 23d4 FEF7EEF9 		BL	CELLM
+ 4259 23d8 FEF7EEF8 		BL	AT
+ 4260 23dc FFF7EEBF 		B.W	WORS1
+ 4261              	WORS2:
+ 4262 23e0 52F804FB 		_UNNEST
+ 4263              	
+ 4264              	// **************************************************************************
+ 4265              	//  cold start
  4266              	
- 4267              	// **************************************************************************
- 4268              	//  cold start
+ 4267              	//    VER	 ( -- n )
+ 4268              	// 	Return the version number of this implementation.
  4269              	
- 4270              	//    VER	 ( -- n )
- 4271              	// 	Return the version number of this implementation.
- 4272              	
- 4273              	// 	.word	_WORDS+MAPOFFSET
- 4274              	// _VERSN	.byte  3
- 4275              	// 	.ascii "VER"
- 4276              	// 	.p2align 2 	
- 4277              	VERSN:
- 4278 23f4 42F804ED 		_NEST
- 4279 23f8 FEF795F8 		_DOLIT
- 4280 23fc 00010000 		.word	VER*256+EXT
- 4281 2400 52F804FB 		_UNNEST
+ 4270              	// 	.word	_WORDS+MAPOFFSET
+ 4271              	// _VERSN	.byte  3
+ 4272              	// 	.ascii "VER"
+ 4273              	// 	.p2align 2 	
+ 4274              	VERSN:
+ 4275 23e4 42F804ED 		_NEST
+ 4276 23e8 FEF79DF8 		_DOLIT
+ 4277 23ec 00010000 		.word	VER*256+EXT
+ 4278 23f0 52F804FB 		_UNNEST
+ 4279              	
+ 4280              	//    hi	  ( -- )
+ 4281              	// 	Display the sign-on message of eForth.
  4282              	
- 4283              	//    hi	  ( -- )
+ 4283 23f4 A4170018 		.word	_WORDS+MAPOFFSET
 ARM GAS  stm32eforth.s 			page 80
 
 
- 4284              	// 	Display the sign-on message of eForth.
- 4285              	
- 4286 2404 B4170018 		.word	_WORDS+MAPOFFSET
- 4287 2408 02       	_HI:	.byte  2
- 4288 2409 4849     		.ascii "HI"
- 4289 240b 00       		.p2align 2 	
- 4290              	HI:
- 4291 240c 42F804ED 		_NEST
- 4292 2410 FEF732FF 		BL	CR	// initialize I/O
- 4293 2414 FEF768FF 		BL	DOTQP
- 4294 2418 17       		.byte	23
- 4295 2419 626C7565 		.ascii "blue pill stm32eForth v" 
- 4295      2070696C 
- 4295      6C207374 
- 4295      6D333265 
- 4295      466F7274 
- 4296              		.p2align 2
- 4297 2430 FEF7FAFA 		BL	BASE
- 4298 2434 FEF7C0F8 		BL	AT
- 4299 2438 FEF7CEFD 		BL	HEX	// save radix
- 4300 243c FFF7DAFF 		BL	VERSN
- 4301 2440 FEF746FD 		BL	BDIGS
- 4302 2444 FEF76AFD 		BL	DIG
- 4303 2448 FEF768FD 		BL	DIG
- 4304 244c FEF76BF8 		_DOLIT
- 4305 2450 2E000000 		.word	'.'
- 4306 2454 FEF74CFD 		BL	HOLD
- 4307 2458 FEF770FD 		BL	DIGS
- 4308 245c FEF794FD 		BL	EDIGS
- 4309 2460 FEF7F2FE 		BL	TYPEE	// format version number
- 4310 2464 FEF7E0FA 		BL	BASE
- 4311 2468 FEF79CF8 		BL	STORE
- 4312 246c FEF704FF 		BL	CR
- 4313 2470 52F804FB 		_UNNEST			// restore radix
+ 4284 23f8 02       	_HI:	.byte  2
+ 4285 23f9 4849     		.ascii "HI"
+ 4286 23fb 00       		.p2align 2 	
+ 4287              	HI:
+ 4288 23fc 42F804ED 		_NEST
+ 4289 2400 FEF73AFF 		BL	CR	// initialize I/O
+ 4290 2404 FEF770FF 		BL	DOTQP
+ 4291 2408 17       		.byte	23
+ 4292 2409 626C7565 		.ascii "blue pill stm32eForth v" 
+ 4292      2070696C 
+ 4292      6C207374 
+ 4292      6D333265 
+ 4292      466F7274 
+ 4293              		.p2align 2
+ 4294 2420 FEF702FB 		BL	BASE
+ 4295 2424 FEF7C8F8 		BL	AT
+ 4296 2428 FEF7D6FD 		BL	HEX	// save radix
+ 4297 242c FFF7DAFF 		BL	VERSN
+ 4298 2430 FEF74EFD 		BL	BDIGS
+ 4299 2434 FEF772FD 		BL	DIG
+ 4300 2438 FEF770FD 		BL	DIG
+ 4301 243c FEF773F8 		_DOLIT
+ 4302 2440 2E000000 		.word	'.'
+ 4303 2444 FEF754FD 		BL	HOLD
+ 4304 2448 FEF778FD 		BL	DIGS
+ 4305 244c FEF79CFD 		BL	EDIGS
+ 4306 2450 FEF7FAFE 		BL	TYPEE	// format version number
+ 4307 2454 FEF7E8FA 		BL	BASE
+ 4308 2458 FEF7A4F8 		BL	STORE
+ 4309 245c FEF70CFF 		BL	CR
+ 4310 2460 52F804FB 		_UNNEST			// restore radix
+ 4311              	
+ 4312              	//    COLD	( -- )
+ 4313              	// 	The high level cold start sequence.
  4314              	
- 4315              	//    COLD	( -- )
- 4316              	// 	The high level cold start sequence.
- 4317              	
- 4318 2474 08180018 		.word	_HI+MAPOFFSET
- 4319 2478 04       	LASTN:	.byte  4
- 4320 2479 434F4C44 		.ascii "COLD"
- 4321 247d 000000   		.p2align 2,0	
- 4322              	COLD:
- 4323              	//  Initiate Forth registers
- 4324 2480 4FF00003 		MOV R3,#UPP&0xffff	//  user area 
- 4325 2484 C2F20003 	 	MOVT R3,#UPP>>16		  
- 4326 2488 03F59F42 		ADD R2,R3,#RPP&0xffff	// Forth return stack
- 4327 248c 03F59D41 		ADD R1,R3,#SPP&0xffff // Forth data stack
- 4328 2490 85EA0505 		EOR R5,R5,R5			//  tos=0
- 4329 2494 00BF     		NOP
- 4330 2496 42F804ED 		_NEST
- 4331              	COLD1:
- 4332 249a FEF744F8 		_DOLIT 
- 4333 249e 00000000 		.word 0 
- 4334 24a2 FEF701F8 		BL ULED // turn off user LED 
- 4335 24a6 FEF73EF8 		_DOLIT
- 4336 24aa 00040000 		.word	UZERO
+ 4315 2464 F8170018 		.word	_HI+MAPOFFSET
+ 4316 2468 04       	LASTN:	.byte  4
+ 4317 2469 434F4C44 		.ascii "COLD"
+ 4318 246d 000000   		.p2align 2,0	
+ 4319              	COLD:
+ 4320              	//  Initiate Forth registers
+ 4321 2470 4FF00003 		MOV R3,#UPP&0xffff	//  user area 
+ 4322 2474 C2F20003 	 	MOVT R3,#UPP>>16		  
+ 4323 2478 03F59F42 		ADD R2,R3,#RPP&0xffff	// Forth return stack
+ 4324 247c 03F59D41 		ADD R1,R3,#SPP&0xffff // Forth data stack
+ 4325 2480 85EA0505 		EOR R5,R5,R5			//  tos=0
+ 4326 2484 00BF     		NOP
+ 4327 2486 42F804ED 		_NEST
+ 4328              	COLD1:
+ 4329 248a FEF74CF8 		_DOLIT 
+ 4330 248e 00000000 		.word 0 
+ 4331 2492 FEF709F8 		BL ULED // turn off user LED 
+ 4332 2496 FEF746F8 		_DOLIT
+ 4333 249a 00040000 		.word	UZERO
+ 4334 249e FEF742F8 		_DOLIT
+ 4335 24a2 00000020 		.word	UPP
+ 4336 24a6 FEF73EF8 		_DOLIT
 ARM GAS  stm32eforth.s 			page 81
 
 
- 4337 24ae FEF73AF8 		_DOLIT
- 4338 24b2 00000020 		.word	UPP
- 4339 24b6 FEF736F8 		_DOLIT
- 4340 24ba 48000000 		.word	ULAST-UZERO
- 4341 24be FEF77BFC 		BL	MOVE 			// initialize user area
- 4342 24c2 FFF7D9FA 		BL	PRESE			// initialize stack and TIB
- 4343 24c6 FEF7A5FA 		BL	TBOOT
- 4344 24ca FEF751FC 		BL	ATEXE			// application boot
- 4345 24ce FEF7F9FA 		BL	CPP 
- 4346 24d2 FEF771F8 		BL	AT 
- 4347 24d6 FEF7CFFB 		BL  ALGND 
- 4348 24da FEF7F3FA 		BL	CPP 
- 4349 24de FEF761F8 		BL	STORE 
- 4350 24e2 FFF7D1FD 		BL	OVERT
- 4351 24e6 FFF7D3BA 		B.W	QUIT			// start interpretation
- 4352              	COLD2:	
- 4353              	CTOP:
- 4354 24ea FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
- 4355              	
- 4356 24ee 00BF     	  .end 
+ 4337 24aa 48000000 		.word	ULAST-UZERO
+ 4338 24ae FEF783FC 		BL	MOVE 			// initialize user area
+ 4339 24b2 FFF7E1FA 		BL	PRESE			// initialize stack and TIB
+ 4340 24b6 FEF7ADFA 		BL	TBOOT
+ 4341 24ba FEF759FC 		BL	ATEXE			// application boot
+ 4342 24be FEF701FB 		BL	CPP 
+ 4343 24c2 FEF779F8 		BL	AT 
+ 4344 24c6 FEF7D7FB 		BL  ALGND 
+ 4345 24ca FEF7FBFA 		BL	CPP 
+ 4346 24ce FEF769F8 		BL	STORE 
+ 4347 24d2 FFF7D1FD 		BL	OVERT
+ 4348 24d6 FFF7DBBA 		B.W	QUIT			// start interpretation
+ 4349              	COLD2:	
+ 4350              	CTOP:
+ 4351 24da FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
+ 4352              	
+ 4353 24de 00BF     	  .end 
 ARM GAS  stm32eforth.s 			page 82
 
 
@@ -4955,14 +4952,14 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:305    .text.reset_handler:0000000000000014 init_devices
        stm32eforth.s:300    .text.reset_handler:0000000000000010 forth_entry
        stm32eforth.s:301    .text.reset_handler:0000000000000010 $d
-       stm32eforth.s:4322   .text.reset_handler:0000000000002480 COLD
+       stm32eforth.s:4319   .text.reset_handler:0000000000002470 COLD
        stm32eforth.s:304    .text.reset_handler:0000000000000014 $t
        stm32eforth.s:320    .text.reset_handler:0000000000000032 wait_hserdy
        stm32eforth.s:340    .text.reset_handler:000000000000004c wait_pllrdy
        stm32eforth.s:353    .text.reset_handler:000000000000006c wait_sws
        stm32eforth.s:425    .text.reset_handler:000000000000011c remap_dest
        stm32eforth.s:423    .text.reset_handler:0000000000000118 remap_src
-       stm32eforth.s:4353   .text.reset_handler:00000000000024ea CTOP
+       stm32eforth.s:4350   .text.reset_handler:00000000000024da CTOP
        stm32eforth.s:471    .text.reset_handler:0000000000000400 UZERO
        stm32eforth.s:424    .text.reset_handler:0000000000000118 $d
        stm32eforth.s:431    *ABS*:0000000000000001 VER
@@ -4980,9 +4977,9 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:448    *ABS*:0000000000000027 TIC
        stm32eforth.s:469    .text.reset_handler:0000000000000120 $t
        stm32eforth.s:472    .text.reset_handler:0000000000000400 $d
-       stm32eforth.s:4290   .text.reset_handler:000000000000240c HI
+       stm32eforth.s:4287   .text.reset_handler:00000000000023fc HI
        stm32eforth.s:3095   .text.reset_handler:0000000000001954 INTER
-       stm32eforth.s:4319   .text.reset_handler:0000000000002478 LASTN
+       stm32eforth.s:4316   .text.reset_handler:0000000000002468 LASTN
        stm32eforth.s:489    .text.reset_handler:0000000000000448 ULAST
        stm32eforth.s:500    .text.reset_handler:0000000000000448 $d
        stm32eforth.s:501    .text.reset_handler:000000000000044c _REBOOT
@@ -5770,327 +5767,326 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:3239   .text.reset_handler:0000000000001ab4 _UNLOCK
        stm32eforth.s:3242   .text.reset_handler:0000000000001abc UNLOCK
        stm32eforth.s:3245   .text.reset_handler:0000000000001ac4 $d
-       stm32eforth.s:3267   .text.reset_handler:0000000000001ae6 LOCK
-       stm32eforth.s:3246   .text.reset_handler:0000000000001ac8 UNLOCK1
-       stm32eforth.s:3409   .text.reset_handler:0000000000001c78 flash_regs
-       stm32eforth.s:3247   .text.reset_handler:0000000000001ac8 $t
-       stm32eforth.s:3274   .text.reset_handler:0000000000001af4 WAIT_BSY
-       stm32eforth.s:3276   .text.reset_handler:0000000000001af6 WAIT1
-       stm32eforth.s:3286   .text.reset_handler:0000000000001b00 $d
-       stm32eforth.s:3287   .text.reset_handler:0000000000001b04 _EPAGE
-       stm32eforth.s:3291   .text.reset_handler:0000000000001b10 EPAGE
-       stm32eforth.s:3295   .text.reset_handler:0000000000001b1c $d
-       stm32eforth.s:3296   .text.reset_handler:0000000000001b20 $t
+       stm32eforth.s:3266   .text.reset_handler:0000000000001ae4 LOCK
+       stm32eforth.s:3406   .text.reset_handler:0000000000001c68 flash_regs
+       stm32eforth.s:3246   .text.reset_handler:0000000000001ac8 $t
+       stm32eforth.s:3273   .text.reset_handler:0000000000001af0 WAIT_BSY
+       stm32eforth.s:3275   .text.reset_handler:0000000000001af2 WAIT1
+       stm32eforth.s:3286   .text.reset_handler:0000000000001afc $d
+       stm32eforth.s:3287   .text.reset_handler:0000000000001b00 _EPAGE
+       stm32eforth.s:3291   .text.reset_handler:0000000000001b0c EPAGE
+       stm32eforth.s:3295   .text.reset_handler:0000000000001b18 $d
+       stm32eforth.s:3296   .text.reset_handler:0000000000001b1c $t
+       stm32eforth.s:3306   .text.reset_handler:0000000000001b3a $d
 ARM GAS  stm32eforth.s 			page 98
 
 
-       stm32eforth.s:3308   .text.reset_handler:0000000000001b46 $d
-       stm32eforth.s:3309   .text.reset_handler:0000000000001b4a $t
-       stm32eforth.s:3313   .text.reset_handler:0000000000001b58 $d
-       stm32eforth.s:3315   .text.reset_handler:0000000000001b66 $t
-       stm32eforth.s:3321   .text.reset_handler:0000000000001b70 HWORD_WRITE
-       stm32eforth.s:3334   .text.reset_handler:0000000000001b92 $d
-       stm32eforth.s:3335   .text.reset_handler:0000000000001b96 $t
-       stm32eforth.s:3336   .text.reset_handler:0000000000001b9a $d
-       stm32eforth.s:3338   .text.reset_handler:0000000000001ba8 $t
-       stm32eforth.s:3347   .text.reset_handler:0000000000001bac $d
-       stm32eforth.s:3348   .text.reset_handler:0000000000001bb0 _ISTOR
-       stm32eforth.s:3352   .text.reset_handler:0000000000001bb4 ISTOR
-       stm32eforth.s:3356   .text.reset_handler:0000000000001bc0 $d
-       stm32eforth.s:3357   .text.reset_handler:0000000000001bc4 $t
-       stm32eforth.s:3368   .text.reset_handler:0000000000001bf0 $d
-       stm32eforth.s:3369   .text.reset_handler:0000000000001bf4 $t
-       stm32eforth.s:3375   .text.reset_handler:0000000000001bfc $d
-       stm32eforth.s:3376   .text.reset_handler:0000000000001c00 _TURN
-       stm32eforth.s:3378   .text.reset_handler:0000000000001c08 $t
-       stm32eforth.s:3379   .text.reset_handler:0000000000001c08 TURN
-       stm32eforth.s:3381   .text.reset_handler:0000000000001c10 $d
-       stm32eforth.s:3382   .text.reset_handler:0000000000001c14 $t
-       stm32eforth.s:3383   .text.reset_handler:0000000000001c18 $d
-       stm32eforth.s:3384   .text.reset_handler:0000000000001c1c $t
-       stm32eforth.s:3385   .text.reset_handler:0000000000001c20 $d
-       stm32eforth.s:3386   .text.reset_handler:0000000000001c24 $t
-       stm32eforth.s:3388   .text.reset_handler:0000000000001c2c $d
-       stm32eforth.s:3389   .text.reset_handler:0000000000001c30 $t
-       stm32eforth.s:3390   .text.reset_handler:0000000000001c34 $d
-       stm32eforth.s:3391   .text.reset_handler:0000000000001c38 $t
-       stm32eforth.s:3395   .text.reset_handler:0000000000001c48 TURN1
-       stm32eforth.s:3405   .text.reset_handler:0000000000001c6c $d
-       stm32eforth.s:3406   .text.reset_handler:0000000000001c70 $t
-       stm32eforth.s:3410   .text.reset_handler:0000000000001c78 $d
-       stm32eforth.s:3421   .text.reset_handler:0000000000001c88 _TICK
-       stm32eforth.s:3423   .text.reset_handler:0000000000001c8a $t
-       stm32eforth.s:3424   .text.reset_handler:0000000000001c8c TICK
-       stm32eforth.s:3429   .text.reset_handler:0000000000001c9c $d
-       stm32eforth.s:3431   .text.reset_handler:0000000000001ca4 TICK1
-       stm32eforth.s:3430   .text.reset_handler:0000000000001ca0 $t
-       stm32eforth.s:3436   .text.reset_handler:0000000000001ca8 $d
-       stm32eforth.s:3437   .text.reset_handler:0000000000001cac _ALLOT
-       stm32eforth.s:3439   .text.reset_handler:0000000000001cb2 $t
-       stm32eforth.s:3440   .text.reset_handler:0000000000001cb4 ALLOT
-       stm32eforth.s:3449   .text.reset_handler:0000000000001cc4 $d
-       stm32eforth.s:3450   .text.reset_handler:0000000000001cc8 _COMMA
-       stm32eforth.s:3451   .text.reset_handler:0000000000001cca $t
-       stm32eforth.s:3452   .text.reset_handler:0000000000001ccc COMMA
-       stm32eforth.s:3465   .text.reset_handler:0000000000001cec $d
-       stm32eforth.s:3466   .text.reset_handler:0000000000001cf0 _BCOMP
-       stm32eforth.s:3468   .text.reset_handler:0000000000001cfa $t
-       stm32eforth.s:3469   .text.reset_handler:0000000000001cfc BCOMP
-       stm32eforth.s:3478   .text.reset_handler:0000000000001d0c $d
-       stm32eforth.s:3479   .text.reset_handler:0000000000001d10 _COMPI
-       stm32eforth.s:3481   .text.reset_handler:0000000000001d18 $t
-       stm32eforth.s:3482   .text.reset_handler:0000000000001d18 COMPI
-       stm32eforth.s:3897   .text.reset_handler:00000000000020e4 CALLC
+       stm32eforth.s:3307   .text.reset_handler:0000000000001b3e $t
+       stm32eforth.s:3311   .text.reset_handler:0000000000001b4c $d
+       stm32eforth.s:3313   .text.reset_handler:0000000000001b5a $t
+       stm32eforth.s:3318   .text.reset_handler:0000000000001b60 HWORD_WRITE
+       stm32eforth.s:3331   .text.reset_handler:0000000000001b82 $d
+       stm32eforth.s:3332   .text.reset_handler:0000000000001b86 $t
+       stm32eforth.s:3333   .text.reset_handler:0000000000001b8a $d
+       stm32eforth.s:3335   .text.reset_handler:0000000000001b98 $t
+       stm32eforth.s:3344   .text.reset_handler:0000000000001b9c $d
+       stm32eforth.s:3345   .text.reset_handler:0000000000001ba0 _ISTOR
+       stm32eforth.s:3349   .text.reset_handler:0000000000001ba4 ISTOR
+       stm32eforth.s:3353   .text.reset_handler:0000000000001bb0 $d
+       stm32eforth.s:3354   .text.reset_handler:0000000000001bb4 $t
+       stm32eforth.s:3365   .text.reset_handler:0000000000001be0 $d
+       stm32eforth.s:3366   .text.reset_handler:0000000000001be4 $t
+       stm32eforth.s:3372   .text.reset_handler:0000000000001bec $d
+       stm32eforth.s:3373   .text.reset_handler:0000000000001bf0 _TURN
+       stm32eforth.s:3375   .text.reset_handler:0000000000001bf8 $t
+       stm32eforth.s:3376   .text.reset_handler:0000000000001bf8 TURN
+       stm32eforth.s:3378   .text.reset_handler:0000000000001c00 $d
+       stm32eforth.s:3379   .text.reset_handler:0000000000001c04 $t
+       stm32eforth.s:3380   .text.reset_handler:0000000000001c08 $d
+       stm32eforth.s:3381   .text.reset_handler:0000000000001c0c $t
+       stm32eforth.s:3382   .text.reset_handler:0000000000001c10 $d
+       stm32eforth.s:3383   .text.reset_handler:0000000000001c14 $t
+       stm32eforth.s:3385   .text.reset_handler:0000000000001c1c $d
+       stm32eforth.s:3386   .text.reset_handler:0000000000001c20 $t
+       stm32eforth.s:3387   .text.reset_handler:0000000000001c24 $d
+       stm32eforth.s:3388   .text.reset_handler:0000000000001c28 $t
+       stm32eforth.s:3392   .text.reset_handler:0000000000001c38 TURN1
+       stm32eforth.s:3402   .text.reset_handler:0000000000001c5c $d
+       stm32eforth.s:3403   .text.reset_handler:0000000000001c60 $t
+       stm32eforth.s:3407   .text.reset_handler:0000000000001c68 $d
+       stm32eforth.s:3418   .text.reset_handler:0000000000001c78 _TICK
+       stm32eforth.s:3420   .text.reset_handler:0000000000001c7a $t
+       stm32eforth.s:3421   .text.reset_handler:0000000000001c7c TICK
+       stm32eforth.s:3426   .text.reset_handler:0000000000001c8c $d
+       stm32eforth.s:3428   .text.reset_handler:0000000000001c94 TICK1
+       stm32eforth.s:3427   .text.reset_handler:0000000000001c90 $t
+       stm32eforth.s:3433   .text.reset_handler:0000000000001c98 $d
+       stm32eforth.s:3434   .text.reset_handler:0000000000001c9c _ALLOT
+       stm32eforth.s:3436   .text.reset_handler:0000000000001ca2 $t
+       stm32eforth.s:3437   .text.reset_handler:0000000000001ca4 ALLOT
+       stm32eforth.s:3446   .text.reset_handler:0000000000001cb4 $d
+       stm32eforth.s:3447   .text.reset_handler:0000000000001cb8 _COMMA
+       stm32eforth.s:3448   .text.reset_handler:0000000000001cba $t
+       stm32eforth.s:3449   .text.reset_handler:0000000000001cbc COMMA
+       stm32eforth.s:3462   .text.reset_handler:0000000000001cdc $d
+       stm32eforth.s:3463   .text.reset_handler:0000000000001ce0 _BCOMP
+       stm32eforth.s:3465   .text.reset_handler:0000000000001cea $t
+       stm32eforth.s:3466   .text.reset_handler:0000000000001cec BCOMP
+       stm32eforth.s:3475   .text.reset_handler:0000000000001cfc $d
+       stm32eforth.s:3476   .text.reset_handler:0000000000001d00 _COMPI
+       stm32eforth.s:3478   .text.reset_handler:0000000000001d08 $t
+       stm32eforth.s:3479   .text.reset_handler:0000000000001d08 COMPI
+       stm32eforth.s:3894   .text.reset_handler:00000000000020d4 CALLC
+       stm32eforth.s:3494   .text.reset_handler:0000000000001d30 $d
 ARM GAS  stm32eforth.s 			page 99
 
 
-       stm32eforth.s:3497   .text.reset_handler:0000000000001d40 $d
-       stm32eforth.s:3498   .text.reset_handler:0000000000001d44 _LITER
-       stm32eforth.s:3500   .text.reset_handler:0000000000001d4c $t
-       stm32eforth.s:3501   .text.reset_handler:0000000000001d4c LITER
-       stm32eforth.s:3504   .text.reset_handler:0000000000001d54 $d
-       stm32eforth.s:3505   .text.reset_handler:0000000000001d58 $t
-       stm32eforth.s:3515   .text.reset_handler:0000000000001d60 STRCQ
-       stm32eforth.s:3518   .text.reset_handler:0000000000001d68 $d
-       stm32eforth.s:3519   .text.reset_handler:0000000000001d6c $t
-       stm32eforth.s:3522   .text.reset_handler:0000000000001d78 $d
-       stm32eforth.s:3523   .text.reset_handler:0000000000001d7c $t
-       stm32eforth.s:3537   .text.reset_handler:0000000000001d98 $d
-       stm32eforth.s:3538   .text.reset_handler:0000000000001d9c _FOR
-       stm32eforth.s:3540   .text.reset_handler:0000000000001da0 $t
-       stm32eforth.s:3541   .text.reset_handler:0000000000001da0 FOR
-       stm32eforth.s:3544   .text.reset_handler:0000000000001da8 $d
-       stm32eforth.s:3545   .text.reset_handler:0000000000001dac $t
-       stm32eforth.s:3551   .text.reset_handler:0000000000001db4 $d
-       stm32eforth.s:3552   .text.reset_handler:0000000000001db8 _BEGIN
-       stm32eforth.s:3554   .text.reset_handler:0000000000001dbe $t
-       stm32eforth.s:3555   .text.reset_handler:0000000000001dc0 BEGIN
-       stm32eforth.s:3563   .text.reset_handler:0000000000001dcc $d
-       stm32eforth.s:3564   .text.reset_handler:0000000000001dd0 _NEXT
-       stm32eforth.s:3567   .text.reset_handler:0000000000001dd8 NEXT
-       stm32eforth.s:3570   .text.reset_handler:0000000000001de0 $d
-       stm32eforth.s:3571   .text.reset_handler:0000000000001de4 $t
-       stm32eforth.s:3577   .text.reset_handler:0000000000001dec $d
-       stm32eforth.s:3578   .text.reset_handler:0000000000001df0 _UNTIL
-       stm32eforth.s:3580   .text.reset_handler:0000000000001df6 $t
-       stm32eforth.s:3581   .text.reset_handler:0000000000001df8 UNTIL
-       stm32eforth.s:3584   .text.reset_handler:0000000000001e00 $d
-       stm32eforth.s:3585   .text.reset_handler:0000000000001e04 $t
-       stm32eforth.s:3591   .text.reset_handler:0000000000001e0c $d
-       stm32eforth.s:3592   .text.reset_handler:0000000000001e10 _AGAIN
-       stm32eforth.s:3594   .text.reset_handler:0000000000001e16 $t
-       stm32eforth.s:3595   .text.reset_handler:0000000000001e18 AGAIN
-       stm32eforth.s:3598   .text.reset_handler:0000000000001e20 $d
-       stm32eforth.s:3599   .text.reset_handler:0000000000001e24 $t
-       stm32eforth.s:3605   .text.reset_handler:0000000000001e2c $d
-       stm32eforth.s:3606   .text.reset_handler:0000000000001e30 _IFF
-       stm32eforth.s:3609   .text.reset_handler:0000000000001e34 IFF
-       stm32eforth.s:3612   .text.reset_handler:0000000000001e3c $d
-       stm32eforth.s:3613   .text.reset_handler:0000000000001e40 $t
-       stm32eforth.s:3615   .text.reset_handler:0000000000001e48 $d
-       stm32eforth.s:3616   .text.reset_handler:0000000000001e4c $t
-       stm32eforth.s:3623   .text.reset_handler:0000000000001e58 $d
-       stm32eforth.s:3624   .text.reset_handler:0000000000001e5c _AHEAD
-       stm32eforth.s:3626   .text.reset_handler:0000000000001e62 $t
-       stm32eforth.s:3627   .text.reset_handler:0000000000001e64 AHEAD
-       stm32eforth.s:3630   .text.reset_handler:0000000000001e6c $d
-       stm32eforth.s:3631   .text.reset_handler:0000000000001e70 $t
-       stm32eforth.s:3633   .text.reset_handler:0000000000001e78 $d
-       stm32eforth.s:3634   .text.reset_handler:0000000000001e7c $t
-       stm32eforth.s:3641   .text.reset_handler:0000000000001e88 $d
-       stm32eforth.s:3642   .text.reset_handler:0000000000001e8c _REPEA
-       stm32eforth.s:3645   .text.reset_handler:0000000000001e94 REPEA
-       stm32eforth.s:3656   .text.reset_handler:0000000000001eac $d
+       stm32eforth.s:3495   .text.reset_handler:0000000000001d34 _LITER
+       stm32eforth.s:3497   .text.reset_handler:0000000000001d3c $t
+       stm32eforth.s:3498   .text.reset_handler:0000000000001d3c LITER
+       stm32eforth.s:3501   .text.reset_handler:0000000000001d44 $d
+       stm32eforth.s:3502   .text.reset_handler:0000000000001d48 $t
+       stm32eforth.s:3512   .text.reset_handler:0000000000001d50 STRCQ
+       stm32eforth.s:3515   .text.reset_handler:0000000000001d58 $d
+       stm32eforth.s:3516   .text.reset_handler:0000000000001d5c $t
+       stm32eforth.s:3519   .text.reset_handler:0000000000001d68 $d
+       stm32eforth.s:3520   .text.reset_handler:0000000000001d6c $t
+       stm32eforth.s:3534   .text.reset_handler:0000000000001d88 $d
+       stm32eforth.s:3535   .text.reset_handler:0000000000001d8c _FOR
+       stm32eforth.s:3537   .text.reset_handler:0000000000001d90 $t
+       stm32eforth.s:3538   .text.reset_handler:0000000000001d90 FOR
+       stm32eforth.s:3541   .text.reset_handler:0000000000001d98 $d
+       stm32eforth.s:3542   .text.reset_handler:0000000000001d9c $t
+       stm32eforth.s:3548   .text.reset_handler:0000000000001da4 $d
+       stm32eforth.s:3549   .text.reset_handler:0000000000001da8 _BEGIN
+       stm32eforth.s:3551   .text.reset_handler:0000000000001dae $t
+       stm32eforth.s:3552   .text.reset_handler:0000000000001db0 BEGIN
+       stm32eforth.s:3560   .text.reset_handler:0000000000001dbc $d
+       stm32eforth.s:3561   .text.reset_handler:0000000000001dc0 _NEXT
+       stm32eforth.s:3564   .text.reset_handler:0000000000001dc8 NEXT
+       stm32eforth.s:3567   .text.reset_handler:0000000000001dd0 $d
+       stm32eforth.s:3568   .text.reset_handler:0000000000001dd4 $t
+       stm32eforth.s:3574   .text.reset_handler:0000000000001ddc $d
+       stm32eforth.s:3575   .text.reset_handler:0000000000001de0 _UNTIL
+       stm32eforth.s:3577   .text.reset_handler:0000000000001de6 $t
+       stm32eforth.s:3578   .text.reset_handler:0000000000001de8 UNTIL
+       stm32eforth.s:3581   .text.reset_handler:0000000000001df0 $d
+       stm32eforth.s:3582   .text.reset_handler:0000000000001df4 $t
+       stm32eforth.s:3588   .text.reset_handler:0000000000001dfc $d
+       stm32eforth.s:3589   .text.reset_handler:0000000000001e00 _AGAIN
+       stm32eforth.s:3591   .text.reset_handler:0000000000001e06 $t
+       stm32eforth.s:3592   .text.reset_handler:0000000000001e08 AGAIN
+       stm32eforth.s:3595   .text.reset_handler:0000000000001e10 $d
+       stm32eforth.s:3596   .text.reset_handler:0000000000001e14 $t
+       stm32eforth.s:3602   .text.reset_handler:0000000000001e1c $d
+       stm32eforth.s:3603   .text.reset_handler:0000000000001e20 _IFF
+       stm32eforth.s:3606   .text.reset_handler:0000000000001e24 IFF
+       stm32eforth.s:3609   .text.reset_handler:0000000000001e2c $d
+       stm32eforth.s:3610   .text.reset_handler:0000000000001e30 $t
+       stm32eforth.s:3612   .text.reset_handler:0000000000001e38 $d
+       stm32eforth.s:3613   .text.reset_handler:0000000000001e3c $t
+       stm32eforth.s:3620   .text.reset_handler:0000000000001e48 $d
+       stm32eforth.s:3621   .text.reset_handler:0000000000001e4c _AHEAD
+       stm32eforth.s:3623   .text.reset_handler:0000000000001e52 $t
+       stm32eforth.s:3624   .text.reset_handler:0000000000001e54 AHEAD
+       stm32eforth.s:3627   .text.reset_handler:0000000000001e5c $d
+       stm32eforth.s:3628   .text.reset_handler:0000000000001e60 $t
+       stm32eforth.s:3630   .text.reset_handler:0000000000001e68 $d
+       stm32eforth.s:3631   .text.reset_handler:0000000000001e6c $t
+       stm32eforth.s:3638   .text.reset_handler:0000000000001e78 $d
+       stm32eforth.s:3639   .text.reset_handler:0000000000001e7c _REPEA
+       stm32eforth.s:3642   .text.reset_handler:0000000000001e84 REPEA
+       stm32eforth.s:3653   .text.reset_handler:0000000000001e9c $d
+       stm32eforth.s:3654   .text.reset_handler:0000000000001ea0 _THENN
 ARM GAS  stm32eforth.s 			page 100
 
 
-       stm32eforth.s:3657   .text.reset_handler:0000000000001eb0 _THENN
-       stm32eforth.s:3660   .text.reset_handler:0000000000001eb8 THENN
-       stm32eforth.s:3670   .text.reset_handler:0000000000001ecc $d
-       stm32eforth.s:3671   .text.reset_handler:0000000000001ed0 _AFT
-       stm32eforth.s:3673   .text.reset_handler:0000000000001ed4 $t
-       stm32eforth.s:3674   .text.reset_handler:0000000000001ed4 AFT
-       stm32eforth.s:3685   .text.reset_handler:0000000000001eec $d
-       stm32eforth.s:3686   .text.reset_handler:0000000000001ef0 _ELSEE
-       stm32eforth.s:3689   .text.reset_handler:0000000000001ef8 ELSEE
-       stm32eforth.s:3699   .text.reset_handler:0000000000001f0c $d
-       stm32eforth.s:3700   .text.reset_handler:0000000000001f10 _WHILE
-       stm32eforth.s:3702   .text.reset_handler:0000000000001f16 $t
-       stm32eforth.s:3703   .text.reset_handler:0000000000001f18 WHILE
-       stm32eforth.s:3712   .text.reset_handler:0000000000001f28 $d
-       stm32eforth.s:3713   .text.reset_handler:0000000000001f2c _ABRTQ
-       stm32eforth.s:3716   .text.reset_handler:0000000000001f34 ABRTQ
-       stm32eforth.s:3719   .text.reset_handler:0000000000001f3c $d
-       stm32eforth.s:3720   .text.reset_handler:0000000000001f40 $t
-       stm32eforth.s:3726   .text.reset_handler:0000000000001f48 $d
-       stm32eforth.s:3727   .text.reset_handler:0000000000001f4c _STRQ
-       stm32eforth.s:3730   .text.reset_handler:0000000000001f50 STRQ
-       stm32eforth.s:3733   .text.reset_handler:0000000000001f58 $d
-       stm32eforth.s:3734   .text.reset_handler:0000000000001f5c $t
-       stm32eforth.s:3740   .text.reset_handler:0000000000001f64 $d
-       stm32eforth.s:3741   .text.reset_handler:0000000000001f68 _DOTQ
-       stm32eforth.s:3744   .text.reset_handler:0000000000001f6c DOTQ
-       stm32eforth.s:3747   .text.reset_handler:0000000000001f74 $d
-       stm32eforth.s:3748   .text.reset_handler:0000000000001f78 $t
-       stm32eforth.s:3757   .text.reset_handler:0000000000001f80 $d
-       stm32eforth.s:3758   .text.reset_handler:0000000000001f84 _UNIQU
-       stm32eforth.s:3760   .text.reset_handler:0000000000001f8c $t
-       stm32eforth.s:3761   .text.reset_handler:0000000000001f8c UNIQU
-       stm32eforth.s:3766   .text.reset_handler:0000000000001f9c $d
-       stm32eforth.s:3774   .text.reset_handler:0000000000001fb8 UNIQ1
-       stm32eforth.s:3767   .text.reset_handler:0000000000001fa0 $t
-       stm32eforth.s:3768   .text.reset_handler:0000000000001fa4 $d
-       stm32eforth.s:3770   .text.reset_handler:0000000000001fac $t
-       stm32eforth.s:3785   .text.reset_handler:0000000000001fc0 SNAME
-       stm32eforth.s:3790   .text.reset_handler:0000000000001fd0 $d
-       stm32eforth.s:3804   .text.reset_handler:0000000000002008 SNAM1
-       stm32eforth.s:3791   .text.reset_handler:0000000000001fd4 $t
-       stm32eforth.s:3806   .text.reset_handler:000000000000200c $d
-       stm32eforth.s:3808   .text.reset_handler:0000000000002014 $t
-       stm32eforth.s:3813   .text.reset_handler:0000000000002018 $d
-       stm32eforth.s:3814   .text.reset_handler:000000000000201c _SCOMP
-       stm32eforth.s:3816   .text.reset_handler:0000000000002026 $t
-       stm32eforth.s:3817   .text.reset_handler:0000000000002028 SCOMP
-       stm32eforth.s:3822   .text.reset_handler:0000000000002038 $d
-       stm32eforth.s:3834   .text.reset_handler:0000000000002064 SCOM2
-       stm32eforth.s:3823   .text.reset_handler:000000000000203c $t
-       stm32eforth.s:3825   .text.reset_handler:0000000000002044 $d
-       stm32eforth.s:3826   .text.reset_handler:0000000000002048 $t
-       stm32eforth.s:3828   .text.reset_handler:0000000000002050 $d
-       stm32eforth.s:3831   .text.reset_handler:000000000000205c SCOM1
-       stm32eforth.s:3829   .text.reset_handler:0000000000002054 $t
-       stm32eforth.s:3837   .text.reset_handler:000000000000206c $d
-       stm32eforth.s:3840   .text.reset_handler:0000000000002078 SCOM3
+       stm32eforth.s:3657   .text.reset_handler:0000000000001ea8 THENN
+       stm32eforth.s:3667   .text.reset_handler:0000000000001ebc $d
+       stm32eforth.s:3668   .text.reset_handler:0000000000001ec0 _AFT
+       stm32eforth.s:3670   .text.reset_handler:0000000000001ec4 $t
+       stm32eforth.s:3671   .text.reset_handler:0000000000001ec4 AFT
+       stm32eforth.s:3682   .text.reset_handler:0000000000001edc $d
+       stm32eforth.s:3683   .text.reset_handler:0000000000001ee0 _ELSEE
+       stm32eforth.s:3686   .text.reset_handler:0000000000001ee8 ELSEE
+       stm32eforth.s:3696   .text.reset_handler:0000000000001efc $d
+       stm32eforth.s:3697   .text.reset_handler:0000000000001f00 _WHILE
+       stm32eforth.s:3699   .text.reset_handler:0000000000001f06 $t
+       stm32eforth.s:3700   .text.reset_handler:0000000000001f08 WHILE
+       stm32eforth.s:3709   .text.reset_handler:0000000000001f18 $d
+       stm32eforth.s:3710   .text.reset_handler:0000000000001f1c _ABRTQ
+       stm32eforth.s:3713   .text.reset_handler:0000000000001f24 ABRTQ
+       stm32eforth.s:3716   .text.reset_handler:0000000000001f2c $d
+       stm32eforth.s:3717   .text.reset_handler:0000000000001f30 $t
+       stm32eforth.s:3723   .text.reset_handler:0000000000001f38 $d
+       stm32eforth.s:3724   .text.reset_handler:0000000000001f3c _STRQ
+       stm32eforth.s:3727   .text.reset_handler:0000000000001f40 STRQ
+       stm32eforth.s:3730   .text.reset_handler:0000000000001f48 $d
+       stm32eforth.s:3731   .text.reset_handler:0000000000001f4c $t
+       stm32eforth.s:3737   .text.reset_handler:0000000000001f54 $d
+       stm32eforth.s:3738   .text.reset_handler:0000000000001f58 _DOTQ
+       stm32eforth.s:3741   .text.reset_handler:0000000000001f5c DOTQ
+       stm32eforth.s:3744   .text.reset_handler:0000000000001f64 $d
+       stm32eforth.s:3745   .text.reset_handler:0000000000001f68 $t
+       stm32eforth.s:3754   .text.reset_handler:0000000000001f70 $d
+       stm32eforth.s:3755   .text.reset_handler:0000000000001f74 _UNIQU
+       stm32eforth.s:3757   .text.reset_handler:0000000000001f7c $t
+       stm32eforth.s:3758   .text.reset_handler:0000000000001f7c UNIQU
+       stm32eforth.s:3763   .text.reset_handler:0000000000001f8c $d
+       stm32eforth.s:3771   .text.reset_handler:0000000000001fa8 UNIQ1
+       stm32eforth.s:3764   .text.reset_handler:0000000000001f90 $t
+       stm32eforth.s:3765   .text.reset_handler:0000000000001f94 $d
+       stm32eforth.s:3767   .text.reset_handler:0000000000001f9c $t
+       stm32eforth.s:3782   .text.reset_handler:0000000000001fb0 SNAME
+       stm32eforth.s:3787   .text.reset_handler:0000000000001fc0 $d
+       stm32eforth.s:3801   .text.reset_handler:0000000000001ff8 SNAM1
+       stm32eforth.s:3788   .text.reset_handler:0000000000001fc4 $t
+       stm32eforth.s:3803   .text.reset_handler:0000000000001ffc $d
+       stm32eforth.s:3805   .text.reset_handler:0000000000002004 $t
+       stm32eforth.s:3810   .text.reset_handler:0000000000002008 $d
+       stm32eforth.s:3811   .text.reset_handler:000000000000200c _SCOMP
+       stm32eforth.s:3813   .text.reset_handler:0000000000002016 $t
+       stm32eforth.s:3814   .text.reset_handler:0000000000002018 SCOMP
+       stm32eforth.s:3819   .text.reset_handler:0000000000002028 $d
+       stm32eforth.s:3831   .text.reset_handler:0000000000002054 SCOM2
+       stm32eforth.s:3820   .text.reset_handler:000000000000202c $t
+       stm32eforth.s:3822   .text.reset_handler:0000000000002034 $d
+       stm32eforth.s:3823   .text.reset_handler:0000000000002038 $t
+       stm32eforth.s:3825   .text.reset_handler:0000000000002040 $d
+       stm32eforth.s:3828   .text.reset_handler:000000000000204c SCOM1
+       stm32eforth.s:3826   .text.reset_handler:0000000000002044 $t
+       stm32eforth.s:3834   .text.reset_handler:000000000000205c $d
+       stm32eforth.s:3837   .text.reset_handler:0000000000002068 SCOM3
+       stm32eforth.s:3835   .text.reset_handler:0000000000002060 $t
 ARM GAS  stm32eforth.s 			page 101
 
 
-       stm32eforth.s:3838   .text.reset_handler:0000000000002070 $t
-       stm32eforth.s:3846   .text.reset_handler:000000000000207c $d
-       stm32eforth.s:3847   .text.reset_handler:0000000000002080 _OVERT
-       stm32eforth.s:3849   .text.reset_handler:0000000000002086 $t
-       stm32eforth.s:3850   .text.reset_handler:0000000000002088 OVERT
-       stm32eforth.s:3861   .text.reset_handler:00000000000020a0 $d
-       stm32eforth.s:3862   .text.reset_handler:00000000000020a4 _SEMIS
-       stm32eforth.s:3864   .text.reset_handler:00000000000020a6 $t
-       stm32eforth.s:3865   .text.reset_handler:00000000000020a8 SEMIS
-       stm32eforth.s:3877   .text.reset_handler:00000000000020c4 $d
-       stm32eforth.s:3878   .text.reset_handler:00000000000020c8 _RBRAC
-       stm32eforth.s:3880   .text.reset_handler:00000000000020ca $t
-       stm32eforth.s:3881   .text.reset_handler:00000000000020cc RBRAC
-       stm32eforth.s:3884   .text.reset_handler:00000000000020d4 $d
-       stm32eforth.s:3885   .text.reset_handler:00000000000020d8 $t
-       stm32eforth.s:3918   .text.reset_handler:000000000000211e $d
-       stm32eforth.s:3919   .text.reset_handler:0000000000002122 _COLON
-       stm32eforth.s:3921   .text.reset_handler:0000000000002124 $t
-       stm32eforth.s:3922   .text.reset_handler:0000000000002124 COLON
-       stm32eforth.s:3935   .text.reset_handler:0000000000002144 $d
-       stm32eforth.s:3936   .text.reset_handler:0000000000002148 _IMMED
-       stm32eforth.s:3938   .text.reset_handler:0000000000002152 $t
-       stm32eforth.s:3939   .text.reset_handler:0000000000002154 IMMED
-       stm32eforth.s:3942   .text.reset_handler:000000000000215c $d
-       stm32eforth.s:3943   .text.reset_handler:0000000000002160 $t
-       stm32eforth.s:3958   .text.reset_handler:0000000000002180 $d
-       stm32eforth.s:3959   .text.reset_handler:0000000000002184 _CONST
-       stm32eforth.s:3962   .text.reset_handler:0000000000002190 CONST
-       stm32eforth.s:3971   .text.reset_handler:00000000000021b0 $d
-       stm32eforth.s:3972   .text.reset_handler:00000000000021b4 $t
-       stm32eforth.s:3979   .text.reset_handler:00000000000021c0 $d
-       stm32eforth.s:3980   .text.reset_handler:00000000000021c4 _CREAT
-       stm32eforth.s:3983   .text.reset_handler:00000000000021cc CREAT
-       stm32eforth.s:3992   .text.reset_handler:00000000000021ec $d
-       stm32eforth.s:3993   .text.reset_handler:00000000000021f0 $t
-       stm32eforth.s:3999   .text.reset_handler:00000000000021f8 $d
-       stm32eforth.s:4000   .text.reset_handler:00000000000021fc _VARIA
-       stm32eforth.s:4003   .text.reset_handler:0000000000002208 VARIA
-       stm32eforth.s:4007   .text.reset_handler:0000000000002214 $d
-       stm32eforth.s:4008   .text.reset_handler:0000000000002218 $t
-       stm32eforth.s:4021   .text.reset_handler:0000000000002220 DMP
-       stm32eforth.s:4025   .text.reset_handler:000000000000222c $d
-       stm32eforth.s:4026   .text.reset_handler:0000000000002230 $t
-       stm32eforth.s:4037   .text.reset_handler:0000000000002258 PDUM2
-       stm32eforth.s:4030   .text.reset_handler:0000000000002240 PDUM1
-       stm32eforth.s:4034   .text.reset_handler:000000000000224c $d
-       stm32eforth.s:4035   .text.reset_handler:0000000000002250 $t
-       stm32eforth.s:4039   .text.reset_handler:000000000000225c $d
-       stm32eforth.s:4040   .text.reset_handler:0000000000002260 $t
-       stm32eforth.s:4045   .text.reset_handler:0000000000002264 $d
-       stm32eforth.s:4046   .text.reset_handler:0000000000002268 _DUMP
-       stm32eforth.s:4049   .text.reset_handler:0000000000002270 DUMP
-       stm32eforth.s:4056   .text.reset_handler:0000000000002288 $d
-       stm32eforth.s:4057   .text.reset_handler:000000000000228c $t
-       stm32eforth.s:4071   .text.reset_handler:00000000000022c0 DUMP4
-       stm32eforth.s:4060   .text.reset_handler:0000000000002298 DUMP1
-       stm32eforth.s:4063   .text.reset_handler:00000000000022a0 $d
+       stm32eforth.s:3843   .text.reset_handler:000000000000206c $d
+       stm32eforth.s:3844   .text.reset_handler:0000000000002070 _OVERT
+       stm32eforth.s:3846   .text.reset_handler:0000000000002076 $t
+       stm32eforth.s:3847   .text.reset_handler:0000000000002078 OVERT
+       stm32eforth.s:3858   .text.reset_handler:0000000000002090 $d
+       stm32eforth.s:3859   .text.reset_handler:0000000000002094 _SEMIS
+       stm32eforth.s:3861   .text.reset_handler:0000000000002096 $t
+       stm32eforth.s:3862   .text.reset_handler:0000000000002098 SEMIS
+       stm32eforth.s:3874   .text.reset_handler:00000000000020b4 $d
+       stm32eforth.s:3875   .text.reset_handler:00000000000020b8 _RBRAC
+       stm32eforth.s:3877   .text.reset_handler:00000000000020ba $t
+       stm32eforth.s:3878   .text.reset_handler:00000000000020bc RBRAC
+       stm32eforth.s:3881   .text.reset_handler:00000000000020c4 $d
+       stm32eforth.s:3882   .text.reset_handler:00000000000020c8 $t
+       stm32eforth.s:3915   .text.reset_handler:000000000000210e $d
+       stm32eforth.s:3916   .text.reset_handler:0000000000002112 _COLON
+       stm32eforth.s:3918   .text.reset_handler:0000000000002114 $t
+       stm32eforth.s:3919   .text.reset_handler:0000000000002114 COLON
+       stm32eforth.s:3932   .text.reset_handler:0000000000002134 $d
+       stm32eforth.s:3933   .text.reset_handler:0000000000002138 _IMMED
+       stm32eforth.s:3935   .text.reset_handler:0000000000002142 $t
+       stm32eforth.s:3936   .text.reset_handler:0000000000002144 IMMED
+       stm32eforth.s:3939   .text.reset_handler:000000000000214c $d
+       stm32eforth.s:3940   .text.reset_handler:0000000000002150 $t
+       stm32eforth.s:3955   .text.reset_handler:0000000000002170 $d
+       stm32eforth.s:3956   .text.reset_handler:0000000000002174 _CONST
+       stm32eforth.s:3959   .text.reset_handler:0000000000002180 CONST
+       stm32eforth.s:3968   .text.reset_handler:00000000000021a0 $d
+       stm32eforth.s:3969   .text.reset_handler:00000000000021a4 $t
+       stm32eforth.s:3976   .text.reset_handler:00000000000021b0 $d
+       stm32eforth.s:3977   .text.reset_handler:00000000000021b4 _CREAT
+       stm32eforth.s:3980   .text.reset_handler:00000000000021bc CREAT
+       stm32eforth.s:3989   .text.reset_handler:00000000000021dc $d
+       stm32eforth.s:3990   .text.reset_handler:00000000000021e0 $t
+       stm32eforth.s:3996   .text.reset_handler:00000000000021e8 $d
+       stm32eforth.s:3997   .text.reset_handler:00000000000021ec _VARIA
+       stm32eforth.s:4000   .text.reset_handler:00000000000021f8 VARIA
+       stm32eforth.s:4004   .text.reset_handler:0000000000002204 $d
+       stm32eforth.s:4005   .text.reset_handler:0000000000002208 $t
+       stm32eforth.s:4018   .text.reset_handler:0000000000002210 DMP
+       stm32eforth.s:4022   .text.reset_handler:000000000000221c $d
+       stm32eforth.s:4023   .text.reset_handler:0000000000002220 $t
+       stm32eforth.s:4034   .text.reset_handler:0000000000002248 PDUM2
+       stm32eforth.s:4027   .text.reset_handler:0000000000002230 PDUM1
+       stm32eforth.s:4031   .text.reset_handler:000000000000223c $d
+       stm32eforth.s:4032   .text.reset_handler:0000000000002240 $t
+       stm32eforth.s:4036   .text.reset_handler:000000000000224c $d
+       stm32eforth.s:4037   .text.reset_handler:0000000000002250 $t
+       stm32eforth.s:4042   .text.reset_handler:0000000000002254 $d
+       stm32eforth.s:4043   .text.reset_handler:0000000000002258 _DUMP
+       stm32eforth.s:4046   .text.reset_handler:0000000000002260 DUMP
+       stm32eforth.s:4053   .text.reset_handler:0000000000002278 $d
+       stm32eforth.s:4054   .text.reset_handler:000000000000227c $t
+       stm32eforth.s:4068   .text.reset_handler:00000000000022b0 DUMP4
+       stm32eforth.s:4057   .text.reset_handler:0000000000002288 DUMP1
+       stm32eforth.s:4060   .text.reset_handler:0000000000002290 $d
+       stm32eforth.s:4061   .text.reset_handler:0000000000002294 $t
 ARM GAS  stm32eforth.s 			page 102
 
 
-       stm32eforth.s:4064   .text.reset_handler:00000000000022a4 $t
-       stm32eforth.s:4073   .text.reset_handler:00000000000022c4 $d
-       stm32eforth.s:4074   .text.reset_handler:00000000000022c8 DUMP3
-       stm32eforth.s:4075   .text.reset_handler:00000000000022c8 $t
-       stm32eforth.s:4084   .text.reset_handler:00000000000022dc $d
-       stm32eforth.s:4085   .text.reset_handler:00000000000022e0 _DOTS
-       stm32eforth.s:4089   .text.reset_handler:00000000000022e4 DOTS
-       stm32eforth.s:4099   .text.reset_handler:0000000000002304 DOTS2
-       stm32eforth.s:4095   .text.reset_handler:00000000000022f8 DOTS1
-       stm32eforth.s:4101   .text.reset_handler:0000000000002308 $d
-       stm32eforth.s:4102   .text.reset_handler:000000000000230c $t
-       stm32eforth.s:4108   .text.reset_handler:0000000000002314 $d
-       stm32eforth.s:4109   .text.reset_handler:0000000000002318 _TNAME
-       stm32eforth.s:4111   .text.reset_handler:000000000000231e $t
-       stm32eforth.s:4112   .text.reset_handler:0000000000002320 TNAME
-       stm32eforth.s:4117   .text.reset_handler:0000000000002330 TNAM1
-       stm32eforth.s:4120   .text.reset_handler:0000000000002338 $d
-       stm32eforth.s:4130   .text.reset_handler:0000000000002360 TNAM2
-       stm32eforth.s:4121   .text.reset_handler:000000000000233c $t
-       stm32eforth.s:4126   .text.reset_handler:0000000000002350 $d
-       stm32eforth.s:4127   .text.reset_handler:0000000000002354 $t
-       stm32eforth.s:4138   .text.reset_handler:000000000000236c $d
-       stm32eforth.s:4139   .text.reset_handler:0000000000002370 _DOTID
-       stm32eforth.s:4141   .text.reset_handler:0000000000002374 $t
-       stm32eforth.s:4142   .text.reset_handler:0000000000002374 DOTID
-       stm32eforth.s:4146   .text.reset_handler:0000000000002380 $d
-       stm32eforth.s:4153   .text.reset_handler:000000000000239c DOTI1
-       stm32eforth.s:4147   .text.reset_handler:0000000000002384 $t
-       stm32eforth.s:4149   .text.reset_handler:000000000000238c $d
-       stm32eforth.s:4150   .text.reset_handler:0000000000002390 $t
-       stm32eforth.s:4155   .text.reset_handler:00000000000023a0 $d
-       stm32eforth.s:4157   .text.reset_handler:00000000000023aa $t
-       stm32eforth.s:4160   *ABS*:0000000000000000 WANT_SEE
-       stm32eforth.s:4244   .text.reset_handler:00000000000023b0 $d
-       stm32eforth.s:4246   .text.reset_handler:00000000000023b4 _WORDS
-       stm32eforth.s:4248   .text.reset_handler:00000000000023ba $t
-       stm32eforth.s:4249   .text.reset_handler:00000000000023bc WORDS
-       stm32eforth.s:4254   .text.reset_handler:00000000000023cc WORS1
-       stm32eforth.s:4257   .text.reset_handler:00000000000023d4 $d
-       stm32eforth.s:4264   .text.reset_handler:00000000000023f0 WORS2
-       stm32eforth.s:4258   .text.reset_handler:00000000000023d8 $t
-       stm32eforth.s:4277   .text.reset_handler:00000000000023f4 VERSN
-       stm32eforth.s:4280   .text.reset_handler:00000000000023fc $d
-       stm32eforth.s:4281   .text.reset_handler:0000000000002400 $t
-       stm32eforth.s:4286   .text.reset_handler:0000000000002404 $d
-       stm32eforth.s:4287   .text.reset_handler:0000000000002408 _HI
-       stm32eforth.s:4294   .text.reset_handler:0000000000002418 $d
-       stm32eforth.s:4296   .text.reset_handler:0000000000002430 $t
-       stm32eforth.s:4305   .text.reset_handler:0000000000002450 $d
-       stm32eforth.s:4306   .text.reset_handler:0000000000002454 $t
-       stm32eforth.s:4318   .text.reset_handler:0000000000002474 $d
-       stm32eforth.s:4324   .text.reset_handler:0000000000002480 $t
-       stm32eforth.s:4331   .text.reset_handler:000000000000249a COLD1
-       stm32eforth.s:4333   .text.reset_handler:000000000000249e $d
-       stm32eforth.s:4334   .text.reset_handler:00000000000024a2 $t
-       stm32eforth.s:4336   .text.reset_handler:00000000000024aa $d
-       stm32eforth.s:4337   .text.reset_handler:00000000000024ae $t
+       stm32eforth.s:4070   .text.reset_handler:00000000000022b4 $d
+       stm32eforth.s:4071   .text.reset_handler:00000000000022b8 DUMP3
+       stm32eforth.s:4072   .text.reset_handler:00000000000022b8 $t
+       stm32eforth.s:4081   .text.reset_handler:00000000000022cc $d
+       stm32eforth.s:4082   .text.reset_handler:00000000000022d0 _DOTS
+       stm32eforth.s:4086   .text.reset_handler:00000000000022d4 DOTS
+       stm32eforth.s:4096   .text.reset_handler:00000000000022f4 DOTS2
+       stm32eforth.s:4092   .text.reset_handler:00000000000022e8 DOTS1
+       stm32eforth.s:4098   .text.reset_handler:00000000000022f8 $d
+       stm32eforth.s:4099   .text.reset_handler:00000000000022fc $t
+       stm32eforth.s:4105   .text.reset_handler:0000000000002304 $d
+       stm32eforth.s:4106   .text.reset_handler:0000000000002308 _TNAME
+       stm32eforth.s:4108   .text.reset_handler:000000000000230e $t
+       stm32eforth.s:4109   .text.reset_handler:0000000000002310 TNAME
+       stm32eforth.s:4114   .text.reset_handler:0000000000002320 TNAM1
+       stm32eforth.s:4117   .text.reset_handler:0000000000002328 $d
+       stm32eforth.s:4127   .text.reset_handler:0000000000002350 TNAM2
+       stm32eforth.s:4118   .text.reset_handler:000000000000232c $t
+       stm32eforth.s:4123   .text.reset_handler:0000000000002340 $d
+       stm32eforth.s:4124   .text.reset_handler:0000000000002344 $t
+       stm32eforth.s:4135   .text.reset_handler:000000000000235c $d
+       stm32eforth.s:4136   .text.reset_handler:0000000000002360 _DOTID
+       stm32eforth.s:4138   .text.reset_handler:0000000000002364 $t
+       stm32eforth.s:4139   .text.reset_handler:0000000000002364 DOTID
+       stm32eforth.s:4143   .text.reset_handler:0000000000002370 $d
+       stm32eforth.s:4150   .text.reset_handler:000000000000238c DOTI1
+       stm32eforth.s:4144   .text.reset_handler:0000000000002374 $t
+       stm32eforth.s:4146   .text.reset_handler:000000000000237c $d
+       stm32eforth.s:4147   .text.reset_handler:0000000000002380 $t
+       stm32eforth.s:4152   .text.reset_handler:0000000000002390 $d
+       stm32eforth.s:4154   .text.reset_handler:000000000000239a $t
+       stm32eforth.s:4157   *ABS*:0000000000000000 WANT_SEE
+       stm32eforth.s:4241   .text.reset_handler:00000000000023a0 $d
+       stm32eforth.s:4243   .text.reset_handler:00000000000023a4 _WORDS
+       stm32eforth.s:4245   .text.reset_handler:00000000000023aa $t
+       stm32eforth.s:4246   .text.reset_handler:00000000000023ac WORDS
+       stm32eforth.s:4251   .text.reset_handler:00000000000023bc WORS1
+       stm32eforth.s:4254   .text.reset_handler:00000000000023c4 $d
+       stm32eforth.s:4261   .text.reset_handler:00000000000023e0 WORS2
+       stm32eforth.s:4255   .text.reset_handler:00000000000023c8 $t
+       stm32eforth.s:4274   .text.reset_handler:00000000000023e4 VERSN
+       stm32eforth.s:4277   .text.reset_handler:00000000000023ec $d
+       stm32eforth.s:4278   .text.reset_handler:00000000000023f0 $t
+       stm32eforth.s:4283   .text.reset_handler:00000000000023f4 $d
+       stm32eforth.s:4284   .text.reset_handler:00000000000023f8 _HI
+       stm32eforth.s:4291   .text.reset_handler:0000000000002408 $d
+       stm32eforth.s:4293   .text.reset_handler:0000000000002420 $t
+       stm32eforth.s:4302   .text.reset_handler:0000000000002440 $d
+       stm32eforth.s:4303   .text.reset_handler:0000000000002444 $t
+       stm32eforth.s:4315   .text.reset_handler:0000000000002464 $d
+       stm32eforth.s:4321   .text.reset_handler:0000000000002470 $t
+       stm32eforth.s:4328   .text.reset_handler:000000000000248a COLD1
+       stm32eforth.s:4330   .text.reset_handler:000000000000248e $d
+       stm32eforth.s:4331   .text.reset_handler:0000000000002492 $t
+       stm32eforth.s:4333   .text.reset_handler:000000000000249a $d
+       stm32eforth.s:4334   .text.reset_handler:000000000000249e $t
+       stm32eforth.s:4335   .text.reset_handler:00000000000024a2 $d
 ARM GAS  stm32eforth.s 			page 103
 
 
-       stm32eforth.s:4338   .text.reset_handler:00000000000024b2 $d
-       stm32eforth.s:4339   .text.reset_handler:00000000000024b6 $t
-       stm32eforth.s:4340   .text.reset_handler:00000000000024ba $d
-       stm32eforth.s:4341   .text.reset_handler:00000000000024be $t
-       stm32eforth.s:4352   .text.reset_handler:00000000000024ea COLD2
-       stm32eforth.s:4354   .text.reset_handler:00000000000024ea $d
-       stm32eforth.s:4356   .text.reset_handler:00000000000024ee $t
+       stm32eforth.s:4336   .text.reset_handler:00000000000024a6 $t
+       stm32eforth.s:4337   .text.reset_handler:00000000000024aa $d
+       stm32eforth.s:4338   .text.reset_handler:00000000000024ae $t
+       stm32eforth.s:4349   .text.reset_handler:00000000000024da COLD2
+       stm32eforth.s:4351   .text.reset_handler:00000000000024da $d
+       stm32eforth.s:4353   .text.reset_handler:00000000000024de $t
        stm32eforth.s:264    .text.default_handler:0000000000000033 $d
        stm32eforth.s:264    .text.default_handler:0000000000000034 $t
        stm32eforth.s:503    .text.reset_handler:0000000000000453 $d
@@ -6141,10 +6137,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:1069   .text.reset_handler:00000000000007c2 $t
        stm32eforth.s:1103   .text.reset_handler:00000000000007f5 $d
        stm32eforth.s:1103   .text.reset_handler:00000000000007f6 $t
+       stm32eforth.s:1114   .text.reset_handler:0000000000000805 $d
 ARM GAS  stm32eforth.s 			page 104
 
 
-       stm32eforth.s:1114   .text.reset_handler:0000000000000805 $d
        stm32eforth.s:1114   .text.reset_handler:0000000000000806 $t
        stm32eforth.s:1125   .text.reset_handler:0000000000000817 $d
        stm32eforth.s:1125   .text.reset_handler:0000000000000818 $t
@@ -6201,10 +6197,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:2030   .text.reset_handler:0000000000000ecf $d
        stm32eforth.s:2030   .text.reset_handler:0000000000000ed0 $t
        stm32eforth.s:2044   .text.reset_handler:0000000000000eed $d
+       stm32eforth.s:2044   .text.reset_handler:0000000000000eee $t
 ARM GAS  stm32eforth.s 			page 105
 
 
-       stm32eforth.s:2044   .text.reset_handler:0000000000000eee $t
        stm32eforth.s:2077   .text.reset_handler:0000000000000f3b $d
        stm32eforth.s:2077   .text.reset_handler:0000000000000f3c $t
        stm32eforth.s:2095   .text.reset_handler:0000000000000f5f $d
@@ -6243,41 +6239,41 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:3219   .text.reset_handler:0000000000001a90 $t
        stm32eforth.s:3241   .text.reset_handler:0000000000001abb $d
        stm32eforth.s:3241   .text.reset_handler:0000000000001abc $t
-       stm32eforth.s:3289   .text.reset_handler:0000000000001b0f $d
-       stm32eforth.s:3289   .text.reset_handler:0000000000001b10 $t
-       stm32eforth.s:3350   .text.reset_handler:0000000000001bb3 $d
-       stm32eforth.s:3350   .text.reset_handler:0000000000001bb4 $t
-       stm32eforth.s:3566   .text.reset_handler:0000000000001dd5 $d
-       stm32eforth.s:3566   .text.reset_handler:0000000000001dd6 $t
-       stm32eforth.s:3608   .text.reset_handler:0000000000001e33 $d
-       stm32eforth.s:3608   .text.reset_handler:0000000000001e34 $t
-       stm32eforth.s:3644   .text.reset_handler:0000000000001e93 $d
-       stm32eforth.s:3644   .text.reset_handler:0000000000001e94 $t
-       stm32eforth.s:3659   .text.reset_handler:0000000000001eb5 $d
-       stm32eforth.s:3659   .text.reset_handler:0000000000001eb6 $t
-       stm32eforth.s:3688   .text.reset_handler:0000000000001ef5 $d
-       stm32eforth.s:3688   .text.reset_handler:0000000000001ef6 $t
-       stm32eforth.s:3715   .text.reset_handler:0000000000001f33 $d
-       stm32eforth.s:3715   .text.reset_handler:0000000000001f34 $t
-       stm32eforth.s:3729   .text.reset_handler:0000000000001f4f $d
-       stm32eforth.s:3729   .text.reset_handler:0000000000001f50 $t
+       stm32eforth.s:3289   .text.reset_handler:0000000000001b0b $d
+       stm32eforth.s:3289   .text.reset_handler:0000000000001b0c $t
+       stm32eforth.s:3347   .text.reset_handler:0000000000001ba3 $d
+       stm32eforth.s:3347   .text.reset_handler:0000000000001ba4 $t
+       stm32eforth.s:3563   .text.reset_handler:0000000000001dc5 $d
+       stm32eforth.s:3563   .text.reset_handler:0000000000001dc6 $t
+       stm32eforth.s:3605   .text.reset_handler:0000000000001e23 $d
+       stm32eforth.s:3605   .text.reset_handler:0000000000001e24 $t
+       stm32eforth.s:3641   .text.reset_handler:0000000000001e83 $d
+       stm32eforth.s:3641   .text.reset_handler:0000000000001e84 $t
+       stm32eforth.s:3656   .text.reset_handler:0000000000001ea5 $d
+       stm32eforth.s:3656   .text.reset_handler:0000000000001ea6 $t
+       stm32eforth.s:3685   .text.reset_handler:0000000000001ee5 $d
+       stm32eforth.s:3685   .text.reset_handler:0000000000001ee6 $t
+       stm32eforth.s:3712   .text.reset_handler:0000000000001f23 $d
+       stm32eforth.s:3712   .text.reset_handler:0000000000001f24 $t
+       stm32eforth.s:3726   .text.reset_handler:0000000000001f3f $d
+       stm32eforth.s:3726   .text.reset_handler:0000000000001f40 $t
+       stm32eforth.s:3740   .text.reset_handler:0000000000001f5b $d
 ARM GAS  stm32eforth.s 			page 106
 
 
-       stm32eforth.s:3743   .text.reset_handler:0000000000001f6b $d
-       stm32eforth.s:3743   .text.reset_handler:0000000000001f6c $t
-       stm32eforth.s:3961   .text.reset_handler:000000000000218d $d
-       stm32eforth.s:3961   .text.reset_handler:000000000000218e $t
-       stm32eforth.s:3982   .text.reset_handler:00000000000021cb $d
-       stm32eforth.s:3982   .text.reset_handler:00000000000021cc $t
-       stm32eforth.s:4002   .text.reset_handler:0000000000002205 $d
-       stm32eforth.s:4002   .text.reset_handler:0000000000002206 $t
-       stm32eforth.s:4048   .text.reset_handler:000000000000226d $d
-       stm32eforth.s:4048   .text.reset_handler:000000000000226e $t
-       stm32eforth.s:4088   .text.reset_handler:00000000000022e3 $d
-       stm32eforth.s:4088   .text.reset_handler:00000000000022e4 $t
-       stm32eforth.s:4289   .text.reset_handler:000000000000240b $d
-       stm32eforth.s:4289   .text.reset_handler:000000000000240c $t
+       stm32eforth.s:3740   .text.reset_handler:0000000000001f5c $t
+       stm32eforth.s:3958   .text.reset_handler:000000000000217d $d
+       stm32eforth.s:3958   .text.reset_handler:000000000000217e $t
+       stm32eforth.s:3979   .text.reset_handler:00000000000021bb $d
+       stm32eforth.s:3979   .text.reset_handler:00000000000021bc $t
+       stm32eforth.s:3999   .text.reset_handler:00000000000021f5 $d
+       stm32eforth.s:3999   .text.reset_handler:00000000000021f6 $t
+       stm32eforth.s:4045   .text.reset_handler:000000000000225d $d
+       stm32eforth.s:4045   .text.reset_handler:000000000000225e $t
+       stm32eforth.s:4085   .text.reset_handler:00000000000022d3 $d
+       stm32eforth.s:4085   .text.reset_handler:00000000000022d4 $t
+       stm32eforth.s:4286   .text.reset_handler:00000000000023fb $d
+       stm32eforth.s:4286   .text.reset_handler:00000000000023fc $t
 
 UNDEFINED SYMBOLS
 _mstack

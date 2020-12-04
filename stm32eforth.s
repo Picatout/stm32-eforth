@@ -3242,15 +3242,13 @@ _UNLOCK: .byte 6
 UNLOCK:	//  unlock flash memory	
 	_NEST 
 	BL QBRAN
-	.word LOCK-MAPOFFSET
-UNLOCK1:
+	.word LOCK+MAPOFFSET
 	ldr	r0, flash_regs 
-	ldr r4, [r0, #FLASH_SR]
-	orr r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+	mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
 	str r4,[r0,#FLASH_SR]
 	ldr r4,[r0,#FLASH_CR]
 	tst r4,#(1<<7)
-	bne 1f
+	beq 1f 
 	ldr	r4, flash_regs+4 // key1
 	str	r4, [r0, #FLASH_KEYR]
 	ldr	r4, flash_regs+8 // key2 
@@ -3262,12 +3260,13 @@ UNLOCK1:
 	ldr	r4, flash_regs+8
 	str	r4, [r0, #FLASH_OPTKEYR]
 */ 
-1:	_UNNEST
+1:
+	_UNNEST
  // lock flash memory
 LOCK: 
 	ldr r0,flash_regs  
-	ldr r4,[r0,#FLASH_CR]
-	orr r4,#(1<<7)
+//	ldr r4,[r0,#FLASH_CR]
+	mov r4,#(1<<7)
 	str r4,[r0,#FLASH_CR]
 	_UNNEST  
 
@@ -3279,9 +3278,10 @@ WAIT1:
 	bne	WAIT1
 	_NEXT
 
-//    ERASE_PAGE	   ( page -- )
+//    ERASE_PAGE	   ( adr -- )
 // 	  Erase one page of flash memory.
 //    stm32f103 page size is 1024 bytes 
+//    adr is any address inside page to erase 
 
 	.word	_UNLOCK+MAPOFFSET
 _EPAGE:	.byte  10
@@ -3294,16 +3294,14 @@ EPAGE: 	//  page --
 	_DOLIT 
 	.word 1 
 	bl  UNLOCK 
-	mov r4,#FLASH_ADR
-	lsl r5,r5,#10
-	add r5,r5,r4 
 	ldr r0,flash_regs 	 
-	str r5,[r0,#FLASH_AR] // page address 
+	mov r4,#2 // set PER bit 
+	str r4,[r0,#FLASH_CR]
+	str r5,[r0,#FLASH_AR] // page to erase address 
 	ldr	r4,[r0, #FLASH_CR]	
-	bic	r4,r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)	// clear OPTWRE|OPTER|OPTPG|MER   
-	orr	R4,R4,#(1<<1)|(1<<6)	//  set STRT|PER  
+	orr	R4,#0x40	//  set STRT bit   
 	str	r4,[r0, #FLASH_CR]	//  start erasing
-1: 	bl	WAIT_BSY
+ 	bl	WAIT_BSY // wait until done
 	_DOLIT 
 	.word 0 
 	bl	UNLOCK  // lock flash write 
@@ -3313,7 +3311,6 @@ EPAGE: 	//  page --
 	.byte 13
 	.ascii " erase error!"
 	.p2align 2
-	_POP
 	_UNNEST
 
 // store 16 bit word
@@ -3331,7 +3328,7 @@ HWORD_WRITE: // ( hword address -- )
 	ldr r5,[r0,#FLASH_SR]
 	and r5,r5,#(5<<2) 
 	bl QBRAN
-	.word 1f 
+	.word 1f+MAPOFFSET 
 	bl ABORQ
 	.byte 13
 	.ascii " write error!"
