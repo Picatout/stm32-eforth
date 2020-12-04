@@ -98,29 +98,28 @@
 //.equ MAPOFFSET  ,	0x00000000	/* absolute */
   .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
 
-
-
 /*************************************
    system variables offset from UPP
 *************************************/
-  .equ TICKS_OFS, 4  // millseconds counter
-  .equ TIMER_OFS, 8  // count down timer
-  .equ BOOT_OFS, 12  // boot program address
-  .equ BASE_OFS, 16  // numeric conversion base 
-  .equ TMP_OFS, 20   // temporary variable
-  .equ SPAN_OFS, 24  // character count received by expect  
-  .equ TOIN_OFS, 28  // >IN  parse pointer in TIB
-  .equ NTIB_OFS, 32  // #TIB  characters in TIB 
-  .equ TIB_OFS, 36   // TIB buffer address 
-  .equ EVAL_OFS, 40  // eval|compile vector 
-  .equ HLD_OFS, 44   // hold pointer 
-  .equ CTXT_OFS, 48  // context pointer 
-  .equ FLSH_CTOP_OFS, 52  // flash free dictionary address 
-  .equ RAM_CTOP_OFS, 56  // ram free dictionary address
-  .equ LASTN_OFS, 60     // last word in dictionary link nfa 
-
-
-
+  .equ SEED_OFS, 4    // prng seed 
+  .equ TICKS_OFS, SEED_OFS+4  // millseconds counter
+  .equ TIMER_OFS, TICKS_OFS+4  // count down timer
+  .equ BOOT_OFS, TIMER_OFS+4  // boot program address
+  .equ BASE_OFS, BOOT_OFS+4  // numeric conversion base 
+  .equ TMP_OFS, BASE_OFS+4   // temporary variable
+  .equ SPAN_OFS, TMP_OFS+4  // character count received by expect  
+  .equ TOIN_OFS, SPAN_OFS+4  // >IN  parse pointer in TIB
+  .equ NTIB_OFS, TOIN_OFS+4  // #TIB  characters in TIB 
+  .equ TIB_OFS, NTIB_OFS+4   // TIB buffer address 
+  .equ EVAL_OFS, TIB_OFS+4  // eval|compile vector 
+  .equ HLD_OFS, EVAL_OFS+4   // hold pointer 
+  .equ CTXT_OFS, HLD_OFS+4  // context pointer 
+  .equ FLSH_CTOP_OFS, CTXT_OFS+4  // flash free dictionary address 
+  .equ RAM_CTOP_OFS, FLSH_CTOP_OFS+4  // ram free dictionary address
+  .equ LASTN_OFS, RAM_CTOP_OFS+4     // last word in dictionary link nfa 
+  .equ USER_BEGIN_OFS, LASTN_OFS+4 // start of user area in RAM 
+  .equ USER_END_OFS, USER_BEGIN_OFS+4  // end of user area in RAM 
+  .equ USER_IMG_OFS,USER_END_OFS+4  // user image save area address  
 
 /***********************************************
 * MACROS
@@ -470,6 +469,7 @@ remap_dest:
 
 UZERO:
 	.word 0  			/*Reserved */
+	.word 0xaa55 /* PRNG seed */ 
 	.word 0      /* system Ticks */
     .word 0     /* delay timer */
 	.word HI+MAPOFFSET  	/*'BOOT */
@@ -485,6 +485,9 @@ UZERO:
 	.word CTOP+MAPOFFSET	/*end of dictionnary */
 	.word CTOP+MAPOFFSET	/* end of RAM dictionary RAM */
 	.word LASTN+MAPOFFSET	/*LAST word in dictionary */
+	.word CTOP+MAPOFFSET    /* beginning of USER dictionary space */
+	.word DEND              /* end of USER dictionary space */
+	.word USER				 /*user image save area address */ 
 	.word 0,0			/*reserved */
 ULAST:
  
@@ -495,9 +498,35 @@ ULAST:
 
 	.p2align 2 
 
+// RANDOM ( n1 -- {0..n1-1} )
+// return pseudo random number 
+// REF: https://en.wikipedia.org/wiki/Xorshift
+
+	.word 0
+_RAND: .byte 6
+	.ascii "RANDOM"
+	.p2align 2 
+RAND:
+	_NEST 
+	bl SEED 
+	bl AT 
+	lsl r4,r5,#13
+	eor r5,r4
+	lsr r4,r5,#17
+	eor r5,r4
+	lsl r4,r5,#5
+	eor r5,r4
+	bl DUPP 
+	bl SEED 
+	bl STORE 
+	bl ABSS
+	bl SWAP 
+	bl MODD 
+	_UNNEST 
+
 // REBOOT ( -- )
 // hardware reset 
-	.word 0
+	.word _RAND+MAPOFFSET
 _REBOOT: .byte 6
 	.ascii "REBOOT"
 	.p2align 2 
@@ -1422,10 +1451,22 @@ DOCON:
 /***********************
   system variables 
 ***********************/
-  
+
+ // SEED ( -- a)
+ // return PRNG seed address 
+
+	.word _DNEGA+MAPOFFSET
+_SEED: .byte 4
+	.ascii "SEED"
+	.p2align 2
+SEED:
+	_PUSH 
+	ADD R5,R3,#SEED_OFS
+	_NEXT 	
+
 //  MSEC ( -- a)
 // return address of milliseconds counter
-  .word _DNEGA+MAPOFFSET 
+  .word _SEED+MAPOFFSET 
 _MSEC: .byte 4
   .ascii "MSEC"
   .p2align 2 
@@ -1588,13 +1629,46 @@ LAST:
 	ADD	R5,R3,#LASTN_OFS
 	_NEXT
 
+//	USER_BEGIN ( -- a )
+//  where user area begin in RAM
+	.word _LAST+MAPOFFSET
+_USER_BGN: .byte 10
+	.ascii "USER_BEGIN"
+	.p2align 2
+USER_BEGIN:
+	_PUSH 
+	ADD R5,R3,#USER_BEGIN_OFS
+	_NEXT 
+
+//  USER_END ( -- a )
+//  where user area end in RAM 
+	.word _USER_BGN+MAPOFFSET
+_USER_END: .byte 8 
+	.ascii "USER_END" 
+	.p2align 2 
+USER_END:
+	_PUSH 
+	ADD R5,R3,#USER_END_OFS
+	_NEXT 
+
+//  USER_IMG ( -- a )
+//  where user image is saved in FLASH
+	.word _USER_END+MAPOFFSET
+_USER_IMG: .byte 8
+	.ascii "USER_IMG"
+	.p2align 2 
+USER_IMG:
+	_PUSH 
+	ADD R5,R3,#USER_IMG_OFS 
+	_NEXT 
+
 // **************************************************************************
 //  Common functions
 
 //    WITHIN	( u ul uh -- t )
 // 	Return true if u is within the range of ul and uh.
 
-	.word	_LAST+MAPOFFSET
+	.word	_USER_IMG+MAPOFFSET
 _WITHI:	.byte   6
 	.ascii "WITHIN"
 	.p2align 2 	
@@ -4349,5 +4423,8 @@ COLD1:
 COLD2:	
 CTOP:
 	.word	0XFFFFFFFF		//  keep CTOP even
+	.p2align 10 
+USER: // user image save 
+	.word 0XFFFFFFFF
 
   .end 

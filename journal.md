@@ -1,5 +1,17 @@
 ### 2020-12-04
 
+#### À faire
+  
+  * écrire les mots qui vont permettre de sauvegarder l'image RAM en mémoire flash et de la rechargée au démarrage.
+  
+
+* Ajout des variables systèmes:
+  * **USER_IMG**, cette variable système contient l'adresse en mémoire flash ou est sauvergardé l'image RAM.
+  * **USER_BEGIN**, cette variable contient l'adrese début de mémoire RAM utilistateur.
+  * **USER_END**, cette variable contient l'adresse find de la mémoire RAM utilisateur.
+
+* Ajout de la variable système **SEED** et du mot **RANDOM** pour la génération de nombres pseudo aléatoires.
+
 * Débogué  mots **UNLOCK**, **I!** et **ERASE_PAGE**.
 
 ### 2020-12-13
