@@ -1,9 +1,43 @@
+### 2020-12-05
+
+* Mots ajoutés pour la sauvegarde en mémoire flash
+
+  * **SAVE_IMG** &nbsp;( -- ), Sauvegarde les définitiations créées par l'utilisateur en mémoire FLASH.
+
+  * **LOAD_IMG** &nbsp;( -- ), Charge en mémoire RAM l'image sauvegardée par **SAVE_IMG**. 
+
+  * **IMG?** &nbsp;( -- f ), Vérifie s'il y a une image de sauvegardée en mémoire FLASH. 
+
+  * **FLH_WR** &nbsp;( src dest u -- dest+4u ), écriture de *u* mots de 32 bits dans la mémoire flash. *src* est l'adresse source de données, *dest* est l'adresse destination en flash et *u* est le nombre de mots à écrire. Retourne l'adresse suivant le dernier mot écris *dest+4u*. 
+
+  * **I!** &nbsp;( w a -- ), Écriture d'un mot de 32 bits dans la mémoire flash. *w* est le mot à écire. *a* est l'adresse destination. 
+
+  * **PAGE** &nbsp;( n -- a ), Retourne l'adresse absolue en mémoire flash d'un numéro de page. *n' est le numéro de page. 
+  *a* est l'adresse résultante entre **0x8000000-0x8001FFFF** 
+
+  * **ERASE_MPG** ( p n -- ) &nbsp;( -- ), Efface *n* page de mémoire flash à partir de la page *p*. 
+
+  * **EPAGE** &nbsp;( a -- ) Efface la page flash contenant l'adresse *a*. 
+
+  * **UNLOCK** &nbsp;( f -- ) Déverrouille la mémoire flash pour l'écriture. *f* est un indicateur booléen. Pour *f==faux*, i.e. **0**, le verroue est appliqué. Pour f==vraie, i.e **~0**, le verroue est enlevée.  
+
 ### 2020-12-04
 
-#### À faire
-  
-  * écrire les mots qui vont permettre de sauvegarder l'image RAM en mémoire flash et de la rechargée au démarrage.
-  
+#### Sauvegarde et restauration de l'image utilistateur
+
+* Sauvegarde 
+    * Effacer les pages qui seront utiliser pour la sauvegarde.
+    * sauvegarder les variables systèmes. 
+    * sauvegarder les définitions. 
+
+* restauration 
+    * Au démarrage le mot COLD doit vérifier s'il y a une image de sauvegardée. Et si c'est le cas il doit appeller 
+      le mot qui va faire la copie en RAM. 
+    * copier les variables système en RAM.
+    * copier les définitiions en RAM. 
+    * démarrer l'application. 
+
+<hr>
 
 * Ajout des variables systèmes:
   * **USER_IMG**, cette variable système contient l'adresse en mémoire flash ou est sauvergardé l'image RAM.

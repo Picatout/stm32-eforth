@@ -18,7 +18,7 @@
     .equ FLASH_HIDDEN_ADR, 0x8010000
     .equ FLASH_HIDDEN_SIZE, 0x10000
     .equ FLASH_HIDDEN_END, FLASH_HIDDEN_ADR+FLASH_HIDDEN_SIZE
-
+    .equ PAGE_SIZE, 1024 // erase block size 
 
    /* system memory */
       .equ SYS_MEM, 0x1FFFF000

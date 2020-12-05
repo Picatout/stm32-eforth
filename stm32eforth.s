@@ -114,9 +114,9 @@
   .equ EVAL_OFS, TIB_OFS+4  // eval|compile vector 
   .equ HLD_OFS, EVAL_OFS+4   // hold pointer 
   .equ CTXT_OFS, HLD_OFS+4  // context pointer 
-  .equ FLSH_CTOP_OFS, CTXT_OFS+4  // flash free dictionary address 
-  .equ RAM_CTOP_OFS, FLSH_CTOP_OFS+4  // ram free dictionary address
-  .equ LASTN_OFS, RAM_CTOP_OFS+4     // last word in dictionary link nfa 
+  .equ FORTH_CTOP_OFS, CTXT_OFS+4  // flash free dictionary address 
+  .equ USER_CTOP_OFS, FORTH_CTOP_OFS+4  // ram free dictionary address
+  .equ LASTN_OFS, USER_CTOP_OFS+4     // last word in dictionary link nfa 
   .equ USER_BEGIN_OFS, LASTN_OFS+4 // start of user area in RAM 
   .equ USER_END_OFS, USER_BEGIN_OFS+4  // end of user area in RAM 
   .equ USER_IMG_OFS,USER_END_OFS+4  // user image save area address  
@@ -469,10 +469,10 @@ remap_dest:
 
 UZERO:
 	.word 0  			/*Reserved */
-	.word 0xaa55 /* PRNG seed */ 
-	.word 0      /* system Ticks */
-    .word 0     /* delay timer */
-	.word HI+MAPOFFSET  	/*'BOOT */
+	.word 0xaa55 /* SEED  */ 
+	.word 0      /* MSEC */
+    .word 0     /* TIMER */
+	.word HI+MAPOFFSET  /*'BOOT */
 	.word BASEE 	/*BASE */
 	.word 0			/*tmp */
 	.word 0			/*SPAN */
@@ -482,12 +482,12 @@ UZERO:
 	.word INTER+MAPOFFSET	/*'EVAL */
 	.word 0			/*HLD */
 	.word LASTN+MAPOFFSET	/*CONTEXT */
-	.word CTOP+MAPOFFSET	/*end of dictionnary */
-	.word CTOP+MAPOFFSET	/* end of RAM dictionary RAM */
+	.word CTOP+MAPOFFSET	/* FCP end of system dictionnary */
+	.word CTOP+MAPOFFSET	/* CP end of RAM dictionary RAM */
 	.word LASTN+MAPOFFSET	/*LAST word in dictionary */
-	.word CTOP+MAPOFFSET    /* beginning of USER dictionary space */
-	.word DEND              /* end of USER dictionary space */
-	.word USER				 /*user image save area address */ 
+	.word CTOP+MAPOFFSET    /* USER_BEGIN, beginning of USER dictionary space */
+	.word DEND              /* USER_END, end of USER dictionary space */
+	.word USER				 /*USER_IMG, user image save area address */ 
 	.word 0,0			/*reserved */
 ULAST:
  
@@ -539,6 +539,7 @@ REBOOT:
 	b . 
 scb_adr:
 	.word SCB_BASE_ADR 
+
 // PAUSE ( u -- ) 
 // suspend execution for u milliseconds
 	.word _REBOOT+MAPOFFSET
@@ -622,8 +623,6 @@ TX1:
 	strh	r5, [r4, #USART_DR]	
 	_POP
 	_NEXT
-
-
 	
 // **************************************************************************
 //  The kernel
@@ -1603,24 +1602,24 @@ _CP:	.byte   2
 	.p2align 2 	
 CPP:
 	_PUSH
-	ADD	R5,R3,#RAM_CTOP_OFS
+	ADD	R5,R3,#USER_CTOP_OFS
 	_NEXT
 
 //   FCP ( -- a )
-//  Point ot top of Flash dictionary
+//  Point ot top of Forth system dictionary
 	.word _CP+MAPOFFSET
-_FCPP: .byte 4 
-	.ascii "FCPP"
+_FCP: .byte 3            
+	.ascii "FCP"
 	.p2align 2 
-FCPP: 
+FCP: 
 	_PUSH 
-	ADD R5,R3,#FLSH_CTOP_OFS 
+	ADD R5,R3,#FORTH_CTOP_OFS 
 	_NEXT 
 
 //    LAST	( -- a )
 // 	Point to the last name in the name dictionary.
 
-	.word	_FCPP+MAPOFFSET
+	.word	_FCP+MAPOFFSET
 _LAST:	.byte   4
 	.ascii "LAST"
 	.p2align 2 	
@@ -3364,6 +3363,7 @@ _EPAGE:	.byte  10
 
 EPAGE: 	//  page --
 	_NEST
+
 	bl	WAIT_BSY
 	_DOLIT 
 	.word 1 
@@ -3419,7 +3419,6 @@ HWORD_WRITE: // ( hword address -- )
 _ISTOR:	.byte  2
 	.ascii "I!"
 	.p2align 2 	
-
 ISTOR:	//  data address --
 	_NEST
 	bl	WAIT_BSY
@@ -3440,42 +3439,178 @@ ISTOR:	//  data address --
 	bl UNLOCK 
 	_UNNEST
 
-//    TURNKEY	( -- )
-// 	Copy dictionary from RAM to flash.
-
-	.word	_ISTOR+MAPOFFSET
-_TURN:	.byte   7
-	.ascii "TURNKEY"
-	.p2align 2 
-TURN:	_NEST
-	_DOLIT			//  save user area
-	.word	RAMOFFSET
-	_DOLIT
-	.word	0xC0			//  to boot array
-	_DOLIT
-	.word	0x40
-	BL	MOVE
-	_DOLIT
-	.word	0
-	_DOLIT
-	.word	FLASHOFFSET
-	BL	CPP
-	BL	AT
-	BL	CELLSL
-	BL	TOR
-TURN1:
-	BL	OVER
-	BL	AT
-	BL	OVER
-	BL	ISTOR
-	BL	SWAP
-	BL	CELLP
-	BL	SWAP
-	BL	CELLP
-	BL	DONXT
-	.word	TURN1+MAPOFFSET
-	BL	DDROP
+// IMG? ( -- T|F )
+// check if an image has been saved 
+	.word _ISTOR+MAPOFFSET 
+_IMGQ: .byte 4
+	.ascii "IMG?"
+	.p2align 2
+IMGQ:
+	_NEST 
+	BL USER_IMG 
+	BL AT 
+	BL AT 
+	_DOLIT 
+	.word -1
+	BL XORR  
 	_UNNEST
+
+// LOAD_IMG ( -- )
+// copy save image in RAM 
+	.word _IMGQ+MAPOFFSET
+_LOAD_IMG: .byte 8 
+	.ascii "LOAD_IMG" 
+	.p2align 2 
+LOAD_IMG:
+	_NEST 
+	BL USER_IMG 
+	BL AT       // image address in flash 
+	BL DUPP
+	BL TOR  
+/* copy system variables to RAM */
+	_PUSH 
+	ADD R5,R3,#BOOT_OFS // copy start at boot variable 
+	_PUSH 
+	MOV R5,#(USER_IMG_OFS-BOOT_OFS)*4 
+	BL DUPP 
+	BL TOR 
+	BL MOVE 
+/* copy user definitions */
+	BL RFROM 
+	BL RFROM 
+	BL PLUS // source address  
+	BL USER_BEGIN 
+	BL AT   // destination address 
+	BL HERE  
+	BL SUBB  // byte count 
+	BL MOVE 
+	_UNNEST 
+
+// ERASE_MPG ( u1 u2 -- )
+// erase many pages 
+// u1 first page number 
+// u2 how many pages  
+	.word _LOAD_IMG+MAPOFFSET
+_ERASE_MPG: .byte 9 
+	.ascii "ERASE_MPG"	
+	.p2align 2 
+ERASE_MPG:
+	_NEST 
+	BL TOR 
+	lsl r5,#10
+	_DOLIT 
+	.word FLASH_ADR 
+	BL PLUS 
+	BL BRAN 
+	.word 2f+MAPOFFSET 
+1:
+	BL DUPP 
+	BL TOR 
+	BL EPAGE 
+	BL RFROM
+	add r5,#PAGE_SIZE 
+2:
+	BL DONXT
+	.word 1b+MAPOFFSET 
+	_POP 
+	_UNNEST 
+
+// FLSH_WR ( src dest u -- dest+u )
+// write u words to flash memory 
+	.word _ERASE_MPG+MAPOFFSET
+_FLSH_WR: .byte 7 
+	.ascii "FLSH_WR"
+	.p2align  
+FLSH_WR: 
+	_NEST 
+	BL TOR
+	BL BRAN 
+	.word 3f+MAPOFFSET  
+/* write system variables to FLASH */
+2:  BL TOR  // destination address 
+	BL DUPP 
+	BL AT   // get data 
+	BL RAT  // get destination address 
+	BL ISTOR
+	BL CELLP  // increment source address 
+	BL RFROM 
+	BL CELLP  // increment dest address 
+3:	BL DONXT 
+	.word 2b+MAPOFFSET
+	BL TOR 
+	BL DROP 
+	BL RFROM 
+	_UNNEST 
+
+// PAGE ( a -- u )
+// convert address to page number 
+	.word _FLSH_WR+MAPOFFSET
+_PAGE: .byte 4 
+	.ascii "PAGE" 
+	.p2align 2 
+PAGE: 
+	mov r4,#0
+	movt r4,#0x800
+	sub r5,r4 
+	lsr r5,#10 
+	_NEXT  
+
+// SAVE_IMG ( -- )
+// copy in flash RAM system variables and user defintitions.
+	.word _PAGE+MAPOFFSET	
+_SAVE_IMG: .byte 8 
+	.ascii "SAVE_IMG"
+	.p2align 2
+SAVE_IMG:
+	_NEST 
+	BL HERE 
+	BL USER_BEGIN 
+	BL AT 
+	BL EQUAL 
+	BL QBRAN
+	.word 1f+MAPOFFSET 
+	_UNNEST  // nothing to save 
+1:	BL IMGQ 
+	BL QBRAN 
+	.word 2f+MAPOFFSET
+/* delete saved image */
+	BL USER_IMG 
+	BL AT 
+	BL PAGE 
+	_DOLIT 
+	.word DEND  
+	BL USER_BEGIN 
+	BL SUBB 
+	_DOLIT 
+	.word 1024 
+	BL SLASH 
+	BL ONEP   // # pages to delete 
+	BL ERASE_MPG 
+/* save system variables */
+2:	_PUSH 
+	ADD R5,R3,#BOOT_OFS // copy start at boot variable 
+	BL USER_IMG 
+	BL AT       // image address in flash 
+	_PUSH 
+	MOV R5,#(USER_IMG_OFS-BOOT_OFS) 
+	BL CELLSL  // word count 
+	BL FLSH_WR 
+/* write user definitions */
+	BL TOR    // destination address 
+	BL HERE 
+	BL USER_BEGIN 
+	BL AT 
+	BL SUBB 
+	BL CELLSL
+	BL TOR     // word count  
+	BL USER_BEGIN 
+	BL AT    // source address 
+	BL RFROM // count 
+	BL RFROM // dest 
+	BL SWAP 
+	BL FLSH_WR  
+	BL DROP 
+	_UNNEST 
 
 flash_regs:
 	.word FLASH_BASE_ADR // 0 
@@ -3488,7 +3623,7 @@ flash_regs:
 //    '	   ( -- ca )
 // 	Search context vocabularies for the next word in input stream.
 
-	.word	_TURN+MAPOFFSET
+	.word	_SAVE_IMG+MAPOFFSET
 _TICK:	.byte  1
 	.ascii "'"
 	.p2align 2 	
@@ -4411,13 +4546,21 @@ COLD1:
 	.word	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack and TIB
-	BL	TBOOT
+	BL	IMGQ			// check if user image saved
+	BL	QBRAN 
+	.word 1f+MAPOFFSET
+	NOP 
+//	BL	LOAD_IMG 
+1:	BL	TBOOT
 	BL	ATEXE			// application boot
 	BL	CPP 
 	BL	AT 
 	BL  ALGND 
+	BL  DUPP 
 	BL	CPP 
-	BL	STORE 
+	BL	STORE
+	BL  USER_BEGIN 
+	BL  STORE  
 	BL	OVERT
 	B.W	QUIT			// start interpretation
 COLD2:	

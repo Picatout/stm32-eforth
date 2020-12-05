@@ -16,6 +16,10 @@ LD_FLAGS=-mmcu=stm32f103
 #sources
 SRC=stm32eforth.s 
 
+# programmer
+VERSION=STLINKV2 
+SERIAL=483f6e066772574857351967
+
 .PHONY: all 
 
 all: clean build dasm
@@ -28,7 +32,8 @@ build:  *.s Makefile
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 flash: $(BUILD_DIR)$(NAME).bin 
-	st-flash write $(BUILD_DIR)$(NAME).bin 0x8000000
+	st-flash --serial=$(SERIAL) erase 
+	st-flash  --serial=$(SERIAL) write $(BUILD_DIR)$(NAME).bin 0x8000000
 
 dasm:
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
