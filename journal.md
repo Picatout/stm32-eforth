@@ -1,3 +1,9 @@
+### 2020-12-06
+
+* Lorsqu'une compilation était avortée suite à une erreur les pointeurs **CP** et **LAST** n'était pas réinitialisé.  
+
+* **USER_BEGIN**, **USER_END** et **USER_IMG** ne sont plus des variables système mais des constantes système.
+
 ### 2020-12-05
 
 * Mots ajoutés pour la sauvegarde en mémoire flash
