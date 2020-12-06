@@ -105,7 +105,8 @@
   .equ TICKS_OFS, SEED_OFS+4  // millseconds counter
   .equ TIMER_OFS, TICKS_OFS+4  // count down timer
   .equ TORAM_OFS, TIMER_OFS+4  // compile to RAM 
-  .equ BOOT_OFS, TORAM_OFS+4  // boot program address
+  .equ IMG_SIGN_OFS, TORAM_OFS+4  // image signature  
+  .equ BOOT_OFS, IMG_SIGN_OFS+4  // boot program address
   .equ BASE_OFS, BOOT_OFS+4  // numeric conversion base 
   .equ TMP_OFS, BASE_OFS+4   // temporary variable
   .equ SPAN_OFS, TMP_OFS+4  // character count received by expect  
@@ -472,6 +473,7 @@ UZERO:
 	.word 0      /* MSEC */
     .word 0     /* TIMER */
 	.word -1    /* >RAM */ 
+	.ascii "IMAG" /* signature */ 
 	.word HI+MAPOFFSET  /*'BOOT */
 	.word BASEE 	/*BASE */
 	.word 0			/*tmp */
@@ -1680,6 +1682,13 @@ USER_IMG:
 	_NEXT 
 USR_IMG_ADR:
 	.word USER 
+
+// image signature 
+IMG_SIGN: 
+	_PUSH 
+	ADD r5,r3,#IMG_SIGN_OFS 
+	LDR R5,[R5]
+	_NEXT 
 
 // **************************************************************************
 //  Common functions
@@ -3459,47 +3468,95 @@ ISTOR:	//  data address --
 	bl UNLOCK 
 	_UNNEST
 
-// IMG? ( -- T|F )
-// check if an image has been saved 
+// IMG_SIZE ( -- u )
+// return flash pages required to save 
+// user ram  
 	.word _ISTOR+MAPOFFSET 
+_IMG_SIZE: .byte 8
+	.ascii "IGM_SIZE" 
+	.p2align 2
+IMG_SIZE: 
+	_NEST
+	_DOLIT 
+	.word VARS_END_OFS-IMG_SIGN_OFS 
+	BL USER_END 
+	BL USER_BEGIN 
+	BL SUBB 
+	BL PLUS 
+	_DOLIT 
+	.word 1024 
+	BL SLMOD 
+	BL SWAP 
+	BL QBRAN 
+	.word 1f+MAPOFFSET 
+	BL ONEP
+1:
+	_UNNEST  
+
+// IMG? ( n -- T|F )
+// check if an image has been saved 
+	.word _IMG_SIZE+MAPOFFSET 
 _IMGQ: .byte 4
 	.ascii "IMG?"
 	.p2align 2
 IMGQ:
 	_NEST 
-	BL USER_IMG 
+	BL IMG_ADR 
 	BL AT 
-	_DOLIT 
-	.word -1
+	BL IMG_SIGN  
 	BL XORR  
+	BL ZEQUAL
 	_UNNEST
 
-// LOAD_IMG ( -- )
-// copy save image in RAM 
+// IMG_ADR ( n -- a )
+// return image address from its number 
+	.word _IMGQ+MAPOFFSET
+_IMG_ADR: .byte 7 
+	.ascii "IMG_ADR"
+	.p2align 2 
+IMG_ADR:
+	_UNNEST 
+	BL IMG_SIZE 
+	BL STAR 
+	BL USER_IMG 
+	BL PLUS 
+	_UNNEST 
+
+// LOAD_IMG ( n -- )
+// Load image in slot n in RAM. 
 	.word _IMGQ+MAPOFFSET
 _LOAD_IMG: .byte 8 
 	.ascii "LOAD_IMG" 
 	.p2align 2 
 LOAD_IMG:
 	_NEST 
-	BL USER_IMG // image address in flash
+	BL DUPP 
+	BL IMGQ 
+	BL QBRAN 
+	.word 1f+MAPOFFSET
 /* copy system variables to RAM */
+	BL IMG_ADR 
+	BL DUPP 
+	BL TOR 
 	_PUSH 
-	ADD R5,R3,#BOOT_OFS // copy start at boot variable 
+	ADD R5,R3,#IMG_SIGN_OFS // copy start at signature 
 	_PUSH 
-	MOV R5,#(VARS_END_OFS-BOOT_OFS)*4 
+	MOV R5,#(VARS_END_OFS-IMG_SIGN_OFS) 
 	BL DUPP 
 	BL TOR 
 	BL MOVE 
 /* copy user definitions */
 	BL RFROM 
-	BL USER_IMG 
+	BL RFROM  
 	BL PLUS // source address  
 	BL USER_BEGIN // destination address
 	BL HERE  
 	BL SUBB  // byte count 
-	BL MOVE 
+	BL MOVE
+	_UNNEST  
+1:	BL DROP 
 	_UNNEST 
+
 
 // ERASE_MPG ( u1 u2 -- )
 // erase many pages 
@@ -3512,10 +3569,7 @@ _ERASE_MPG: .byte 9
 ERASE_MPG:
 	_NEST 
 	BL TOR 
-	lsl r5,#10
-	_DOLIT 
-	.word FLASH_ADR 
-	BL PLUS 
+	BL PG_TO_ADR 
 	BL BRAN 
 	.word 2f+MAPOFFSET 
 1:
@@ -3557,22 +3611,53 @@ FLSH_WR:
 	BL RFROM 
 	_UNNEST 
 
-// PAGE ( a -- u )
+// ADR>PG ( a -- n )
 // convert address to page number 
 	.word _FLSH_WR+MAPOFFSET
-_PAGE: .byte 4 
-	.ascii "PAGE" 
+_ADR_TO_PG: .byte 6 
+	.ascii "ADR>PG" 
 	.p2align 2 
-PAGE: 
-	mov r4,#0
-	movt r4,#0x800
-	sub r5,r4 
+ADR_TO_PG: 
 	lsr r5,#10 
+	eor r5,#127 
 	_NEXT  
 
-// SAVE_IMG ( -- )
+// PG>ADR ( n -- a )
+// convert page# to address 
+	.word _ADR_TO_PG+MAPOFFSET
+_PG_TO_ADR: .byte 6 
+	.ascii "PG>ADR" 
+	.p2align 2 
+PG_TO_ADR:
+	movt r5,#2
+	lsl r5,#10 
+	_NEXT 
+
+// ERASE_IMG ( n -- )
+// erase image n 
+	.word _PG_TO_ADR+MAPOFFSET 
+_ERASE_IMG: .byte 9
+	.ascii "ERASE_IMG"
+	.p2align 2
+ERASE_IMG:
+	_NEST
+	BL IMG_ADR
+	BL IMG_SIZE 
+	BL BRAN 
+	.word  2f+MAPOFFSET 
+1:	BL DUPP 
+	BL EPAGE
+	ADD R5,#PAGE_SIZE 
+2:	BL DONXT 
+	.word 1b+MAPOFFSET 
+	BL DROP 
+	_UNNEST 
+
+// SAVE_IMG ( n -- )
 // copy in flash RAM system variables and user defintitions.
-	.word _PAGE+MAPOFFSET	
+// n is image slot number 
+
+	.word _ERASE_IMG+MAPOFFSET	
 _SAVE_IMG: .byte 8 
 	.ascii "SAVE_IMG"
 	.p2align 2
@@ -3584,41 +3669,33 @@ SAVE_IMG:
 	BL QBRAN
 	.word 1f+MAPOFFSET 
 	_UNNEST  // nothing to save 
-1:	BL IMGQ 
+1:	BL DUPP 
+	BL IMGQ 
 	BL QBRAN 
 	.word 2f+MAPOFFSET
 /* delete saved image */
-	BL USER_IMG 
-	BL PAGE 
-	BL USER_END  
-	BL USER_BEGIN 
-	BL SUBB 
-	_DOLIT 
-	.word 1024 
-	BL SLASH 
-	BL ONEP   // # pages to delete 
-	BL ERASE_MPG 
+	BL DUPP 
+	BL ERASE_IMG 
 /* save system variables */
-2:	_PUSH 
-	ADD R5,R3,#BOOT_OFS // copy start at boot variable 
-	BL USER_IMG // image address in flash  
+2:	BL IMG_ADR // where to save  
+	ADD R5,R3,#IMG_SIGN_OFS // save from here  
+	BL OVER  // dest src dest 
 	_PUSH 
-	MOV R5,#(VARS_END_OFS-BOOT_OFS) 
+	MOV R5,#(VARS_END_OFS-IMG_SIGN_OFS) 
 	BL CELLSL  // word count 
-	BL FLSH_WR 
+	BL DUPP 
+	BL TOR 
+	BL FLSH_WR  // ( dest src dest count, R: count -- )
 /* write user definitions */
-	BL TOR    // destination address 
-	BL HERE 
+	BL RFROM    // ( dest count -- )
+	BL PLUS     // ( dest+ --  )
+	BL USER_BEGIN 
+	BL SWAP  // ( src dest+ -- )
+	BL HERE   
 	BL USER_BEGIN 
 	BL SUBB 
-	BL CELLSL
-	BL TOR     // word count  
-	BL USER_BEGIN 
-	BL RFROM // count 
-	BL RFROM // dest 
-	BL SWAP 
+	BL CELLSL  // src dest+ count -- 
 	BL FLSH_WR  
-	BL DROP 
 	_UNNEST 
 
 flash_regs:
@@ -4572,7 +4649,9 @@ COLD1:
 	.word	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack and TIB
-	BL	IMGQ			// check if user image saved
+	_DOLIT 
+	.word 0 
+	BL	IMGQ			// check if user image saved in slot 0 
 	BL	QBRAN 
 	.word 1f+MAPOFFSET
 	NOP 

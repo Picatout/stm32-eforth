@@ -1,5 +1,20 @@
 ### 2020-12-06
 
+* Modifié système pour permettre la sauvegarde de plusieurs images. 
+  * **IMG_SIZE** &nbsp;( -- n ), Retourne le nombre de pages FLASH requis pour sauvegarder la totalité de la mémoire RAM disponible. 
+
+  * **IMG?** &nbsp;( n -- ), Modifié, il faut maintenant indiquer le numéro de l'image. 
+
+  * **IMG_ADR** &nbsp;( n -- a ), Retourne l'adresse *a* de l'image à partir de son numéro *n*.
+
+  * **ERASE_IMG** &nbsp;( n -- ), Efface l'image numéro *n*. 
+
+  * **LOAD_IMG** &nbsp;( n -- ), Modifié, maintenant il faut indiquer le numéro de l'image à charger.
+
+  * **SAVE_IMG** &nbsp;( n -- ), Modifié, maintenant il faut indiquer le numéro de l'image destination. 
+
+* Renommé le mot **PAGE** en **ADR>PG** et ajouter le mot inverse **PG>ADR** 
+
 * Lorsqu'une compilation était avortée suite à une erreur les pointeurs **CP** et **LAST** n'était pas réinitialisé.  
 
 * **USER_BEGIN**, **USER_END** et **USER_IMG** ne sont plus des variables système mais des constantes système.
