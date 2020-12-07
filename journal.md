@@ -1,3 +1,12 @@
+### 2020-12-07
+
+
+* Corrigé bogue dans **SAVE_IMG** et **LOAD_IMG**.
+
+* **TURNKEY** &nbsp;( -- ) "mot", Initialise la variable **'BOOT** avec l'adresse d'exécution du *mot* passé en argument, ensuite sauvegarde l'image dans la fente **0**. Le mot **COLD** vérifie s'il y une image dans la fente **0** et si c'est le cas la charge automatiquement et le vecteur **'BOOT** est exécuté. 
+
+* **FORGET** &nbsp;( -- ) "mot", Oublie le *mot* ainsi que tous ceux qui ont été définis après celui-ci. 
+
 ### 2020-12-06
 
 * Renommé **USER_IMG** EN **IMAGE0**, Retourne l'adresse de la première image. 

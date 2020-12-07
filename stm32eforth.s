@@ -3539,20 +3539,21 @@ LOAD_IMG:
 /* copy system variables to RAM */
 	BL IMG_ADR 
 	BL DUPP 
-	BL TOR 
+	BL TOR   // save source address 
 	_PUSH 
 	ADD R5,R3,#IMG_SIGN_OFS // copy start at signature 
 	_PUSH 
 	MOV R5,#(VARS_END_OFS-IMG_SIGN_OFS) 
 	BL DUPP 
 	BL TOR 
-	BL MOVE 
+	BL MOVE // ( src dest count -- ) R: src count 
 /* copy user definitions */
 	BL RFROM 
 	BL RFROM  
 	BL PLUS // source address  
 	BL USER_BEGIN // destination address
 	BL HERE  
+	BL OVER 
 	BL SUBB  // byte count 
 	BL MOVE
 	_UNNEST  
@@ -3666,9 +3667,8 @@ _SAVE_IMG: .byte 8
 SAVE_IMG:
 	_NEST 
 	BL HERE 
-	BL USER_BEGIN 
+	BL USER_BEGIN
 	BL EQUAL 
-	BL INVER 
 	BL QBRAN
 	.word 1f+MAPOFFSET 
 	BL DROP 
@@ -3681,19 +3681,16 @@ SAVE_IMG:
 	BL DUPP 
 	BL ERASE_IMG 
 /* save system variables */
-2:	BL IMG_ADR // where to save  
+2:	BL IMG_ADR // where to save
+	_PUSH 
 	ADD R5,R3,#IMG_SIGN_OFS // save from here  
-	BL OVER  // dest src dest 
+	BL SWAP  //  ( src dest --  
 	_PUSH 
 	MOV R5,#(VARS_END_OFS-IMG_SIGN_OFS) 
 	BL CELLSL  // word count 
-	BL DUPP 
-	BL TOR 
-	BL FLSH_WR  // ( dest src dest count, R: count -- )
+	BL FLSH_WR  // ( src dest count -- dest+u )
 /* write user definitions */
-	BL RFROM    // ( dest count -- )
-	BL PLUS     // ( dest+ --  )
-	BL USER_BEGIN 
+	BL USER_BEGIN
 	BL SWAP  // ( src dest+ -- )
 	BL HERE   
 	BL USER_BEGIN 
@@ -3701,6 +3698,50 @@ SAVE_IMG:
 	BL CELLSL  // src dest+ count -- 
 	BL FLSH_WR  
 	_UNNEST 
+
+// TURNKEY ( -- "WORD") 
+// set autorun program in 'BOOT variable 
+// and save image in slot 0.
+	.word _SAVE_IMG+MAPOFFSET
+_TURNKEY: .byte 7
+	.ascii "TURNKEY"
+	.p2align 2 
+TURNKEY:
+	_NEST 
+	BL TICK 
+	BL TBOOT 
+	BL STORE 
+	_DOLIT 
+	.word 0 
+	BL SAVE_IMG 
+	_UNNEST
+
+	.word _TURNKEY+MAPOFFSET
+_FORGET: .byte 6 
+	.ascii "FORGET"
+	.p2align 2
+FORGET:
+	_NEST 
+	BL TOKEN 
+	BL DUPP 
+	BL QBRAN 
+	_DOLIT 
+	.word 9f+MAPOFFSET 
+	BL NAMEQ // ( a -- ca na | a 0 )
+	BL QDUP 
+	BL QBRAN 
+	.word 8f+MAPOFFSET
+	BL CELLM // ( ca la )
+	BL DUPP 
+	BL CPP   
+	BL STORE
+	BL AT 
+	BL LAST 
+	BL STORE
+	BL OVERT 
+8:  BL DROP 
+9:	_UNNEST 
+
 
 flash_regs:
 	.word FLASH_BASE_ADR // 0 
@@ -3713,7 +3754,7 @@ flash_regs:
 //    '	   ( -- ca )
 // 	Search context vocabularies for the next word in input stream.
 
-	.word	_SAVE_IMG+MAPOFFSET
+	.word	_FORGET+MAPOFFSET
 _TICK:	.byte  1
 	.ascii "'"
 	.p2align 2 	
@@ -4653,11 +4694,14 @@ COLD1:
 	.word	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack and TIB
-	BL	IMAGE0			// check if user image saved in slot 0 
+	_DOLIT				// check if user image saved in slot 0 
+	.word 0
+	BL IMGQ 
 	BL	QBRAN 
 	.word 1f+MAPOFFSET
-	NOP 
-//	BL	LOAD_IMG 
+	_DOLIT 
+	.word 0
+	BL	LOAD_IMG 
 1:	BL	TBOOT
 	BL	ATEXE			// application boot
 	BL	OVERT
