@@ -1,5 +1,8 @@
 ### 2020-12-07
 
+* L'adaption de stm32eForth selon le modèle original de C.H. Thing étant complété, j'entrepris un autre modèle qui lui sera exécuté à partir de la mémoire FLASH. Le fichier source s'appelle [stm32eforth-fl.s](stm32eforth-fl.s)
+
+<hr>
 
 * Corrigé bogue dans **SAVE_IMG** et **LOAD_IMG**.
 
