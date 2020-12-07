@@ -1,5 +1,10 @@
 ### 2020-12-06
 
+* Renommé **USER_IMG** EN **IMAGE0**, Retourne l'adresse de la première image. 
+
+* Corrigé bogue dans **ADR>PG**.
+
+<hr>
 * Modifié système pour permettre la sauvegarde de plusieurs images. 
   * **IMG_SIZE** &nbsp;( -- n ), Retourne le nombre de pages FLASH requis pour sauvegarder la totalité de la mémoire RAM disponible. 
 
