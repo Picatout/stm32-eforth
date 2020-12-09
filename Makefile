@@ -54,6 +54,10 @@ debug:
 	cd $(BUILD_DIR) &&\
 	$(DBG) -tui --eval-command="target remote localhost:4242" $(NAME).elf
 
+debug_fl: 
+	cd $(BUILD_DIR) &&\
+	$(DBG) -tui --eval-command="target remote localhost:4242" $(NAME)-fl.elf
+
 .PHONY: clean 
 
 clean:

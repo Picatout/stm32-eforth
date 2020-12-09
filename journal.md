@@ -1,3 +1,18 @@
+### 2020-12-08
+
+* Dans la version [stm32eforth-fl.s](stm32eforth-fl.s) le coeur du système Forth demeure en mémoire FLASH et est exécuté à partir de là. Les mots utilisateurs définis avec **':'** demeurent en mémoire RAM et sont exéctés à partir de là. 
+ 
+* Je dois changer le modèle d'exécution pour passer du modèle *subroutine threaded* au modèle *inderect threaded* du à une limitation du jeu d'instruction *thumb* du CPU ARM-V7M.  l'instruction machine **BL target** est un adressage relatif sur 25 bits signés, donc permet des sauts relatifs dans la plage {-16777216 à 16777214}. Ce qui ne permet pas de faire des sauts entre la mémoire RAM et la mémoire FLASH.  Avec le modèle *indirect threaded* les mot définis par l'utilsateur avec **':'**  seront une liste d'adresses absolues. L'interpréteur interne lit cette liste en chargeant chaque adresse dans un registre pour utiliser une instruction **BLX address** qui permet d'atteindre l'entièreté de l'espace d'adressage de 32 bits. L'inconvénient est un ralentissement de l'exécution. 
+Dans cette version le registre **R0** est utilisé comme **IP** i.e. *Instruction Pointer* de la machine virtuelle. Le registre **R4** est utilisé comme **WP** i.e. *Working Register*. Le code de la machine virtuelle va ressemblé à ceci.
+```
+// inteprète interne du code FORTH 
+NEXT:
+  LDR WP,[IP],#4
+  BLX WP 
+  B NEXT 
+```
+
+
 ### 2020-12-07
 
 * L'adaption de stm32eForth selon le modèle original de C.H. Thing étant complété, j'entrepris un autre modèle qui lui sera exécuté à partir de la mémoire FLASH. Le fichier source s'appelle [stm32eforth-fl.s](stm32eforth-fl.s)

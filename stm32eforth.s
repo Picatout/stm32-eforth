@@ -490,7 +490,6 @@ UZERO:
 	.word 0,0			/*reserved */
 ULAST:
 
- 
 
 /***********************************
 //  Start of Forth dictionary
