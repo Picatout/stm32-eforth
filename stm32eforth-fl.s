@@ -103,7 +103,8 @@
 /*************************************
    system variables offset from UPP
 *************************************/
-  .equ SEED_OFS, 4    // prng seed 
+  .equ FTRACE_OFS,4 // tracing flag 
+  .equ SEED_OFS, FTRACE_OFS+4    // prng seed 
   .equ TICKS_OFS, SEED_OFS+4  // millseconds counter
   .equ TIMER_OFS, TICKS_OFS+4  // count down timer
   .equ TORAM_OFS, TIMER_OFS+4  // compile to RAM 
@@ -162,6 +163,18 @@
 	_ADR DOTQP 
 	.byte \len 
 	.ascii "\text" 
+	.p2align 2 
+	.endm
+
+	.macro _COMPI name 
+	_ADR COMPI 
+	.word \name 
+	.endm 
+
+	.macro _ABORQ len,name 
+	_ADR ABORQ 
+	.byte \len 
+	.ascii "\name"
 	.p2align 2 
 	.endm
 
@@ -280,6 +293,7 @@ isr_vectors:
 
 UZERO:
 	.word 0  			/*Reserved */
+	.word 0		/* FTRACE */ 
 	.word 0xaa55 /* SEED  */ 
 	.word 0      /* MSEC */
     .word 0     /* TIMER */
@@ -559,13 +573,19 @@ NEST:
 	ADD R0,R4,#3
 // inner interprer
 INEXT: 
-	LDR R4,[R0],#4 
+/*
+	ADD R6,R3,#FTRACE_OFS
+	LDR R6,[R6]
+	CBZ r6, 1f
+	_PUSH 
+	LDR R5,[R0]
+	SUB R5,#1
+	B DBG_PRT
+*/
+1:	LDR R4,[R0],#4 
 	BLX R4 
-	B INEXT 
 UNNEST:
 	LDMFD R2!,{R0}
-	LDR R4,[R0],#4 
-	BLX R4 
 	B INEXT 
 
 	.p2align 2 
@@ -719,9 +739,10 @@ _EXECU:	.byte   7
 	.ascii "EXECUTE"
 	.p2align 2 	
 EXECU: 
-	ORR	LR,R5,#1 
+	ORR	R4,R5,#1 
 	_POP
-	_NEST 
+	BX R4 
+	_NEXT 
 
 //    next	( -- ) counter on R:
 // 	Run time code for the single index loop.
@@ -868,10 +889,33 @@ TOR:
 	_POP
 	_NEXT
 
+//	RP! ( u -- )
+// initialize RPP with u 
+	.word _TOR 
+_RPSTOR: .byte 3 
+	.ascii "RP!" 
+	.p2align 2 
+RPSTOR:
+	MOV R2,R5 
+	_POP  
+	_NEXT 
+
+
+//	SP! ( u -- )
+// initialize SPP with u 
+	.word _RPSTOR  
+_SPSTOR: .byte 3 
+	.ascii "SP!" 
+	.p2align 2 
+SPSTOR:
+	MOV R1,R5 
+	EOR R5,R5,R5 
+	_NEXT 
+
 //    SP@	 ( -- a )
 // 	Push the current data stack pointer.
 
-	.word	_TOR
+	.word	_SPSTOR
 _SPAT:	.byte   3
 	.ascii "SP@"
 	.p2align 2 	
@@ -935,8 +979,9 @@ _ZLESS:	.byte   2
 	.ascii "0<"
 	.p2align 2 	
 ZLESS:
-	MOV	R4,#0
-	ADD	R5,R4,R5,ASR #32
+//	MOV	R4,#0
+//	ADD	R5,R4,R5,ASR #32
+	ASR R5,#31
 	_NEXT 
 
 //    AND	 ( w w -- w )
@@ -1696,13 +1741,24 @@ LAST:
 	ADD	R5,R3,#LASTN_OFS
 	_NEXT
 
+//	FTRACE ( -- a )
+// return trace flag address 
+	.word _LAST  
+_FTRACE: .byte 6
+	.ascii "FTRACE"
+	.p2align 2 
+FTRACE:	
+	_PUSH 
+	ADD R5,R3,#FTRACE_OFS 
+	_NEXT 
+
 /***********************
 	system constants 
 ***********************/
 
 //	USER_BEGIN ( -- a )
 //  where user area begin in RAM
-	.word _LAST
+	.word _FTRACE
 _USER_BGN: .byte 10
 	.ascii "USER_BEGIN"
 	.p2align 2
@@ -1711,7 +1767,7 @@ USER_BEGIN:
 	ldr r5,USR_BGN_ADR 
 	_NEXT 
 USR_BGN_ADR:
-.word CTOP 
+.word  DTOP 
 
 //  USER_END ( -- a )
 //  where user area end in RAM 
@@ -2008,7 +2064,8 @@ _PAD:	.byte  3
 PAD:
 	_NEST
 	_ADR	HERE
-	ADD	R5,R5,#80
+	_DOLIT 80
+	_ADR PLUS 
 	_UNNEST
 
 //    TIB	 ( -- a )
@@ -2235,9 +2292,8 @@ DIGS:
 DIGS1:
     _ADR	DIG
 	_ADR	DUPP
-	_ADR	QBRAN
-	.word	DIGS2
-	B	DIGS1
+	_QBRAN 	DIGS2
+	_BRAN	DIGS1
 DIGS2:
 	  _UNNEST
 
@@ -2258,7 +2314,7 @@ SIGN1:
 	  _UNNEST
 
 //    #>	  ( w -- b u )
-// 	Prepare the outputDCB to be TYPE'd.
+// 	Prepare the output word to be TYPE'd.
 
 	.word	_SIGN
 _EDIGS:	.byte  2
@@ -2451,10 +2507,11 @@ KEY1:
 // CTRL-C reboot
 	_ADR DUPP 
 	_DOLIT	3 
-	_ADR EQUAL 
-	_ADR INVER
-	_QBRAN	REBOOT 
+	_ADR XORR
+	_QBRAN	GO_REBOOT 
 	_UNNEST
+GO_REBOOT: 
+	_ADR REBOOT 
 
 //    SPACE	( -- )
 // 	Send the blank character to the output device.
@@ -2815,7 +2872,7 @@ PAREN:
 
 	.word	_PAREN
 _BKSLA:	.byte  IMEDD+1
-	.byte	'\'
+	.byte	'\\'
 	.p2align 2 	
 BKSLA:
 	_NEST
@@ -3062,16 +3119,14 @@ TTAP:
 	_ADR	DUPP
 	_DOLIT	CRR
 	_ADR	XORR
-	_ADR	QBRAN
-	.word	KTAP2
+	_QBRAN  KTAP2
 	_DOLIT	BKSPP
 	_ADR	XORR
-	_ADR	QBRAN
-	.word	KTAP1
+	_QBRAN	KTAP1
 	_ADR	BLANK
 	_ADR	TAP
 	_UNNEST
-	.word	0			// patch
+//	.word	0			// patch
 KTAP1:
 	_ADR	BKSP
 	_UNNEST
@@ -3196,19 +3251,15 @@ INTER:
 	_ADR	AT
 	_DOLIT	COMPO
 	_ADR	ANDD	// ?compile only lexicon bits
-	_ADR	ABORQ
-	.byte	13
-	.ascii " compile only"
-	.p2align 2 	
+	_ABORQ	13," compile only"
 	_ADR	EXECU
 	_UNNEST			// execute defined word
 INTE1:
 	_ADR	NUMBQ
-	_ADR	QBRAN
-	.word	INTE2
+	_QBRAN	INTE2
 	_UNNEST
 INTE2:
-  B.W	ABORT	// error
+	_BRAN	ABORT	// error
 
 //    [	   ( -- )
 // 	Start the text interpreter.
@@ -3238,9 +3289,7 @@ DOTOK:
 	_ADR	AT
 	_ADR	EQUAL
 	_QBRAN	DOTO1
-	_ADR	DOTQP
-	.byte	3
-	.ascii " ok"
+	_DOTQP	3," ok"
 DOTO1:
 	_ADR	CR
 	_UNNEST
@@ -3256,10 +3305,7 @@ QSTAC:
 	_NEST
 	_ADR	DEPTH
 	_ADR	ZLESS	// check only for underflow
-	_ADR	ABORQ
-	.byte	10
-	.ascii " underflow"
-	.p2align 2 	
+	_ABORQ	10," underflow"
 	_UNNEST
 
 //    EVAL	( -- )
@@ -3293,12 +3339,10 @@ _PRESE:	.byte  6
 	.ascii "PRESET"
 	.p2align 2 	
 PRESE:
-//	_NEST
-	MOVW	R1,#SPP&0xffff		//  init SP
- 	MOVT	R1,#SPP>>16
-	EOR	R5,R5,R5			//  init TOS=0
-//	_UNNEST
-	_NEXT
+	_NEST 
+	_DOLIT SPP 
+	_ADR SPSTOR 
+	_UNNEST 
 
 //    QUIT	( -- )
 // 	Reset return stack pointer and start text interpreter.
@@ -3308,9 +3352,8 @@ _QUIT:	.byte  4
 	.ascii "QUIT"
 	.p2align 2 	
 QUIT:
-	_NEST
-	MOVW	R2,#RPP&0xffff  /* RESET RSTACK */
- 	MOVT	R2,#RPP>>16 
+	_DOLIT RPP 
+	_ADR RPSTOR 
 QUIT1:
 	_ADR	LBRAC			// start interpretation
 QUIT2:
@@ -3373,10 +3416,7 @@ EPAGE: 	//  page --
 	ldr r5,[r0,#FLASH_SR] // check for errors 
 	and r5,r5,#(5<<2)
 	_NEST 
-	_ADR ABORQ 
-	.byte 13
-	.ascii " erase error!"
-	.p2align 2
+	_ABORQ 	13," erase error!"
 	_UNNEST
 
 // store 16 bit word
@@ -3393,9 +3433,7 @@ HWORD_WRITE: // ( hword address -- )
 	and r5,r5,#(5<<2) 
 	_NEST 
 	_QBRAN	1f 
-	_ADR	ABORQ
-	.byte 13
-	.ascii " write error!"
+	_ABORQ	13," write error!"
 	.p2align 2
 1:	 
 	_UNNEST 
@@ -3759,15 +3797,13 @@ _COMPI:	.byte  COMPO+7
 COMPI:
 	_NEST
 	_ADR	RFROM
-	_DOLIT -2 
-	_ADR ANDD 
-	_ADR	DUPP
+	_ADR	DUPP 
 	_ADR	AT
-	_ADR	CALLC			// compile _ADR instruction
-	_ADR	CELLP
-	_DOLIT	1
-	_ADR ORR  
-	_ADR	TOR
+	_DOLIT 1 
+	_ADR	ORR 
+	_ADR	COMMA 
+	_ADR	CELLP 
+	_ADR	TOR 
 	_UNNEST			// adjust return address
 
 //    LITERAL	( w -- )
@@ -3779,8 +3815,7 @@ _LITER:	.byte  IMEDD+7
 	.p2align 2 	
 LITER:
 	_NEST
-	_ADR	COMPI
-	.word	DOLIT
+	_COMPI	DOLIT
 	_ADR	COMMA
 	_UNNEST
 
@@ -3817,8 +3852,7 @@ _FOR:	.byte  COMPO+IMEDD+3
 	.p2align 2 	
 FOR:
 	_NEST
-	_ADR	COMPI
-	.word	TOR
+	_COMPI	TOR
 	_ADR	HERE
 	_UNNEST
 
@@ -3843,8 +3877,7 @@ _FNEXT:	.byte  COMPO+IMEDD+4
 	.p2align 2 	
 FNEXT:
 	_NEST
-	_ADR	COMPI
-	.word	DONXT
+	_COMPI	DONXT
 	_ADR	COMMA
 	_UNNEST
 
@@ -3857,8 +3890,7 @@ _UNTIL:	.byte  COMPO+IMEDD+5
 	.p2align 2 	
 UNTIL:
 	_NEST
-	_ADR	COMPI
-	.word	QBRAN
+	_COMPI	QBRAN
 	_ADR	COMMA
 	_UNNEST
 
@@ -3871,8 +3903,7 @@ _AGAIN:	.byte  COMPO+IMEDD+5
 	.p2align 2 	
 AGAIN:
 	_NEST
-	_ADR	COMPI
-	.word	BRAN
+	_COMPI	BRAN
 	_ADR	COMMA
 	_UNNEST
 
@@ -3885,8 +3916,7 @@ _IFF:	.byte  COMPO+IMEDD+2
 	.p2align 2 	
 IFF:
 	_NEST
-	_ADR	COMPI
-	.word	QBRAN
+	_COMPI	QBRAN
 	_ADR	HERE
 	_DOLIT	4
 	_ADR	CPP
@@ -3902,8 +3932,7 @@ _AHEAD:	.byte  COMPO+IMEDD+5
 	.p2align 2 	
 AHEAD:
 	_NEST
-	_ADR	COMPI
-	.word	BRAN
+	_COMPI	BRAN
 	_ADR	HERE
 	_DOLIT	4
 	_ADR	CPP
@@ -3990,8 +4019,7 @@ _ABRTQ:	.byte  IMEDD+6
 	.p2align 2 	
 ABRTQ:
 	_NEST
-	_ADR	COMPI
-	.word	ABORQ
+	_COMPI	ABORQ
 	_ADR	STRCQ
 	_UNNEST
 
@@ -4004,8 +4032,7 @@ _STRQ:	.byte  IMEDD+2
 	.p2align 2 	
 STRQ:
 	_NEST
-	_ADR	COMPI
-	.word	STRQP
+	_COMPI	STRQP
 	_ADR	STRCQ
 	_UNNEST
 
@@ -4018,8 +4045,7 @@ _DOTQ:	.byte  IMEDD+COMPO+2
 	.p2align 2 	
 DOTQ:
 	_NEST
-	_ADR	COMPI
-	.word	DOTQP
+	_COMPI	DOTQP
 	_ADR	STRCQ
 	_UNNEST
 
@@ -4038,10 +4064,7 @@ UNIQU:
 	_ADR	DUPP
 	_ADR	NAMEQ			// ?name exists
 	_QBRAN	UNIQ1	// redefinitions are OK
-	_ADR	DOTQP
-	.byte	7
-	.ascii " reDef "		// but warn the user
-	.p2align 2 	
+	_DOTQP	7," reDef "		// but warn the user
 	_ADR	OVER
 	_ADR	COUNT
 	_ADR	TYPEE			// just in case its not planned
@@ -4078,7 +4101,7 @@ SNAM1:
 	_ADR	STRQP
 	.byte	7
 	.ascii " name? "
-	B.W	ABORT
+	_BRAN	ABORT
 
 //    $COMPILE	( a -- )
 // 	Compile next word to code dictionary as a token or literal.
@@ -4275,10 +4298,38 @@ VARIA:
 // **************************************************************************
 //  Tools
 
+//  TRACE ( f -- )
+// enable or disable tracing 
+	.word _VARIA 
+_TRACE: .byte 5
+	.ascii "TRACE"
+	.p2align 2
+TRACE: 
+	_NEST 
+	_ADR FTRACE 
+	_ADR STORE 
+	_UNNEST 
+
+// TR_PRINT ( ca -- )
+// print name from ca  
+	.word _TRACE 
+_DBG_PRT: .byte 7 
+	.ascii "DBG_PRT"
+DBG_PRT:
+	_NEST 
+	_ADR TNAME 
+	_ADR QDUP 
+	_QBRAN 1f 
+	_ADR COUNT 
+	_ADR TYPEE 
+	_ADR CR
+1:  	
+	_UNNEST 
+
 //    dm+	 ( a u -- a )
 // 	Dump u bytes from , leaving a+u on the stack.
 
-// 	.word	_VARIA
+// 	.word	_TRACE
 // _DMP	.byte  3
 // 	.ascii "dm+"
 // 	.p2align 2 	
@@ -4374,8 +4425,7 @@ TNAME:
 	_ADR	AT			//  na
 TNAM1:
 	_ADR	DUPP			//  na na
-	_ADR	QBRAN
-	.word	TNAM2	//  vocabulary end, no match
+	_QBRAN	TNAM2	//  vocabulary end, no match
 	_ADR	DUPP			//  na na
 	_ADR	NAMET			//  na ca
 	_ADR	RAT			//  na ca code
@@ -4406,10 +4456,7 @@ DOTID:
 	_ADR	TYPEE
 	_UNNEST			// display name string
 DOTI1:
-	_ADR	DOTQP
-	.byte	9
-	.ascii " {noName}"
-	.p2align 2 	
+	_DOTQP	9," {noName}"
 	_UNNEST
 
 	.equ WANT_SEE, 0  // set to 1 if you want SEE 
@@ -4454,8 +4501,7 @@ DECOMP:
 	_DOLIT	0xF000D000 //0xF800F000
 	_ADR	EQUAL			//  a code ?
 	_ADR	INVER 
-	_ADR	QBRAN
-	.word	DECOM2	//  not a command
+	_QBRAN	DECOM2	//  not a command
 	//  a valid_code --, extract address and display name
 	MOVW	R0,#0xFFE
 	MOV	R4,R5
@@ -4503,8 +4549,7 @@ WORDS:
 	_ADR	AT			// only in context
 WORS1:
 	_ADR	QDUP			// ?at end of list
-	_ADR	QBRAN
-	.word	WORS2
+	_QBRAN	WORS2
 	_ADR	DUPP
 	_ADR	SPACE
 	_ADR	DOTID			// display a name
@@ -4586,7 +4631,10 @@ COLD1:
 //	_QBRAN 1f
 //	_DOLIT 0
 //	_ADR	LOAD_IMG 
-1:	_ADR	TBOOT
+1:
+//_DOLIT 1
+//_ADR TRACE 
+	_ADR	TBOOT
 	_ADR	ATEXE			// application boot
 	_ADR	OVERT
 	_BRAN	QUIT			// start interpretation
