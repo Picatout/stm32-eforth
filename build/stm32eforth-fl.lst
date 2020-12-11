@@ -460,10 +460,10 @@ ARM GAS  stm32eforth-fl.s 			page 1
  309 0230 804E0020 		.word TIBB	/*TIB */
  310 0234 9C1A0000 		.word INTER	/*'EVAL */
  311 0238 00000000 		.word 0			/*HLD */
- 312 023c C4280000 		.word LASTN	/*CONTEXT */
- 313 0240 38290000 		.word CTOP	/* FCP end of system dictionnary */
+ 312 023c C8280000 		.word LASTN	/*CONTEXT */
+ 313 0240 3C290000 		.word CTOP	/* FCP end of system dictionnary */
  314 0244 00010020 		.word DTOP	/* CP end of RAM dictionary RAM */
- 315 0248 C4280000 		.word LASTN	/*LAST word in dictionary */
+ 315 0248 C8280000 		.word LASTN	/*LAST word in dictionary */
  316 024c 00000000 		.word 0,0			/*reserved */
  316      00000000 
  317              	ULAST:
@@ -544,7 +544,7 @@ ARM GAS  stm32eforth-fl.s 			page 1
  382 0068 01F0CCFD 		bl	unlock			/* unlock flash memory */
  383 006c DFF80880 		ldr r8,nest_adr 
  384 0070 48F00108 		orr r8,r8,#1  
- 385 0074 02F02AFC 		bl	COLD
+ 385 0074 02F02CFC 		bl	COLD
  386              	nest_adr: 
  387 0078 0C040000 		.word NEST 
  388              	
@@ -5291,74 +5291,74 @@ ARM GAS  stm32eforth-fl.s 			page 1
  4581              	HI:
  4582 2858 404700BF 		_NEST
  4583 285c A1130000 		_ADR	CR	// initialize I/O
- 4584 2860 09140000 		_DOTQP	23, "blue pill stm32eForth v" 
- 4584      17626C75 
+ 4584 2860 09140000 		_DOTQP	26, "blue pill stm32eForth-it v" 
+ 4584      1A626C75 
  4584      65207069 
  4584      6C6C2073 
  4584      746D3332 
- 4585 287c 850A0000 		_ADR	BASE
- 4586 2880 E9050000 		_ADR	AT
- 4587 2884 F5100000 		_ADR	HEX	// save radix
- 4588 2888 41280000 		_ADR	VERSN
- 4589 288c E50F0000 		_ADR	BDIGS
- 4590 2890 31100000 		_ADR	DIG
- 4591 2894 31100000 		_ADR	DIG
- 4592 2898 6D050000 		_DOLIT	'.'
+ 4585 2880 850A0000 		_ADR	BASE
+ 4586 2884 E9050000 		_ADR	AT
+ 4587 2888 F5100000 		_ADR	HEX	// save radix
+ 4588 288c 41280000 		_ADR	VERSN
+ 4589 2890 E50F0000 		_ADR	BDIGS
+ 4590 2894 31100000 		_ADR	DIG
+ 4591 2898 31100000 		_ADR	DIG
+ 4592 289c 6D050000 		_DOLIT	'.'
  4592      2E000000 
- 4593 28a0 05100000 		_ADR	HOLD
- 4594 28a4 51100000 		_ADR	DIGS
- 4595 28a8 A5100000 		_ADR	EDIGS
- 4596 28ac 6D130000 		_ADR	TYPEE	// format version number
- 4597 28b0 850A0000 		_ADR	BASE
- 4598 28b4 D5050000 		_ADR	STORE
- 4599 28b8 A1130000 		_ADR	CR
- 4600 28bc 1B040000 		_UNNEST			// restore radix
+ 4593 28a4 05100000 		_ADR	HOLD
+ 4594 28a8 51100000 		_ADR	DIGS
+ 4595 28ac A5100000 		_ADR	EDIGS
+ 4596 28b0 6D130000 		_ADR	TYPEE	// format version number
+ 4597 28b4 850A0000 		_ADR	BASE
+ 4598 28b8 D5050000 		_ADR	STORE
+ 4599 28bc A1130000 		_ADR	CR
+ 4600 28c0 1B040000 		_UNNEST			// restore radix
  4601              	
  4602              	//    COLD	( -- )
  4603              	// 	The high level cold start sequence.
  4604              	
- 4605 28c0 54280000 		.word	_HI
- 4606 28c4 04       	LASTN:	.byte  4
- 4607 28c5 434F4C44 		.ascii "COLD"
- 4608 28c9 000000   		.p2align 2,0	
+ 4605 28c4 54280000 		.word	_HI
+ 4606 28c8 04       	LASTN:	.byte  4
+ 4607 28c9 434F4C44 		.ascii "COLD"
+ 4608 28cd 000000   		.p2align 2,0	
  4609              	COLD:
  4610              	//  Initiate Forth registers
- 4611 28cc 4FF00003 		mov r3,#UPP&0xffff
- 4612 28d0 C2F20003 		movt r3,#UPP>>16 
- 4613 28d4 03F59F42 		add R2,R3,#RPP&0xffff	// Forth return stack
- 4614 28d8 03F59D41 		add R1,R3,#SPP&0xffff // Forth data stack
- 4615 28dc 85EA0505 		eor R5,R5,R5			//  tos=0
- 4616 28e0 1648     		ldr R0,=COLD1 
- 4617 28e2 FDF797BD 		_NEXT
+ 4611 28d0 4FF00003 		mov r3,#UPP&0xffff
+ 4612 28d4 C2F20003 		movt r3,#UPP>>16 
+ 4613 28d8 03F59F42 		add R2,R3,#RPP&0xffff	// Forth return stack
+ 4614 28dc 03F59D41 		add R1,R3,#SPP&0xffff // Forth data stack
+ 4615 28e0 85EA0505 		eor R5,R5,R5			//  tos=0
+ 4616 28e4 1648     		ldr R0,=COLD1 
+ 4617 28e6 FDF795BD 		_NEXT
  4618              	COLD1:
- 4619 28e6 6D050000 		_DOLIT  0 
+ 4619 28ea 6D050000 		_DOLIT  0 
  4619      00000000 
- 4620 28ee 01000000 		_ADR ULED // turn off user LED 
- 4621 28f2 6D050000 		_DOLIT	UZERO
+ 4620 28f2 01000000 		_ADR ULED // turn off user LED 
+ 4621 28f6 6D050000 		_DOLIT	UZERO
  4621      00020000 
- 4622 28fa 6D050000 		_DOLIT	UPP
+ 4622 28fe 6D050000 		_DOLIT	UPP
  4622      00000020 
 ARM GAS  stm32eforth-fl.s 			page 90
 
 
- 4623 2902 6D050000 		_DOLIT	ULAST-UZERO
+ 4623 2906 6D050000 		_DOLIT	ULAST-UZERO
  4623      54000000 
- 4624 290a B50E0000 		_ADR	MOVE 			// initialize user area
- 4625 290e C51B0000 		_ADR	PRESE			// initialize stack and TIB
- 4626 2912 5D1D0000 		_ADR IMGQ		// if there is a saved image load it  
- 4627 2916 A9050000 		_QBRAN 1f
- 4627      22290000 
- 4628 291e 8D1D0000 		_ADR	LOAD_IMG 
+ 4624 290e B50E0000 		_ADR	MOVE 			// initialize user area
+ 4625 2912 C51B0000 		_ADR	PRESE			// initialize stack and TIB
+ 4626 2916 5D1D0000 		_ADR IMGQ		// if there is a saved image load it  
+ 4627 291a A9050000 		_QBRAN 1f
+ 4627      26290000 
+ 4628 2922 8D1D0000 		_ADR	LOAD_IMG 
  4629              	1:
- 4630 2922 710A0000 		_ADR	TBOOT
- 4631 2926 650E0000 		_ADR	ATEXE			// application boot
- 4632 292a 91240000 		_ADR	OVERT
- 4633 292e BB050000 		_BRAN	QUIT			// start interpretation
+ 4630 2926 710A0000 		_ADR	TBOOT
+ 4631 292a 650E0000 		_ADR	ATEXE			// application boot
+ 4632 292e 91240000 		_ADR	OVERT
+ 4633 2932 BB050000 		_BRAN	QUIT			// start interpretation
  4633      E41B0000 
  4634              	COLD2:
- 4635 2936 00BF     		.p2align 2 	
+ 4635 293a 00BF     		.p2align 2 	
  4636              	CTOP:
- 4637 2938 FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
+ 4637 293c FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
  4638              	
  4639              		.section .text.user, "a", %progbits 
  4640              		.p2align 10 
@@ -5498,8 +5498,8 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
     stm32eforth-fl.s:4581   .text:0000000000002858 HI
                             *ABS*:000000000000000a BASEE
     stm32eforth-fl.s:3257   .text:0000000000001a9c INTER
-    stm32eforth-fl.s:4606   .text:00000000000028c4 LASTN
-    stm32eforth-fl.s:4636   .text:0000000000002938 CTOP
+    stm32eforth-fl.s:4606   .text:00000000000028c8 LASTN
+    stm32eforth-fl.s:4636   .text:000000000000293c CTOP
     stm32eforth-fl.s:317    .isr_vector:0000000000000254 ULAST
     stm32eforth-fl.s:324    .text:0000000000000000 $t
     stm32eforth-fl.s:336    .text:0000000000000018 exception_msg
@@ -5514,7 +5514,7 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
     stm32eforth-fl.s:391    .text:000000000000007c init_devices
     stm32eforth-fl.s:3379   .text:0000000000001c04 unlock
     stm32eforth-fl.s:386    .text:0000000000000078 nest_adr
-    stm32eforth-fl.s:4609   .text:00000000000028cc COLD
+    stm32eforth-fl.s:4609   .text:00000000000028d0 COLD
     stm32eforth-fl.s:387    .text:0000000000000078 $d
     stm32eforth-fl.s:576    .text:000000000000040c NEST
     stm32eforth-fl.s:390    .text:000000000000007c $t
@@ -6459,15 +6459,15 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
     stm32eforth-fl.s:4571   .text:0000000000002844 $d
     stm32eforth-fl.s:4578   .text:0000000000002854 _HI
     stm32eforth-fl.s:4583   .text:000000000000285c $d
-    stm32eforth-fl.s:4585   .text:000000000000287c $d
-    stm32eforth-fl.s:4611   .text:00000000000028cc $t
-    stm32eforth-fl.s:4618   .text:00000000000028e6 COLD1
-    stm32eforth-fl.s:4619   .text:00000000000028e6 $d
-    stm32eforth-fl.s:4634   .text:0000000000002936 COLD2
-    stm32eforth-fl.s:4635   .text:0000000000002936 $t
-    stm32eforth-fl.s:4637   .text:0000000000002938 $d
+    stm32eforth-fl.s:4585   .text:0000000000002880 $d
+    stm32eforth-fl.s:4611   .text:00000000000028d0 $t
+    stm32eforth-fl.s:4618   .text:00000000000028ea COLD1
+    stm32eforth-fl.s:4619   .text:00000000000028ea $d
+    stm32eforth-fl.s:4634   .text:000000000000293a COLD2
+    stm32eforth-fl.s:4635   .text:000000000000293a $t
+    stm32eforth-fl.s:4637   .text:000000000000293c $d
     stm32eforth-fl.s:4642   .text.user:0000000000000000 $d
-    stm32eforth-fl.s:4644   .text:000000000000293c $d
+    stm32eforth-fl.s:4644   .text:0000000000002940 $d
     stm32eforth-fl.s:340    .text:000000000000002f $d
     stm32eforth-fl.s:340    .text:0000000000000030 $t
     stm32eforth-fl.s:622    .text:0000000000000449 $d
@@ -6677,6 +6677,7 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
     stm32eforth-fl.s:4395   .text:0000000000002724 $t
     stm32eforth-fl.s:4580   .text:0000000000002857 $d
     stm32eforth-fl.s:4580   .text:0000000000002858 $t
+    stm32eforth-fl.s:4584   .text:000000000000287f $d
 
 UNDEFINED SYMBOLS
 _mstack

@@ -4581,7 +4581,7 @@ _HI:	.byte  2
 HI:
 	_NEST
 	_ADR	CR	// initialize I/O
-	_DOTQP	23, "blue pill stm32eForth v" 
+	_DOTQP	26, "blue pill stm32eForth-it v" 
 	_ADR	BASE
 	_ADR	AT
 	_ADR	HEX	// save radix

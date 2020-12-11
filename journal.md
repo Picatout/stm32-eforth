@@ -1,5 +1,14 @@
 ### 2020-12-11
 
+* test de vitesse comparée: 
+```
+: TEST MSEC @ 1000000 FOR 1 31 LSHIFT DROP NEXT MSEC @ SWAP - . ;
+```
+  * version *subroutine threaded* 1154 millisecondes. 
+  * version *indirect threaded* 1264 millisecondes.
+
+Le MCU fonctionnant à la vitesse maximale de 72Mhz.
+<hr>
 * Modifié et testé le système de sauvegarde des images utilisateurs.
 
 * **IMAGE0** renommé **IMG_ADR** 
