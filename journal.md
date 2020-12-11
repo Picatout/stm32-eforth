@@ -1,3 +1,10 @@
+### 2020-12-10
+
+* Travaillé sur le nouvelle version [stm32eforth-fl.s](stm32eforth-fl.s), le travail est presque complété ne rest qu'à faire des tests supplémentaires. Pour construire et programmer cette version sur la carte il faut faire:
+```  
+  make build_fl && make flash_fl
+```
+
 ### 2020-12-08
 
 * Dans la version [stm32eforth-fl.s](stm32eforth-fl.s) le coeur du système Forth demeure en mémoire FLASH et est exécuté à partir de là. Les mots utilisateurs définis avec **':'** demeurent en mémoire RAM et sont exéctés à partir de là. 

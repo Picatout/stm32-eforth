@@ -105,11 +105,12 @@
 /*************************************
    system variables offset from UPP
 *************************************/
-  .equ SEED_OFS, 4    // prng seed 
+  .equ FTRACE_OFS,4 // tracing flag 
+  .equ SEED_OFS, FTRACE_OFS+4    // prng seed 
   .equ TICKS_OFS, SEED_OFS+4  // millseconds counter
   .equ TIMER_OFS, TICKS_OFS+4  // count down timer
-  .equ FTRACE_OFS, TIMER_OFS+4  // compile to RAM 
-  .equ IMG_SIGN_OFS, FTRACE_OFS+4  // image signature  
+  .equ TORAM_OFS, TIMER_OFS+4  // compile to RAM 
+  .equ IMG_SIGN_OFS, TORAM_OFS+4  // image signature  
   .equ BOOT_OFS, IMG_SIGN_OFS+4  // boot program address
   .equ BASE_OFS, BOOT_OFS+4  // numeric conversion base 
   .equ TMP_OFS, BASE_OFS+4   // temporary variable
@@ -144,8 +145,7 @@
 	.endm 
 
  	.macro	_NEST /*start high level word */
-	BX R8 // BX R8 
-	NOP.N 
+	B NEST // BX R8 
 	.endm
 
 	.macro _ADR label 
@@ -169,8 +169,8 @@
 	.endm
 
 	.macro _COMPI name 
-	_DOLIT \name 
-	_ADR CALLC 
+	_ADR COMPI 
+	.word \name 
 	.endm 
 
 	.macro _ABORQ len,name 
@@ -295,10 +295,11 @@ isr_vectors:
 
 UZERO:
 	.word 0  			/*Reserved */
+	.word 0		/* FTRACE */ 
 	.word 0xaa55 /* SEED  */ 
 	.word 0      /* MSEC */
     .word 0     /* TIMER */
-	.word 0    /* FTRACE */ 
+	.word -1    /* >RAM */ 
 	.ascii "IMAG" /* signature */ 
 	.word HI  /*'BOOT */
 	.word BASEE 	/*BASE */
@@ -606,11 +607,11 @@ COMPI_NEST:
 	ldr r6,[r6]
 	mov r7,#0x4700+(8<<3)
 	strh r7,[r6],#2
-	mov r7,#0xbf00 // NOP.N   
+	mov r7,#0xbf00 // NOP  
 	strh r7,[r6],#2 
 	add r7,r3,#RAM_CTOP_OFS 
 	str r6,[r7]
-	_NEXT  
+	bx lr 
 
 // RANDOM ( n1 -- {0..n1-1} )
 // return pseudo random number 
@@ -786,7 +787,7 @@ NEXT1:
 	/* decrement loop counter */
 	SUB	R4,R4,#1
 	STR	R4,[R2]
-	LDR	R0,[R0]	// go begining of loop 
+	LDR	R0,[R0]	// gbegining of loop 
 	_NEXT 
 
 //    ?branch	( f -- )
@@ -1555,9 +1556,8 @@ DNEGA:
 // 	.p2align 2 	
 DOVAR:
 	_PUSH
-	MOV R5,R0
-	ADD R0,R0,#4 
-	_NEXT  
+	MOV  R5,R0
+	_UNNEST  
 
 //    doCON	( -- a ) 
 // 	Run time routine for CONSTANT.
@@ -1568,8 +1568,8 @@ DOVAR:
 // 	.p2align 2 	
 DOCON:
 	_PUSH
-	LDR.W R5,[R0],#4 
-	_NEXT   
+	LDR R5,[R0],#4
+	_UNNEST  
 
 /***********************
   system variables 
@@ -1609,10 +1609,22 @@ TIMER:
   ADD R5,R3,#TIMER_OFS
   _NEXT
 
+// >RAM ( -- a )
+// compilation target 
+// -1 compile to RAM, 0 compile to FLASH 
+	.word _TIMER
+_TORAM: .byte 4 
+	.ascii ">RAM" 
+	.p2align 2 
+TORAM:
+	_PUSH 
+	ADD R5,R3,#TORAM_OFS
+	_NEXT 
+
 //    'BOOT	 ( -- a )
 // 	Application.
 
-	.word	_TIMER
+	.word	_TORAM
 _TBOOT:	.byte   5
 	.ascii "'BOOT"
 	.p2align 2 	
@@ -3376,44 +3388,39 @@ QUIT2:
 /***************************
 //  Flash memory interface
 ***************************/
-	.p2align 2 
+
 unlock:	//  unlock flash memory	
-	ldr	r7, flash_regs 
-	mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
-	str r4,[r7,#FLASH_SR]
-	ldr r4,[r7,#FLASH_CR]
-	tst r4,#(1<<7)
-	beq 1f 
+	ldr	r0, flash_regs 
+//	mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+//	str r4,[r0,#FLASH_SR]
+//	ldr r4,[r0,#FLASH_CR]
+//	tst r4,#(1<<7)
+//	beq 1f 
 	ldr	r4, flash_regs+4 // key1
-	str	r4, [r7, #FLASH_KEYR]
+	str	r4, [r0, #FLASH_KEYR]
 	ldr	r4, flash_regs+8 // key2 
-	str	r4, [r7, #FLASH_KEYR]
-	b unlock 
+	str	r4, [r0, #FLASH_KEYR]
 	/* unlock option registers */
 /*	
 	ldr	r4, flash_regs+4 
-	str	r4, [r7, #FLASH_OPTKEYR]
+	str	r4, [r0, #FLASH_OPTKEYR]
 	ldr	r4, flash_regs+8
-	str	r4, [r7, #FLASH_OPTKEYR]
+	str	r4, [r0, #FLASH_OPTKEYR]
 */
-1:	bx lr 
+	bx lr 
 
-	.p2align 2 
 WAIT_BSY:
-	ldr	r7,flash_regs
+	ldr	r0,flash_regs
 WAIT1:
-	ldr	r4, [r7, #FLASH_SR]	//  FLASH_SR
+	ldr	r4, [r0, #FLASH_SR]	//  FLASH_SR
 	ands	r4, #0x1	//  BSY
 	bne	WAIT1
 	_RET 
-	
-	.p2align 2
 
-//    ERASE_PAGE	   ( adr -- F )
+//    ERASE_PAGE	   ( adr -- )
 // 	  Erase one page of flash memory.
 //    stm32f103 page size is 1024 bytes 
 //    adr is any address inside page to erase 
-//	  return success|fail flag 
 
 	.word _QUIT  
 _EPAGE:	.byte  10
@@ -3421,36 +3428,41 @@ _EPAGE:	.byte  10
 	.p2align 2 	
 
 EPAGE: 	//  page --
-	ldr r7,flash_regs 	 
+	_CALL	WAIT_BSY
+	ldr r0,flash_regs 	 
 	mov r4,#2 // set PER bit 
-	str r4,[r7,#FLASH_CR]
-	str r5,[r7,#FLASH_AR] // page to erase address 
-	ldr	r4,[r7, #FLASH_CR]	
+	str r4,[r0,#FLASH_CR]
+	str r5,[r0,#FLASH_AR] // page to erase address 
+	ldr	r4,[r0, #FLASH_CR]	
 	orr	R4,#0x40	//  set STRT bit   
-	str	r4,[r7, #FLASH_CR]	//  start erasing
+	str	r4,[r0, #FLASH_CR]	//  start erasing
  	_CALL	WAIT_BSY // wait until done
-	ldr r5,[r7,#FLASH_SR] // check for errors 
+	ldr r5,[r0,#FLASH_SR] // check for errors 
 	and r5,r5,#(5<<2)
-	_NEXT 
+	_NEST 
+	_ABORQ 	13," erase error!"
+	_UNNEST
 
-	.p2align 2 
 // store 16 bit word
-// expect flash unlocked
-// return success|fail flag   
-HWORD_WRITE: // ( hword address -- F  )
-	ldr r7,flash_regs 
-	ldr	r4, [r7, #FLASH_CR]	//  FLASH_CR
+// expect flash unlocked  
+HWORD_WRITE: // ( hword address -- )
+	ldr	r4, [r0, #FLASH_CR]	//  FLASH_CR
 	mov r4,#1 // set PG 
-	str r4,[r7,#FLASH_CR]
+	str r4,[r0,#FLASH_CR]
 	mov r6,r5 
 	_POP 
 	strh r5,[r6] 
 	_CALL WAIT_BSY 
-	ldr r5,[r7,#FLASH_SR]
+	ldr r5,[r0,#FLASH_SR]
 	and r5,r5,#(5<<2) 
-	_NEXT 
+	_NEST 
+	_QBRAN	1f 
+	_ABORQ	13," write error!"
+	.p2align 2
+1:	 
+	_UNNEST 
 
-	.p2align 2 
+
 //    I!	   ( data address -- )
 // 	   Write one word into flash memory
 //	   address must even 
@@ -3460,23 +3472,20 @@ _ISTOR:	.byte  2
 	.ascii "I!"
 	.p2align 2 	
 ISTOR:	//  data address --
+	_CALL	WAIT_BSY
 	_NEST 
 	_ADR DDUP 
 	_ADR TOR 
 	_ADR TOR 
 	_ADR HWORD_WRITE
-	_QBRAN 1f 
-0:	_ABORQ 10, "write failed"
-1:	_ADR RFROM
+	_ADR RFROM
 	_DOLIT 65536 
 	_ADR  SLASH
 	_ADR RFROM 
 	_DOLIT 2 
 	_ADR PLUS 
 	_ADR HWORD_WRITE 
-	_QBRAN 2f
-	_BRAN 0b 
-2:	_UNNEST
+	_UNNEST
 
 // IMG_SIZE ( -- u )
 // return flash pages required to save 
@@ -3855,9 +3864,9 @@ STRCQ:
 	_ADR	STORE
 	_UNNEST 			// adjust the code pointer
 
-/*******************
+// **************************************************************************
 //  Structures
-*******************/
+
 //    FOR	 ( -- a )
 // 	Start a FOR-NEXT loop structure in a colon definition.
 
@@ -3883,9 +3892,9 @@ BEGIN:
 	_ADR	HERE
 	_UNNEST
 	.p2align 2 
-
 //    NEXT	( a -- )
 // 	Terminate a FOR-NEXT loop structure.
+
 	.word	_BEGIN
 _FNEXT:	.byte  COMPO+IMEDD+4
 	.ascii "NEXT"
@@ -4146,7 +4155,7 @@ SCOM2:
 	_UNNEST			// compile number as integer
 SCOM3: // compilation abort 
 	_ADR COLON_ABORT 
-	_ADR	ABORT			// error
+	_BRAN	ABORT			// error
 
 // before aborting a compilation 
 // reset HERE and LAST
@@ -4188,8 +4197,7 @@ _SEMIS:	.byte  IMEDD+COMPO+1
 	.p2align 2 	
 SEMIS:
 	_NEST
-	_DOLIT	UNNEST
-	_ADR	ONEP 
+//	_DOLIT	_UNNEST
 	_ADR	COMMA
 	_ADR	LBRAC
 	_ADR	OVERT
@@ -4236,7 +4244,8 @@ COLON:
 	_NEST
 	_ADR	TOKEN
 	_ADR	SNAME
-	_ADR	COMPI_NEST 
+	_DOLIT	NEST
+	_ADR	COMMA
 	_ADR	RBRAC
 	_UNNEST
 
@@ -4274,12 +4283,11 @@ CONST:
 	_ADR	TOKEN
 	_ADR	SNAME
 	_ADR	OVERT
-	_ADR	COMPI_NEST
+	_DOLIT	NEST
+	_ADR	COMMA
 	_DOLIT	DOCON
 	_ADR	CALLC
 	_ADR	COMMA
-	_DOLIT	UNNEST 
-	_ADR	CALLC  
 	_UNNEST
 
 //    CREATE	( -- //  string> )
@@ -4311,8 +4319,6 @@ VARIA:
 	_ADR	CREAT
 	_DOLIT	0
 	_ADR	COMMA
-	_DOLIT UNNEST
-	_ADR	CALLC  
 	_UNNEST
 
 // **************************************************************************
