@@ -1,3 +1,19 @@
+### 2020-12-11
+
+* Modifié et testé le système de sauvegarde des images utilisateurs.
+
+* **IMAGE0** renommé **IMG_ADR** 
+
+* Vocabulaire des sauvegardes.
+    * **IMG_ADR**&nbsp;&nbsp;( -- a ), Retourne l'adresse en mémoire FLASH où est sauvegardée l'image. 
+    * **IMG_SIGN**&nbsp;&nbsp;( -- a ),Retourne l'adresse de la variable système signature. Celle-ci contient le mot **IMAG**. 
+    * **IMG?**&nbsp;&nbsp;( -- f ), Retourne un indicateur booléen indiquant s'il y a une image de sauvegardée. 
+    * **SAVE_IMG**&nbsp;&nbsp;( -- ), S'il y a des définitions utilisateurs dans la mémoire RAM sauvegarde cette image dans la mémoire FLASH. 
+    Lorsqu'une image est sauvegardée elle est rechargée automatiquement dans la mémoire RAM au démarrage.
+    * **LOAD_IMG**&nbsp;&nbsp;( -- ), Charge en mémoire RAM l'image sauvegardée en mémoire FLASH.
+
+    * **TURNKEY**&nbsp;&nbsp;( -- ) *word*, Initialise le vecteur 'BOOT avec l'adresse d'exécution du mot *word* et sauvegarde l'image. Au démarrage ce mot sera exécuté comme application. **TURNKEY** implique qu'il y a des définitions utilisateurs dans la mémoire RAM. 
+
 ### 2020-12-10
 
 * Travaillé sur le nouvelle version [stm32eforth-fl.s](stm32eforth-fl.s), le travail est presque complété ne rest qu'à faire des tests supplémentaires. Pour construire et programmer cette version sur la carte il faut faire:

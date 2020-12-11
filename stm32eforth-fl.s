@@ -595,7 +595,7 @@ UNNEST:
 
 	.p2align 2 
 
-// compile "BX R8" 
+// compile "BX 	R8" 
 // this is the only way 
 // a colon defintion in RAM 
 // can jump to NEST
@@ -776,16 +776,16 @@ EXECU:
 // 	.ascii "next"
 // 	.p2align 2 	
 DONXT:
-	LDR	R4,[R2]   // ( -- u )  
-	CBNZ R4,NEXT1 
+	LDR	R6,[R2]   // ( -- u )  
+	CBNZ R6,NEXT1 
 	/* loop done */
 	ADD	R2,R2,#4 // drop counter 
 	ADD	R0,R0,#4 // skip after loop address 
 	_NEXT
 NEXT1:
 	/* decrement loop counter */
-	SUB	R4,R4,#1
-	STR	R4,[R2]
+	SUB	R6,R6,#1
+	STR	R6,[R2]
 	LDR	R0,[R0]	// go begining of loop 
 	_NEXT 
 
@@ -1794,13 +1794,13 @@ USER_END:
 USER_END_ADR:
 	.word DEND 
 
-//  IMAGE0 ( -- a )
+//  IMG_ADR ( -- a )
 //  where user image is saved in FLASH
 	.word _USER_END
-_IMAGE0: .byte 6
-	.ascii "IMAGE0"
+_IMG_ADR: .byte 7
+	.ascii "IMG_ADR"
 	.p2align 2 
-IMAGE0:
+IMG_ADR:
 	_PUSH
 	ldr r5,USR_IMG_ADR   
 	_NEXT 
@@ -1809,14 +1809,13 @@ USR_IMG_ADR:
 
 // IMG_SIGN ( -- a )
 // image signature 
-	.word _IMAGE0 
+	.word _IMG_ADR 
 _IMG_SIGN: .byte 8
 	.ascii "IMG_SIGN"
 	.p2align 2
 IMG_SIGN: 
 	_PUSH 
 	ADD r5,r3,#IMG_SIGN_OFS 
-	LDR R5,[R5]
 	_NEXT 
 
 /* *********************
@@ -3379,22 +3378,22 @@ QUIT2:
 	.p2align 2 
 unlock:	//  unlock flash memory	
 	ldr	r7, flash_regs 
-	mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
-	str r4,[r7,#FLASH_SR]
-	ldr r4,[r7,#FLASH_CR]
-	tst r4,#(1<<7)
+	mov r6,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+	str r6,[r7,#FLASH_SR]
+	ldr r6,[r7,#FLASH_CR]
+	tst r6,#(1<<7)
 	beq 1f 
-	ldr	r4, flash_regs+4 // key1
-	str	r4, [r7, #FLASH_KEYR]
-	ldr	r4, flash_regs+8 // key2 
-	str	r4, [r7, #FLASH_KEYR]
+	ldr	r6, flash_regs+4 // key1
+	str	r6, [r7, #FLASH_KEYR]
+	ldr	r6, flash_regs+8 // key2 
+	str	r6, [r7, #FLASH_KEYR]
 	b unlock 
 	/* unlock option registers */
 /*	
-	ldr	r4, flash_regs+4 
-	str	r4, [r7, #FLASH_OPTKEYR]
-	ldr	r4, flash_regs+8
-	str	r4, [r7, #FLASH_OPTKEYR]
+	ldr	r6, flash_regs+4 
+	str	r6, [r7, #FLASH_OPTKEYR]
+	ldr	r6, flash_regs+8
+	str	r6, [r7, #FLASH_OPTKEYR]
 */
 1:	bx lr 
 
@@ -3402,8 +3401,8 @@ unlock:	//  unlock flash memory
 WAIT_BSY:
 	ldr	r7,flash_regs
 WAIT1:
-	ldr	r4, [r7, #FLASH_SR]	//  FLASH_SR
-	ands	r4, #0x1	//  BSY
+	ldr	r6, [r7, #FLASH_SR]	//  FLASH_SR
+	ands	r6, #0x1	//  BSY
 	bne	WAIT1
 	_RET 
 	
@@ -3422,12 +3421,12 @@ _EPAGE:	.byte  10
 
 EPAGE: 	//  page --
 	ldr r7,flash_regs 	 
-	mov r4,#2 // set PER bit 
-	str r4,[r7,#FLASH_CR]
+	mov r6,#2 // set PER bit 
+	str r6,[r7,#FLASH_CR]
 	str r5,[r7,#FLASH_AR] // page to erase address 
-	ldr	r4,[r7, #FLASH_CR]	
-	orr	R4,#0x40	//  set STRT bit   
-	str	r4,[r7, #FLASH_CR]	//  start erasing
+	ldr	r6,[r7, #FLASH_CR]	
+	orr	R6,#0x40	//  set STRT bit   
+	str	r6,[r7, #FLASH_CR]	//  start erasing
  	_CALL	WAIT_BSY // wait until done
 	ldr r5,[r7,#FLASH_SR] // check for errors 
 	and r5,r5,#(5<<2)
@@ -3437,7 +3436,7 @@ EPAGE: 	//  page --
 // store 16 bit word
 // expect flash unlocked
 // return success|fail flag   
-HWORD_WRITE: // ( hword address -- F  )
+HWORD_WRITE: // ( hword address -- f  )
 	ldr r7,flash_regs 
 	ldr	r4, [r7, #FLASH_CR]	//  FLASH_CR
 	mov r4,#1 // set PG 
@@ -3500,8 +3499,8 @@ IMG_SIZE:
 1:
 	_UNNEST  
 
-// IMG? ( n -- T|F )
-// check if an image has been saved in slot n 
+// IMG? (  -- T|F )
+// check if an image has been saved in FLASH  
 	.word _IMG_SIZE 
 _IMGQ: .byte 4
 	.ascii "IMG?"
@@ -3511,36 +3510,19 @@ IMGQ:
 	_ADR IMG_ADR 
 	_ADR AT 
 	_ADR IMG_SIGN  
+	_ADR AT 
 	_ADR XORR  
 	_ADR ZEQUAL
 	_UNNEST
 
-// IMG_ADR ( n -- a )
-// return image address from its number
-// IMG_ADR=USER_SPACE+IMG_SIZE*1024*n  
+// LOAD_IMG (  -- )
+// Load saved image into RAM. 
 	.word _IMGQ
-_IMG_ADR: .byte 7 
-	.ascii "IMG_ADR"
-	.p2align 2 
-IMG_ADR:
-	_NEST 
-	_ADR IMG_SIZE // number of pages per image. 
-	_DOLIT 10
-	_ADR LSHIFT
-	_ADR STAR     // * n 
-	_ADR IMAGE0 
-	_ADR PLUS    // + USER_SPACE  
-	_UNNEST 
-
-// LOAD_IMG ( n -- )
-// Load image in slot n in RAM. 
-	.word _IMG_ADR
 _LOAD_IMG: .byte 8 
 	.ascii "LOAD_IMG" 
 	.p2align 2 
 LOAD_IMG:
 	_NEST 
-	_ADR DUPP 
 	_ADR IMGQ 
 	_QBRAN 1f
 /* copy system variables to RAM */
@@ -3561,10 +3543,7 @@ LOAD_IMG:
 	_ADR OVER 
 	_ADR SUBB  // byte count 
 	_ADR MOVE
-	_UNNEST  
-1:	_ADR DROP 
-	_UNNEST 
-
+1:	_UNNEST  
 
 // ERASE_MPG ( u1 u2 -- )
 // erase many pages 
@@ -3578,15 +3557,17 @@ ERASE_MPG:
 	_NEST 
 	_ADR TOR 
 	_ADR PG_TO_ADR 
-	_BRAN 2f 
+	_BRAN 3f 
 1:
 	_ADR DUPP 
 	_ADR TOR 
-	_ADR EPAGE 
-	_ADR RFROM
+	_ADR EPAGE
+	_QBRAN 2f 
+	_ABORQ 12,"erase failed"
+2:	_ADR RFROM
 	_DOLIT PAGE_SIZE 
 	_ADR PLUS 
-2:
+3:
 	_DONXT 1b 
 	_ADR TPOP 
 	_UNNEST 
@@ -3638,8 +3619,8 @@ PG_TO_ADR:
 	lsl r5,#10 
 	_NEXT 
 
-// ERASE_IMG ( n -- )
-// erase image in slot n  
+// ERASE_IMG (  -- )
+// erase saved image  
 	.word _PG_TO_ADR 
 _ERASE_IMG: .byte 9
 	.ascii "ERASE_IMG"
@@ -3647,7 +3628,7 @@ _ERASE_IMG: .byte 9
 ERASE_IMG:
 	_NEST
 	_ADR IMG_ADR 
-	_ADR IMG_SIZE 
+	_ADR IMG_SIZE // in page count 
 	_ADR TOR 
 	_BRAN 2f 
 1:	_ADR DUPP 
@@ -3658,9 +3639,8 @@ ERASE_IMG:
 	_ADR DROP 
 	_UNNEST 
 
-// SAVE_IMG ( n -- )
-// copy in flash RAM system variables and user defintitions.
-// n is image slot number 
+// SAVE_IMG (  -- )
+// save in flash memory system variables and user defintitions.
 	.word _ERASE_IMG	
 _SAVE_IMG: .byte 8 
 	.ascii "SAVE_IMG"
@@ -3670,19 +3650,15 @@ SAVE_IMG:
 	_ADR HERE 
 	_ADR USER_BEGIN
 	_ADR EQUAL 
-	_QBRAN 1f 
-	_ADR DROP 
-	_UNNEST  // nothing to save 
-1:	_ADR DUPP 
-	_ADR IMGQ 
+	_QBRAN 1f
+	_UNNEST  
+1:	_ADR IMGQ 
 	_QBRAN 2f
 /* delete saved image */
-	_ADR DUPP 
 	_ADR ERASE_IMG 
 /* save system variables */
-2:	_ADR IMG_ADR // where to save
-	_ADR IMG_SIGN 
-	_ADR SWAP  //  ( src dest --  
+2:	_ADR IMG_SIGN // src address
+	_ADR IMG_ADR // dest address
 	_DOLIT (VARS_END_OFS-IMG_SIGN_OFS) 
 	_ADR CELLSL  // word count 
 	_ADR FLSH_WR  // ( src dest count -- dest+u )
@@ -3694,11 +3670,11 @@ SAVE_IMG:
 	_ADR SUBB 
 	_ADR CELLSL  // src dest+ count -- 
 	_ADR FLSH_WR  
-	_UNNEST 
+9:	_UNNEST 
 
 // TURNKEY ( -- "WORD") 
 // set autorun program in 'BOOT variable 
-// and save image in slot 0.
+// and save image 
 	.word _SAVE_IMG
 _TURNKEY: .byte 7
 	.ascii "TURNKEY"
@@ -3706,9 +3682,10 @@ _TURNKEY: .byte 7
 TURNKEY:
 	_NEST 
 	_ADR TICK 
+	_DOLIT 1 
+	_ADR ORR 		
 	_ADR TBOOT 
 	_ADR STORE 
-	_DOLIT  0 
 	_ADR SAVE_IMG 
 	_UNNEST
 
@@ -4646,14 +4623,10 @@ COLD1:
 	_DOLIT	ULAST-UZERO
 	_ADR	MOVE 			// initialize user area
 	_ADR	PRESE			// initialize stack and TIB
-//	_DOLIT 0		// check if user image saved in slot 0 
-//	_ADR IMGQ 
-//	_QBRAN 1f
-//	_DOLIT 0
-//	_ADR	LOAD_IMG 
+	_ADR IMGQ		// if there is a saved image load it  
+	_QBRAN 1f
+	_ADR	LOAD_IMG 
 1:
-//_DOLIT 1
-//_ADR TRACE 
 	_ADR	TBOOT
 	_ADR	ATEXE			// application boot
 	_ADR	OVERT
