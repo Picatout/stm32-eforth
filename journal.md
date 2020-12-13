@@ -1,6 +1,24 @@
 ### 2020-12-13
 
-* Modifié  **DEPTH** 
+* Ajout des mots suivants:
+
+    * **DEFER**&nbsp;&nbsp;( "name" -- ), Création d'une définition vide à laquelle sera affectée ultérieurement une fonction. *name* est le nom du nouveau mot. 
+    * **DEFER!**&nbsp;&nbsp;( "name1" "name2" -- ), Affecte l'action *name1* au mot différé *name2*.
+    * **DEFER@**&nbsp;&nbsp;( "name" -- a), Obtient l'adresse d'exécution du mot qui est affecté au mot différé *name*.
+    
+    exemple:
+    ```
+    blue pill stm32eForth-it v1.00
+    DEFER TEST ok
+    DEFER! HI TEST ok
+    TEST
+    blue pill stm32eForth-it v1.00
+    ok
+    DEFER@ TEST >NAME CR COUNT TYPE
+    HI ok
+    ```
+
+* Modifié  **DEPTH** , rapportait un élément de trop.
 
 ### 2020-12-12
 

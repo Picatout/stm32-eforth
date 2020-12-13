@@ -3088,14 +3088,11 @@ BKSP:
 	_QBRAN	BACK1
 	_DOLIT	BKSPP
 	_ADR	TECHO
-// 	_ADR	ATEXE
 	_ADR	ONEM
 	_ADR	BLANK
 	_ADR	TECHO
-// 	_ADR	ATEXE
 	_DOLIT	BKSPP
 	_ADR	TECHO
-// 	_ADR	ATEXE
 BACK1:
 	  _UNNEST
 
@@ -3110,7 +3107,6 @@ TAP:
 	_NEST
 	_ADR	DUPP
 	_ADR	TECHO
-// 	_ADR	ATEXE
 	_ADR	OVER
 	_ADR	CSTOR
 	_ADR	ONEP
@@ -3173,7 +3169,6 @@ ACCP1:
 	_BRAN	ACCP3
 ACCP2:
 	_ADR	KTAP
-// 	_ADR	ATEXE
 ACCP3:	  
 	_BRAN	ACCP1
 ACCP4:
@@ -3214,6 +3209,7 @@ _ABORT:	.byte  5
 	.p2align 2 	
 ABORT:
 	_NEST
+ABORT1:
 	_ADR	SPACE
 	_ADR	COUNT
 	_ADR	TYPEE
@@ -3232,14 +3228,11 @@ ABORT:
 // 	.p2align 2 	
 ABORQ:
 	_NEST
-	_QBRAN	ABOR1	// text flag
 	_ADR	DOSTR
-	_ADR	COUNT
-	_ADR	TYPEE
-	_ADR	CR
-	_BRAN	QUIT
-ABOR1:
-	_ADR	DOSTR
+	_ADR	SWAP 
+	_QBRAN	1f	// text flag
+	_BRAN	ABORT1
+1:
 	_ADR	DROP
 	_UNNEST			// drop error
 
@@ -3315,7 +3308,7 @@ QSTAC:
 	_NEST
 	_ADR	DEPTH
 	_ADR	ZLESS	// check only for underflow
-	_ABORQ	10," underflow"
+	_ABORQ	9,"underflow"
 	_UNNEST
 
 //    EVAL	( -- )
@@ -4268,11 +4261,11 @@ DODOES:
 	_ADR AT
 	_ADR NAMET 
 	_ADR CELLP 
-	_ADR DUPP  
-	_ADR TOR 
+//	_ADR DUPP  
+//	_ADR TOR 
 	_ADR STORE  
-	_ADR RFROM
-	_ADR CELLP 
+//	_ADR RFROM
+//	_ADR CELLP 
 	_UNNEST 
 
 //  DOES> ( -- )
@@ -4290,21 +4283,63 @@ DOES:
 	_ADR COMPI_NEST 
 	_UNNEST 
 
-// DOES; ( -- )
+//  DEFER@ ( "name" -- a )
+//  return value of code field of defered function. 
 	.word _DOES 
-_DOESS: .byte 5+COMPO  
-	.ascii "DOES;"
-	.p2align 2
-DOESS:
+_DEFERAT: .byte 6 
+	.ascii "DEFER@"
+	.p2align 2 
+DEFERAT: 
 	_NEST 
+	_ADR TICK
+	_ADR CELLP 
+	_ADR AT 
+	_ADR ONEM 
+	_UNNEST 
+
+// DEFER! ( "name1" "name2" -- )
+// assign an action to a defered word 
+	.word _DEFERAT 
+_DEFERSTO: .byte 6 
+	.ascii "DEFER!" 
+	.p2align 2 
+DEFERSTO:
+	_NEST 
+	_ADR TICK 
+	_ADR ONEP 
+	_ADR TICK 
+	_ADR CELLP 
+	_ADR STORE 
+	_UNNEST
+
+//  DEFER ( "name" -- )
+//  create a defered definition
+	.word _DEFERSTO  
+_DEFER: .byte 5 
+	.ascii "DEFER"
+	.p2align 2
+DEFER:
+	_NEST 
+	_ADR CREAT 
 	_DOLIT UNNEST 
-	_ADR CALLC 	
+	_ADR CALLC 
+	_DOLIT DEFER_NOP
+	_ADR ONEP 
+	_ADR LAST 
+	_ADR AT 
+	_ADR NAMET 
+	_ADR CELLP 
+	_ADR STORE 
+	_UNNEST 
+DEFER_NOP:
+	_NEST  
+	_ADR NOP 
 	_UNNEST 
 
 //    CREATE	( -- //  string> )
 // 	Compile a new array entry without allocating code space.
 
-	.word	_DOESS 
+	.word	_DEFER 
 _CREAT:	.byte  6
 	.ascii "CREATE"
 	.p2align 2 	
