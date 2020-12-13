@@ -1906,12 +1906,10 @@ _DEPTH:	.byte  5
 	.ascii "DEPTH"
 	.p2align 2 	
 DEPTH:
+	ADD	R6,R3,#SPP&0xffff 
+	SUB	R6,R6,R1
 	_PUSH
-	MOVW	R5,#SPP&0xffff+4 
- 	MOVT	R5,#SPP>>16 
-	SUB	R5,R5,R1
-	ASR	R5,R5,#2
-	SUB	R5,R5,#1
+	ASR	R5,R6,#2
 	_NEXT
 
 //    PICK	( ... +n -- ... w )
@@ -3157,6 +3155,7 @@ _ABORT:	.byte  5
 ABORT:
 	_NEST
 	BL	SPACE
+ABORT1:
 	BL	COUNT
 	BL	TYPEE
 	_DOLIT
@@ -3175,15 +3174,12 @@ ABORT:
 // 	.p2align 2 	
 ABORQ:
 	_NEST
+	BL	DOSTR 
+	BL	SWAP 
 	BL	QBRAN
-	.word	ABOR1+MAPOFFSET	// text flag
-	BL	DOSTR
-	BL	COUNT
-	BL	TYPEE
-	BL	CR
-	B.W	QUIT
-ABOR1:
-	BL	DOSTR
+	.word	1f+MAPOFFSET	// text flag
+	B	ABORT1 
+1:
 	BL	DROP
 	_UNNEST			// drop error
 
@@ -3309,8 +3305,7 @@ _PRESE:	.byte  6
 	.p2align 2 	
 PRESE:
 //	_NEST
-	MOVW	R1,#SPP&0xffff		//  init SP
- 	MOVT	R1,#SPP>>16
+	ADD	R1,R3,#SPP&0xffff		//  init SP
 	EOR	R5,R5,R5			//  init TOS=0
 //	_UNNEST
 	_NEXT
@@ -4655,7 +4650,6 @@ COLD:
 	ADD R2,R3,#RPP&0xffff	// Forth return stack
 	ADD R1,R3,#SPP&0xffff // Forth data stack
 	EOR R5,R5,R5			//  tos=0
-	NOP
 	_NEST
 COLD1:
 	_DOLIT 
@@ -4668,14 +4662,11 @@ COLD1:
 	_DOLIT
 	.word	ULAST-UZERO
 	BL	MOVE 			// initialize user area
-	BL	PRESE			// initialize stack and TIB
-	_DOLIT				// check if user image saved in slot 0 
-	.word 0
+	BL	PRESE			// initialize stack
+	// check if user image saved in slot 0 
 	BL IMGQ 
 	BL	QBRAN 
 	.word 1f+MAPOFFSET
-	_DOLIT 
-	.word 0
 	BL	LOAD_IMG 
 1:	BL	TBOOT
 	BL	ATEXE			// application boot

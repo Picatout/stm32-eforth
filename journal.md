@@ -1,3 +1,13 @@
+### 2020-12-13
+
+* Modifié  **DEPTH** 
+
+### 2020-12-12
+
+Poursuite du travail sur la version [stm32eforth-fl.s](stm32eforth-fl.s)
+
+* Correction de bogue dans **DOVAR** et **DOCON** qui ne se terminait pas correctement. 
+
 ### 2020-12-11
 
 * test de vitesse comparée: 

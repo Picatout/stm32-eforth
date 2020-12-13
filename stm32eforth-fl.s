@@ -1557,7 +1557,7 @@ DOVAR:
 	_PUSH
 	MOV R5,R0
 	ADD R0,R0,#4 
-	_NEXT  
+	B UNNEST 
 
 //    doCON	( -- a ) 
 // 	Run time routine for CONSTANT.
@@ -1569,7 +1569,7 @@ DOVAR:
 DOCON:
 	_PUSH
 	LDR.W R5,[R0],#4 
-	_NEXT   
+	B UNNEST 
 
 /***********************
   system variables 
@@ -2025,12 +2025,11 @@ _DEPTH:	.byte  5
 	.ascii "DEPTH"
 	.p2align 2 	
 DEPTH:
+	MOVW	R6,#SPP&0xffff
+ 	MOVT	R6,#SPP>>16 
+	SUB	R6,R6,R1
 	_PUSH
-	MOVW	R5,#SPP&0xffff+4 
- 	MOVT	R5,#SPP>>16 
-	SUB	R5,R5,R1
-	ASR	R5,R5,#2
-	SUB	R5,R5,#1
+	ASR	R5,R6,#2
 	_NEXT
 
 //    PICK	( ... +n -- ... w )
@@ -3816,7 +3815,7 @@ LITER:
 
 // 	.word	_LITER
 // _STRCQ	.byte  3
-// 	.ascii "$$,"""
+// 	.ascii "$,\""
 // 	.p2align 2 	
 STRCQ:
 	_NEST
@@ -4016,11 +4015,11 @@ ABRTQ:
 	_UNNEST
 
 //    $"	( -- //  string> )
-// 	Compile an inlineDCB literal.
+// 	Compile an inline word literal.
 
 	.word	_ABRTQ
 _STRQ:	.byte  IMEDD+2
-	.byte	'$','"'
+	.ascii	"$\""
 	.p2align 2 	
 STRQ:
 	_NEST
@@ -4166,8 +4165,7 @@ _SEMIS:	.byte  IMEDD+COMPO+1
 SEMIS:
 	_NEST
 	_DOLIT	UNNEST
-	_ADR	ONEP 
-	_ADR	COMMA
+	_ADR	CALLC
 	_ADR	LBRAC
 	_ADR	OVERT
 	_UNNEST
@@ -4187,8 +4185,7 @@ RBRAC:
 	_UNNEST
 
 //    BL.W	( ca -- )
-// 	Assemble a branch-link long instruction to ca.
-// 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
+// 	compile ca.
 
 // 	.word	_RBRAC
 // _CALLC	.byte  5
@@ -4259,10 +4256,55 @@ CONST:
 	_ADR	CALLC  
 	_UNNEST
 
+// doDOES> ( -- a )
+// runtime action of DOES> 
+// leave parameter field address on stack 
+DODOES:
+	_NEST 
+	_ADR	RFROM
+	_ADR	CELLP 
+	_ADR	ONEP  
+	_ADR LAST 
+	_ADR AT
+	_ADR NAMET 
+	_ADR CELLP 
+	_ADR DUPP  
+	_ADR TOR 
+	_ADR STORE  
+	_ADR RFROM
+	_ADR CELLP 
+	_UNNEST 
+
+//  DOES> ( -- )
+//  compile time action 
+	.word _CONST   
+_DOES: .byte IMEDD+COMPO+5 
+	.ascii "DOES>"
+	.p2align 2
+DOES: 
+	_NEST 
+	_DOLIT DODOES 
+	_ADR CALLC 
+	_DOLIT	UNNEST
+	_ADR	CALLC
+	_ADR COMPI_NEST 
+	_UNNEST 
+
+// DOES; ( -- )
+	.word _DOES 
+_DOESS: .byte 5+COMPO  
+	.ascii "DOES;"
+	.p2align 2
+DOESS:
+	_NEST 
+	_DOLIT UNNEST 
+	_ADR CALLC 	
+	_UNNEST 
+
 //    CREATE	( -- //  string> )
 // 	Compile a new array entry without allocating code space.
 
-	.word	_CONST
+	.word	_DOESS 
 _CREAT:	.byte  6
 	.ascii "CREATE"
 	.p2align 2 	
