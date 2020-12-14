@@ -1,5 +1,11 @@
+### 2020-12-14
+
+* Débogué  **DOES>**. 
+
 ### 2020-12-13
 
+* travail sur mot **DOES>**. 
+<hr>
 * Ajout des mots suivants:
 
     * **DEFER**&nbsp;&nbsp;( "name" -- ), Création d'une définition vide à laquelle sera affectée ultérieurement une fonction. *name* est le nom du nouveau mot. 

@@ -4261,11 +4261,7 @@ DODOES:
 	_ADR AT
 	_ADR NAMET 
 	_ADR CELLP 
-//	_ADR DUPP  
-//	_ADR TOR 
 	_ADR STORE  
-//	_ADR RFROM
-//	_ADR CELLP 
 	_UNNEST 
 
 //  DOES> ( -- )
@@ -4279,9 +4275,13 @@ DOES:
 	_DOLIT DODOES 
 	_ADR CALLC 
 	_DOLIT	UNNEST
+	_ADR	CALLC 
+	_ADR COMPI_NEST
+	_DOLIT RFROM 
 	_ADR	CALLC
-	_ADR COMPI_NEST 
 	_UNNEST 
+
+
 
 //  DEFER@ ( "name" -- a )
 //  return value of code field of defered function. 
