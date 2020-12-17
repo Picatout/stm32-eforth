@@ -41,7 +41,7 @@ build_fl: *.s Makefile
 
 flash: $(BUILD_DIR)$(NAME).bin 
 	st-flash --serial=$(SERIAL) erase 
-	st-flash  --serial=$(SERIAL) write $(BUILD_DIR)$(NAME).bin 0x8000000
+	st-flash  --serial=$(SERIAL)  write $(BUILD_DIR)$(NAME).bin 0x8000000
 
 flash_fl: $(BUILD_DIR)$(NAME)-fl.bin
 	st-flash --serial=$(SERIAL) erase 

@@ -4046,7 +4046,7 @@ STRQ:
 
 	.word	_STRQ+MAPOFFSET
 _DOTQ:	.byte  IMEDD+COMPO+2
-	.byte	'.','"'
+	.ascii	".\""
 	.p2align 2 	
 DOTQ:
 	_NEST
@@ -4087,7 +4087,7 @@ UNIQ1:
 
 // 	.word	_UNIQU+MAPOFFSET
 // _SNAME	.byte  3
-// 	.ascii "$$,n"
+// 	.ascii "$,n"
 // 	.p2align 2 	
 SNAME:
 	_NEST
@@ -4118,8 +4118,8 @@ SNAM1:
 // 	Compile next word to code dictionary as a token or literal.
 
 	.word	_UNIQU+MAPOFFSET
-_SCOMP:	.byte  8
-	.ascii "$$COMPILE"
+_SCOMP:	.byte  7
+	.ascii "$COMPILE"
 	.p2align 2 	
 SCOMP:
 	_NEST
@@ -4235,7 +4235,7 @@ CALLC:
 	BL	COMMA			//  assemble BL.W instruction
 	_UNNEST
 
-
+	.p2align 
 // 	:	( -- //  string> )
 // 	Start a new colon definition using next word as its name.
 

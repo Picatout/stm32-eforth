@@ -4493,7 +4493,7 @@ ARM GAS  stm32eforth.s 			page 1
  4046              	
  4047 2294 7C160018 		.word	_STRQ+MAPOFFSET
  4048 2298 C2       	_DOTQ:	.byte  IMEDD+COMPO+2
- 4049 2299 2E22     		.byte	'.','"'
+ 4049 2299 2E22     		.ascii	".\""
  4050 229b 00       		.p2align 2 	
  4051              	DOTQ:
  4052 229c 42F804ED 		_NEST
@@ -4539,7 +4539,7 @@ ARM GAS  stm32eforth.s 			page 1
  4087              	
  4088              	// 	.word	_UNIQU+MAPOFFSET
  4089              	// _SNAME	.byte  3
- 4090              	// 	.ascii "$$,n"
+ 4090              	// 	.ascii "$,n"
  4091              	// 	.p2align 2 	
  4092              	SNAME:
  4093 22f0 42F804ED 		_NEST
@@ -4574,11 +4574,10 @@ ARM GAS  stm32eforth.s 			page 1
  4118              	// 	Compile next word to code dictionary as a token or literal.
  4119              	
  4120 2348 B4160018 		.word	_UNIQU+MAPOFFSET
- 4121 234c 08       	_SCOMP:	.byte  8
- 4122 234d 2424434F 		.ascii "$$COMPILE"
- 4122      4D50494C 
- 4122      45
- 4123 2356 00BF     		.p2align 2 	
+ 4121 234c 07       	_SCOMP:	.byte  7
+ 4122 234d 24434F4D 		.ascii "$COMPILE"
+ 4122      50494C45 
+ 4123 2355 0000BF   		.p2align 2 	
  4124              	SCOMP:
  4125 2358 42F804ED 		_NEST
  4126 235c FFF776FA 		BL	NAMEQ
@@ -4618,10 +4617,10 @@ ARM GAS  stm32eforth.s 			page 1
  4160 23c4 FEF7BEFB 		BL CPP  
  4161 23c8 FEF718F9 		BL STORE 
  4162 23cc FEF720F9 		BL AT 
+ 4163 23d0 FEF7CCFB 		BL LAST 
 ARM GAS  stm32eforth.s 			page 78
 
 
- 4163 23d0 FEF7CCFB 		BL LAST 
  4164 23d4 FEF712F9 		BL STORE 
  4165 23d8 52F804FB 		_UNNEST 
  4166              	
@@ -4678,10 +4677,10 @@ ARM GAS  stm32eforth.s 			page 1
  4216              	
  4217              	// 	.word	_RBRAC+MAPOFFSET
  4218              	// _CALLC	.byte  5
+ 4219              	// 	.ascii "call,"
 ARM GAS  stm32eforth.s 			page 79
 
 
- 4219              	// 	.ascii "call,"
  4220              	// 	.p2align 2 	
  4221              	CALLC:
  4222 2444 42F804ED 		_NEST
@@ -4700,7 +4699,7 @@ ARM GAS  stm32eforth.s 			page 1
  4235 2476 FFF7C1FD 		BL	COMMA			//  assemble BL.W instruction
  4236 247a 52F804FB 		_UNNEST
  4237              	
- 4238              	
+ 4238              		.p2align 
  4239              	// 	:	( -- //  string> )
  4240              	// 	Start a new colon definition using next word as its name.
  4241              	
@@ -4738,10 +4737,10 @@ ARM GAS  stm32eforth.s 			page 1
  4271 24d0 FEF74CFB 		BL	LAST
  4272 24d4 FEF79CF8 		BL	AT
  4273 24d8 FEF790F8 		BL	STORE
+ 4274 24dc 52F804FB 		_UNNEST
 ARM GAS  stm32eforth.s 			page 80
 
 
- 4274 24dc 52F804FB 		_UNNEST
  4275              	
  4276              	// **************************************************************************
  4277              	//  Defining words
@@ -4798,10 +4797,10 @@ ARM GAS  stm32eforth.s 			page 1
  4325      41424C45 
  4326 2565 0000BF   		.p2align 2 	
  4327              	VARIA:
+ 4328 2568 42F804ED 		_NEST
 ARM GAS  stm32eforth.s 			page 81
 
 
- 4328 2568 42F804ED 		_NEST
  4329 256c FFF7DEFF 		BL	CREAT
  4330 2570 FEF705F8 		_DOLIT
  4331 2574 00000000 		.word	0
@@ -4858,10 +4857,10 @@ ARM GAS  stm32eforth.s 			page 1
  4382 25f0 FEF736F8 		BL	TOR
  4383 25f4 00F014B8 		B.W	DUMP4			// start count down loop
  4384              	DUMP1:
+ 4385 25f8 FEF7B2FE 	  BL	CR
 ARM GAS  stm32eforth.s 			page 82
 
 
- 4385 25f8 FEF7B2FE 	  BL	CR
  4386 25fc FDF7BFFF 		_DOLIT
  4387 2600 10000000 		.word	16
  4388 2604 FEF752F9 		BL	DDUP
@@ -4918,10 +4917,10 @@ ARM GAS  stm32eforth.s 			page 1
  4438 2684 FDF7ECFF 		BL	TOR			//  
  4439 2688 FEF752FA 		BL	CNTXT			//  va
  4440 268c FDF7C0FF 		BL	AT			//  na
+ 4441              	TNAM1:
 ARM GAS  stm32eforth.s 			page 83
 
 
- 4441              	TNAM1:
  4442 2690 FEF702F8 		BL	DUPP			//  na na
  4443 2694 FDF796FF 		BL	QBRAN
  4444 2698 C01A0018 		.word	TNAM2+MAPOFFSET	//  vocabulary end, no match
@@ -4978,10 +4977,10 @@ ARM GAS  stm32eforth.s 			page 1
  4493              	SEE:
  4494              		_NEST
  4495              		BL	TICK	//  ca --, starting address
+ 4496              		BL	CR	
 ARM GAS  stm32eforth.s 			page 84
 
 
- 4496              		BL	CR	
  4497              		_DOLIT
  4498              		.word	20
  4499              		BL	TOR
@@ -5038,10 +5037,10 @@ ARM GAS  stm32eforth.s 			page 1
  4550              	// 	BL	RFROM			//  a
  4551              		BL	DROP
  4552              		_UNNEST
+ 4553              	DECOM1:	// BL	RFROM		//  a
 ARM GAS  stm32eforth.s 			page 85
 
 
- 4553              	DECOM1:	// BL	RFROM		//  a
  4554              		BL	AT			//  data
  4555              		BL	UDOT			//  display data
  4556              		_UNNEST
@@ -5098,10 +5097,10 @@ ARM GAS  stm32eforth.s 			page 1
  4606              	
  4607              	//    hi	  ( -- )
  4608              	// 	Display the sign-on message of eForth.
+ 4609              	
 ARM GAS  stm32eforth.s 			page 86
 
 
- 4609              	
  4610 2764 141B0018 		.word	_WORDS+MAPOFFSET
  4611 2768 02       	_HI:	.byte  2
  4612 2769 4849     		.ascii "HI"
@@ -5158,10 +5157,10 @@ ARM GAS  stm32eforth.s 			page 1
  4659 2808 00040000 		.word	UZERO
  4660 280c FDF7B7FE 		_DOLIT
  4661 2810 00000020 		.word	UPP
+ 4662 2814 FDF7B3FE 		_DOLIT
 ARM GAS  stm32eforth.s 			page 87
 
 
- 4662 2814 FDF7B3FE 		_DOLIT
  4663 2818 54000000 		.word	ULAST-UZERO
  4664 281c FEF740FB 		BL	MOVE 			// initialize user area
  4665 2820 FFF798F9 		BL	PRESE			// initialize stack
@@ -6400,7 +6399,6 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:4115   .text.reset_handler:0000000000002344 $t
        stm32eforth.s:4120   .text.reset_handler:0000000000002348 $d
        stm32eforth.s:4121   .text.reset_handler:000000000000234c _SCOMP
-       stm32eforth.s:4123   .text.reset_handler:0000000000002356 $t
        stm32eforth.s:4124   .text.reset_handler:0000000000002358 SCOMP
        stm32eforth.s:4129   .text.reset_handler:0000000000002368 $d
        stm32eforth.s:4141   .text.reset_handler:0000000000002394 SCOM2
@@ -6447,10 +6445,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:4307   .text.reset_handler:000000000000252c CREAT
        stm32eforth.s:4316   .text.reset_handler:000000000000254c $d
        stm32eforth.s:4317   .text.reset_handler:0000000000002550 $t
+       stm32eforth.s:4323   .text.reset_handler:0000000000002558 $d
 ARM GAS  stm32eforth.s 			page 109
 
 
-       stm32eforth.s:4323   .text.reset_handler:0000000000002558 $d
        stm32eforth.s:4324   .text.reset_handler:000000000000255c _VARIA
        stm32eforth.s:4327   .text.reset_handler:0000000000002568 VARIA
        stm32eforth.s:4331   .text.reset_handler:0000000000002574 $d
@@ -6507,10 +6505,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:4484   *ABS*:0000000000000000 WANT_SEE
        stm32eforth.s:4568   .text.reset_handler:0000000000002710 $d
        stm32eforth.s:4570   .text.reset_handler:0000000000002714 _WORDS
+       stm32eforth.s:4572   .text.reset_handler:000000000000271a $t
 ARM GAS  stm32eforth.s 			page 110
 
 
-       stm32eforth.s:4572   .text.reset_handler:000000000000271a $t
        stm32eforth.s:4573   .text.reset_handler:000000000000271c WORDS
        stm32eforth.s:4578   .text.reset_handler:000000000000272c WORS1
        stm32eforth.s:4581   .text.reset_handler:0000000000002734 $d
@@ -6567,10 +6565,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:808    .text.reset_handler:000000000000065f $d
        stm32eforth.s:808    .text.reset_handler:0000000000000660 $t
        stm32eforth.s:832    .text.reset_handler:0000000000000685 $d
+       stm32eforth.s:832    .text.reset_handler:0000000000000686 $t
 ARM GAS  stm32eforth.s 			page 111
 
 
-       stm32eforth.s:832    .text.reset_handler:0000000000000686 $t
        stm32eforth.s:854    .text.reset_handler:00000000000006a7 $d
        stm32eforth.s:854    .text.reset_handler:00000000000006a8 $t
        stm32eforth.s:867    .text.reset_handler:00000000000006b9 $d
@@ -6627,10 +6625,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:1517   .text.reset_handler:0000000000000aa8 $t
        stm32eforth.s:1541   .text.reset_handler:0000000000000ac5 $d
        stm32eforth.s:1541   .text.reset_handler:0000000000000ac6 $t
+       stm32eforth.s:1565   .text.reset_handler:0000000000000aef $d
 ARM GAS  stm32eforth.s 			page 112
 
 
-       stm32eforth.s:1565   .text.reset_handler:0000000000000aef $d
        stm32eforth.s:1565   .text.reset_handler:0000000000000af0 $t
        stm32eforth.s:1614   .text.reset_handler:0000000000000b41 $d
        stm32eforth.s:1614   .text.reset_handler:0000000000000b42 $t
@@ -6687,10 +6685,10 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:2776   .text.reset_handler:000000000000162b $d
        stm32eforth.s:2776   .text.reset_handler:000000000000162c $t
        stm32eforth.s:2821   .text.reset_handler:000000000000168d $d
+       stm32eforth.s:2821   .text.reset_handler:000000000000168e $t
 ARM GAS  stm32eforth.s 			page 113
 
 
-       stm32eforth.s:2821   .text.reset_handler:000000000000168e $t
        stm32eforth.s:2836   .text.reset_handler:00000000000016b1 $d
        stm32eforth.s:2836   .text.reset_handler:00000000000016b2 $t
        stm32eforth.s:3091   .text.reset_handler:000000000000192f $d
@@ -6741,15 +6739,17 @@ board/blue-pill/stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
        stm32eforth.s:4036   .text.reset_handler:0000000000002280 $t
        stm32eforth.s:4050   .text.reset_handler:000000000000229b $d
        stm32eforth.s:4050   .text.reset_handler:000000000000229c $t
+       stm32eforth.s:4123   .text.reset_handler:0000000000002355 $d
+       stm32eforth.s:4123   .text.reset_handler:0000000000002356 $t
        stm32eforth.s:4285   .text.reset_handler:00000000000024ed $d
        stm32eforth.s:4285   .text.reset_handler:00000000000024ee $t
        stm32eforth.s:4306   .text.reset_handler:000000000000252b $d
        stm32eforth.s:4306   .text.reset_handler:000000000000252c $t
        stm32eforth.s:4326   .text.reset_handler:0000000000002565 $d
-       stm32eforth.s:4326   .text.reset_handler:0000000000002566 $t
 ARM GAS  stm32eforth.s 			page 114
 
 
+       stm32eforth.s:4326   .text.reset_handler:0000000000002566 $t
        stm32eforth.s:4372   .text.reset_handler:00000000000025cd $d
        stm32eforth.s:4372   .text.reset_handler:00000000000025ce $t
        stm32eforth.s:4412   .text.reset_handler:0000000000002643 $d

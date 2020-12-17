@@ -4025,7 +4025,7 @@ STRQ:
 
 	.word	_STRQ
 _DOTQ:	.byte  IMEDD+COMPO+2
-	.byte	'.','"'
+	.ascii	".\""
 	.p2align 2 	
 DOTQ:
 	_NEST
@@ -4061,7 +4061,7 @@ UNIQ1:
 
 // 	.word	_UNIQU
 // _SNAME	.byte  3
-// 	.ascii "$$,n"
+// 	.ascii "$,n"
 // 	.p2align 2 	
 SNAME:
 	_NEST
@@ -4092,7 +4092,7 @@ SNAM1:
 
 	.word	_UNIQU
 _SCOMP:	.byte  8
-	.ascii "$$COMPILE"
+	.ascii "$COMPILE"
 	.p2align 2 	
 SCOMP:
 	_NEST
@@ -4249,6 +4249,7 @@ CONST:
 	_ADR	CALLC  
 	_UNNEST
 
+	.p2align 2 
 // doDOES> ( -- a )
 // runtime action of DOES> 
 // leave parameter field address on stack 
@@ -4264,6 +4265,7 @@ DODOES:
 	_ADR STORE  
 	_UNNEST 
 
+	.p2align 2
 //  DOES> ( -- )
 //  compile time action 
 	.word _CONST   
