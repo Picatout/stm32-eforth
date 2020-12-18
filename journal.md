@@ -1,3 +1,8 @@
+### 2020-12-17
+
+* Travail sur ansi.f et SendFile.c 
+
+* Découvert bogue dans **'**. 
 ### 2020-12-14
 
 * Débogué  **DOES>**. 
