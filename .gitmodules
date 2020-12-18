@@ -1,3 +1,6 @@
 [submodule "sendfile"]
 	path = sendfile
 	url = https://github.com/picatout/sendfile
+[submodule "SendFile"]
+	path = SendFile
+	url = https://github.com/picatout/sendfile
