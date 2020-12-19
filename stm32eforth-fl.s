@@ -3727,7 +3727,7 @@ TICK:
 	_QBRAN	TICK1
 	_UNNEST	// yes, push code address
 TICK1:	
-	_BRAN	ABORT	// no, error
+	_ADR ABORT	// no, error
 
 //    ALLOT	( n -- )
 // 	Allocate n bytes to the ram area.
@@ -4085,7 +4085,7 @@ SNAM1:
 	_ADR	STRQP
 	.byte	7
 	.ascii " name? "
-	_BRAN	ABORT
+	_ADR	ABORT
 
 //    $COMPILE	( a -- )
 // 	Compile next word to code dictionary as a token or literal.

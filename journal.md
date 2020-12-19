@@ -1,3 +1,7 @@
+### 2020-12-18 
+
+* Corrigé bogue dans mot **'**, après étiquette **TICK1** remplacé **_BRAN ABORT** par **_ADR ABORT**.  Corrigé même erreur après étiquette **SNAME1**.   
+
 ### 2020-12-17
 
 * Travail sur ansi.f et SendFile.c 
