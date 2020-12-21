@@ -1,3 +1,11 @@
+### 2020-12-20
+
+* Adapté jeu snake à partir de [snake.fx](https://github.com/Picatout/ForthEx/blob/master/docs/html/snake.fx).<BR/>Pour l'utilisé sur la blue pill il faut le charger avec la commande:
+```
+SendFile -s/dev/ttyS0 ansi.f snake.f 
+```
+En supposant que le terminal branché à la blue pill utilise **/dev/ttyS0** 
+
 ### 2020-12-18 
 
 * Corrigé bogue dans mot **'**, après étiquette **TICK1** remplacé **_BRAN ABORT** par **_ADR ABORT**.  Corrigé même erreur après étiquette **SNAME1**.   

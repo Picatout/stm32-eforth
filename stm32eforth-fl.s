@@ -1400,7 +1400,7 @@ EQUAL:
 	_NEXT
 
 //    U<	 ( w w -- t )
-// 	Unsigned equal?
+// 	Unsigned less?
 
 	.word	_EQUAL
 _ULESS:	.byte   2

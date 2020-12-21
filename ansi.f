@@ -28,3 +28,8 @@
 \ positionne le curseur x colonne, y ligne 
 : CURPOS ESC[ PARAM .; PARAM .H ; 
 
+\ B/W ( f -- )
+\ établie le mode vidéo du terminal 
+\ true B/W vidéo inverse, caractère noir/blanc 
+\ false B/W video normal, caractère blanc/noir 
+: B/W IF ESC[ ." 7m" ELSE ESC[ ." 0m" THEN ; 
