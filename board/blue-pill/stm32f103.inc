@@ -122,3 +122,21 @@
    // key to to write in SCB_AIRCR 
    .equ SCB_VECTKEY,0x5fa 
    
+   /* NVIC block */
+   .equ NVIC_BASE_ADR, 0xE000E100
+   .equ NVIC_ISER0, 0
+   .equ NVIC_ISER1, 4
+   .equ NVIC_ISER2, 8
+   .equ NVIC_ICER0, 0x80
+   .equ NVIC_ICER1, 0x84 
+   .equ NVIC_ICER2, 0x88 
+   .equ NVIC_ISPR0, 0x100
+   .equ NVIC_ISPR1, 0x104
+   .equ NVIC_ISPR2, 0x108 
+   .equ NVIC_ICPR0, 0x180
+   .equ NVIC_ICPR1, 0x184
+   .equ NVIC_ICPR2, 0x188
+   .equ NVIC_IABR0, 0x200
+   .equ NVIC_IABR1, 0x204
+   .equ NVIC_IABR2, 0x208
+   .equ NVIC_IPR_BASE, 0x300 

@@ -124,6 +124,12 @@
   .equ RAM_CTOP_OFS, FORTH_CTOP_OFS+4  // ram free dictionary address
   .equ LASTN_OFS, RAM_CTOP_OFS+4     // last word in dictionary link nfa 
   .equ VARS_END_OFS, LASTN_OFS+4 // end of system variables  
+  
+  .equ RX_QUEUE_SIZE, 16 // uart_rx queue size 16 characters 
+  .equ RX_QUEUE_OFS, VARS_END_OFS+4 // rx queue 
+  .equ RX_HEAD_OFS, RX_QUEUE_OFS+RX_QUEUE_SIZE // queue head indice 
+  .equ RX_TAIL_OFS, RX_HEAD_OFS+4 // queue tail indice 
+  	
 
 /***********************************************
 * MACROS
@@ -266,7 +272,7 @@ isr_vectors:
   .word      default_handler /* IRQ34, I2C2 Error */                            
   .word      default_handler /* IRQ35, SPI1 */                   
   .word      default_handler /* IRQ36, SPI2 */                   
-  .word      default_handler /* IRQ37, USART1 */                   
+  .word      uart_rx_handler /* IRQ37, USART1 */                   
   .word      default_handler /* IRQ38, USART2 */                   
   .word      default_handler /* IRQ39, USART3 */                   
   .word      default_handler /* IRQ40, External Line[15:10]s */                          
@@ -315,6 +321,8 @@ UZERO:
 	.word LASTN	/*LAST word in dictionary */
 	.word 0,0			/*reserved */
 ULAST:
+	.space  RX_QUEUE_SIZE+8 /* space reserved for rx_queue,head and tail pointer.
+
 
 /*****************************************************
 * default isr handler called on unexpected interrupt
@@ -324,21 +332,33 @@ ULAST:
   .p2align 2 
   .global default_handler
 default_handler:
+	mov r2,#USART1_BASE_ADR&0xffff
+	movt r2,#USART1_BASE_ADR>>16 
 	ldr r7,exception_msg 
-	ldrb r0,[r7],#1 
-1:	_PUSH 
-	ldrb r5,[r7],#1
-	bl EMIT 
+	ldrb r0,[r7],#1
+1:	ldrb r5,[r7],#1
+	bl uart_tx 	 
 	subs r0,r0,#1 
-	bne 1b 	
-	b REBOOT   
+	bne 1b
+2:	ldr r1,[r2,#USART_SR]
+	tst r1,#(1<<6) // TC 
+	beq 2b 
+	b reboot   
   .size  default_handler, .-default_handler
 exception_msg:
 	.word .+4 
 	.byte 18
-	.ascii "\n\rexeption reboot!"
+	.ascii "\rexception reboot!"
 	.p2align 2
-REBOOT:
+
+uart_tx:
+	ldr r1,[r2,#USART_SR]
+	tst r1,#(1<<7)
+	beq uart_tx
+	strb r5,[r2,#USART_DR] 
+	bx lr 
+
+reboot:
 	ldr r0,scb_adr 
 	ldr r1,[r0,#SCB_AIRCR]
 	orr r1,#(1<<2)
@@ -368,6 +388,31 @@ systick_handler:
 systick_exit:
   bx lr
 
+/**************************
+	UART RX handler
+**************************/
+	.p2align 2
+	.type uart_rx_handler, %function
+uart_rx_handler:
+	push {r4,r6,r7,r9}
+	mov r4,#USART1_BASE_ADR&0xffff
+	movt r4,#USART1_BASE_ADR>>16
+	ldr r6,[r4,#USART_SR]
+	ldr r9,[r4,#USART_DR]
+	tst r6,#(1<<5) // RXNE 
+	beq 2f // no char received 
+	cmp r9,#3
+	beq reboot // received CTRL-C then reboot MCU 
+	add r7,r3,#RX_QUEUE_OFS
+	ldr r4,[r3,#RX_TAIL_OFS]
+	add r7,r7,r4 
+	strb r9,[r7]
+	add r4,#1 
+	and r4,#(RX_QUEUE_SIZE-1)
+	str r4,[r3,#RX_TAIL_OFS]
+2:	
+	pop {r4,r6,r7,r9}
+	bx lr 
 
 /**************************************
   reset_handler execute at MCU reset
@@ -468,14 +513,19 @@ wait_sws:
   mov r2,#(0xA<<4)
   orr r1,r1,r2 
   str r1,[r0,#GPIO_CRH]
-
   mov r0,#UART&0xFFFF
   movt r0,#UART>>16	
 /* BAUD rate */
   mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
   str r1,[r0,#USART_BRR]
-  mov r1,#(3<<2)+(1<<13)
+  mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
   str r1,[r0,#USART_CR1] /*enable usart*/
+/* enable interrupt in NVIC */
+  mov r0,#NVIC_BASE_ADR&0xffff
+  movt r0,#NVIC_BASE_ADR>>16 
+  ldr r1,[r0,#NVIC_ISER1]
+  orr r1,#32   
+  str r1,[r0,#NVIC_ISER1]
 /* configure systicks for 1msec ticks */
   mov r0,#STK_BASE_ADR&0xFFFF
   movt r0,#STK_BASE_ADR>>16	
@@ -683,7 +733,7 @@ ULED_OFF:
 	str r6,[r4,#GPIO_BSRR]
 	_NEXT    
 
-//    ?RX	 ( -- c T | F )
+//    ?KEY	 ( -- c T | F )
 // 	Return input character and true, or a false if no input.
 	.word	_ULED
 _QRX:	.byte   4
@@ -692,19 +742,19 @@ _QRX:	.byte   4
 QKEY:
 QRX: 
 	_PUSH
-	mov r4,#UART&0xFFFF
-	movt r4,#UART>>16
-	ldrh	r6, [r4, #USART_SR]
-	ands	r6, #0x20		//  RXE
-	BEQ	QRX1
- 	LDR	R5, [R4, #USART_DR]
-	_PUSH
-    IT NE 
-	MVNNE	R5,#0
-QRX1:
-	IT EQ 
-    MOVEQ	R5,#0
-	_NEXT 
+	ldr r7,[r3,#RX_TAIL_OFS] 
+	ldr r6,[r3,#RX_HEAD_OFS]
+	eors r5,r6,r7 
+	beq 1f
+	add r7,r3,#RX_QUEUE_OFS 
+	add r7,r6 
+	ldrb r5,[r7]
+	add r6,#1 
+	and r6,#(RX_QUEUE_SIZE-1)
+	str r6,[R3,#RX_HEAD_OFS]
+	_PUSH 
+	mov r5,#-1
+1:	_NEXT 
 
 //    TX!	 ( c -- )
 // 	Send character c to the output device.
@@ -2514,14 +2564,7 @@ KEY:
 KEY1:
 	_ADR	QRX
 	_QBRAN	KEY1
-// CTRL-C reboot
-	_ADR DUPP 
-	_DOLIT	3 
-	_ADR XORR
-	_QBRAN	GO_REBOOT 
 	_UNNEST
-GO_REBOOT: 
-	_ADR REBOOT 
 
 //    SPACE	( -- )
 // 	Send the blank character to the output device.
@@ -4692,6 +4735,8 @@ COLD:
 	add R2,R3,#RPP&0xffff	// Forth return stack
 	add R1,R3,#SPP&0xffff // Forth data stack
 	eor R5,R5,R5			//  tos=0
+	str r5,[r3,#RX_HEAD_OFS]
+	str r5,[r3,#RX_TAIL_OFS]
 	ldr R0,=COLD1 
 	_NEXT
 COLD1:

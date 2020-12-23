@@ -1,3 +1,8 @@
+### 2020-12-22
+
+* Ajouter une file pour la réception UART afin d'éviter la perte de caractères. pendant la réception de fichier avec SendFile.
+
+
 ### 2020-12-20
 
 * Adapté jeu snake à partir de [snake.fx](https://github.com/Picatout/ForthEx/blob/master/docs/html/snake.fx).<BR/>Pour l'utilisé sur la blue pill il faut le charger avec la commande:
