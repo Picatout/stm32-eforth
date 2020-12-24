@@ -332,32 +332,49 @@ ULAST:
   .p2align 2 
   .global default_handler
 default_handler:
-	mov r2,#USART1_BASE_ADR&0xffff
-	movt r2,#USART1_BASE_ADR>>16 
-	ldr r7,exception_msg 
-	ldrb r0,[r7],#1
-1:	ldrb r5,[r7],#1
-	bl uart_tx 	 
-	subs r0,r0,#1 
-	bne 1b
-2:	ldr r1,[r2,#USART_SR]
-	tst r1,#(1<<6) // TC 
-	beq 2b 
-	b reboot   
-  .size  default_handler, .-default_handler
+// search last executed word 
+	LDMFD R2!,{R4}
+	mov r3,#UPP&0xffff
+	movt r3,#UPP>>16 
+	add R2,R3,#RPP&0xffff	// Forth return stack
+	add R1,R3,#SPP&0xffff // Forth data stack
+	eor R5,R5,R5			//  tos=0
+	str r5,[r3,#RX_HEAD_OFS]
+	str r5,[r3,#RX_TAIL_OFS]
+	_PUSH
+	ldr r5,[r4,#-4]
+	sub r5,#1 
+	ldr r0,word_that_crashed
+	b INEXT 	
+1:	ldr r5,exception_msg 
+	push {lr}
+	bl uart_puts 
+	pop {lr}
+// wait transmission completed
+	b reboot  
+	.p2align 2 
 exception_msg:
 	.word .+4 
 	.byte 18
 	.ascii "\rexception reboot!"
 	.p2align 2
 
-uart_tx:
-	ldr r1,[r2,#USART_SR]
-	tst r1,#(1<<7)
-	beq uart_tx
-	strb r5,[r2,#USART_DR] 
-	bx lr 
+word_that_crashed:
+	.word .+4
+	_ADR CR 
+	_ADR TNAME
+	_ADR QDUP 
+	_QBRAN 2f 
+	_ADR COUNT 
+	_ADR TYPEE 
+	_BRAN 2f
+2:
+	_ADR 1b 
 
+
+/****************
+   MCU reset 
+****************/
 reboot:
 	ldr r0,scb_adr 
 	ldr r1,[r0,#SCB_AIRCR]
@@ -368,6 +385,115 @@ reboot:
 	.p2align 2
 scb_adr:
 	.word SCB_BASE_ADR 
+
+
+/*******************************
+  UART low level routines
+********************************
+
+/*******************************
+  initialise UART peripheral 
+********************************/
+	.type uart_init, %function
+uart_init:
+/* set GPIOA PIN 9, uart TX  */
+  mov r0,#GPIOA_BASE_ADR&0XFFFF
+  movt r0,#GPIOA_BASE_ADR>>16	
+  ldr r1,[r0,#GPIO_CRH]
+  mvn r2,#(15<<4)
+  and r1,r1,r2
+  mov r2,#(0xA<<4)
+  orr r1,r1,r2 
+  str r1,[r0,#GPIO_CRH]
+  mov r0,#UART&0xFFFF
+  movt r0,#UART>>16	
+/* BAUD rate */
+  mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
+  str r1,[r0,#USART_BRR]
+  mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
+  str r1,[r0,#USART_CR1] /*enable usart*/
+/* enable interrupt in NVIC */
+  mov r0,#NVIC_BASE_ADR&0xffff
+  movt r0,#NVIC_BASE_ADR>>16 
+  ldr r1,[r0,#NVIC_ISER1]
+  orr r1,#32   
+  str r1,[r0,#NVIC_ISER1]
+  bx lr 
+
+/***********************************
+uart_tx 
+  input: R5 character to transmit 
+  prerequisite: r4 initialise to UART_BASE_ADR
+***********************************/
+	.type uart_tx,%function 
+uart_tx:
+1:
+	ldr	r6, [r4, #USART_SR]	
+	ands	r6, #0x80		//  TXE bit 
+	beq	1b
+	strb	r5, [r4, #USART_DR]	
+	bx lr 
+
+/*********************************
+uart_puts 
+	input: r5 pointer to couted string
+	use: r9 hold char count.   
+*********************************/
+	.p2align 2 
+	.type uart_puts, %function 
+uart_puts:
+	mov r4,#UART&0xFFFF
+	movt r4,#UART>>16
+	mov r7,r5 
+	ldrb r9,[r7],#1
+	ands r9,r9 
+	b 2f 
+1:  ldrb r5,[r7],#1
+	push {lr}
+	bl uart_tx 
+	pop {lr} 
+	subs r9,#1 
+2:	bne 1b 
+3:	ldr r6,[r4,#USART_SR]
+	tst r6,#(1<<6) // TC 
+	beq 3b 
+	bx lr 
+
+/**************************
+	UART RX handler
+**************************/
+	.p2align 2
+	.type uart_rx_handler, %function
+uart_rx_handler:
+	push {r4,r6,r7,r9}
+	mov r4,#USART1_BASE_ADR&0xffff
+	movt r4,#USART1_BASE_ADR>>16
+	ldr r6,[r4,#USART_SR]
+	ldr r9,[r4,#USART_DR]
+	tst r6,#(1<<5) // RXNE 
+	beq 2f // no char received 
+	cmp r9,#3
+	beq user_reboot // received CTRL-C then reboot MCU 
+	add r7,r3,#RX_QUEUE_OFS
+	ldr r4,[r3,#RX_TAIL_OFS]
+	add r7,r7,r4 
+	strb r9,[r7]
+	add r4,#1 
+	and r4,#(RX_QUEUE_SIZE-1)
+	str r4,[r3,#RX_TAIL_OFS]
+2:	
+	pop {r4,r6,r7,r9}
+	bx lr 
+
+user_reboot:
+	ldr r5,user_reboot_msg
+	bl uart_puts 
+	b reboot  
+user_reboot_msg:
+	.word .+4
+	.byte 13 
+	.ascii "\ruser reboot!"
+	.p2align 2 
 
 /*********************************
 	system milliseconds counter
@@ -388,31 +514,7 @@ systick_handler:
 systick_exit:
   bx lr
 
-/**************************
-	UART RX handler
-**************************/
-	.p2align 2
-	.type uart_rx_handler, %function
-uart_rx_handler:
-	push {r4,r6,r7,r9}
-	mov r4,#USART1_BASE_ADR&0xffff
-	movt r4,#USART1_BASE_ADR>>16
-	ldr r6,[r4,#USART_SR]
-	ldr r9,[r4,#USART_DR]
-	tst r6,#(1<<5) // RXNE 
-	beq 2f // no char received 
-	cmp r9,#3
-	beq reboot // received CTRL-C then reboot MCU 
-	add r7,r3,#RX_QUEUE_OFS
-	ldr r4,[r3,#RX_TAIL_OFS]
-	add r7,r7,r4 
-	strb r9,[r7]
-	add r4,#1 
-	and r4,#(RX_QUEUE_SIZE-1)
-	str r4,[r3,#RX_TAIL_OFS]
-2:	
-	pop {r4,r6,r7,r9}
-	bx lr 
+
 
 /**************************************
   reset_handler execute at MCU reset
@@ -423,7 +525,8 @@ uart_rx_handler:
   .global reset_handler
 reset_handler:
 	bl	remap 
-	bl	init_devices	 	/* RCC, GPIOs, USART */
+	bl	init_devices	 	/* RCC, GPIOs */
+	bl	uart_init 
 	bl	unlock			/* unlock flash memory */
 	ldr r8,nest_adr 
 	orr r8,r8,#1  
@@ -503,29 +606,6 @@ wait_sws:
   orr r1,r1,r2
   str r1,[r0,#GPIO_CRH]
 
-/* configure USART1 */
-/* set GPIOA PIN 9, uart TX  */
-  mov r0,#GPIOA_BASE_ADR&0XFFFF
-  movt r0,#GPIOA_BASE_ADR>>16	
-  ldr r1,[r0,#GPIO_CRH]
-  mvn r2,#(15<<4)
-  and r1,r1,r2
-  mov r2,#(0xA<<4)
-  orr r1,r1,r2 
-  str r1,[r0,#GPIO_CRH]
-  mov r0,#UART&0xFFFF
-  movt r0,#UART>>16	
-/* BAUD rate */
-  mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
-  str r1,[r0,#USART_BRR]
-  mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
-  str r1,[r0,#USART_CR1] /*enable usart*/
-/* enable interrupt in NVIC */
-  mov r0,#NVIC_BASE_ADR&0xffff
-  movt r0,#NVIC_BASE_ADR>>16 
-  ldr r1,[r0,#NVIC_ISER1]
-  orr r1,#32   
-  str r1,[r0,#NVIC_ISER1]
 /* configure systicks for 1msec ticks */
   mov r0,#STK_BASE_ADR&0xFFFF
   movt r0,#STK_BASE_ADR>>16	
@@ -768,11 +848,7 @@ EMIT:
 TECHO:
 	mov r4,#UART&0xFFFF
 	movt r4,#UART>>16
-TX1:
-	ldrh	r6, [r4, #USART_SR]	
-	ands	r6, #0x80		//  TXE bit 
-	beq	TX1
-	strh	r5, [r4, #USART_DR]	
+	bl uart_tx 
 	_POP
 	_NEXT 
 	

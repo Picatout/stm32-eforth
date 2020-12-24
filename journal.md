@@ -1,3 +1,11 @@
+### 2020-12-23 
+
+* Débogage code UART bas niveau.
+
+* retravaillé  **default_handler**.
+
+* travail sur jeu **snake.f**
+
 ### 2020-12-22
 
 * Ajouter une file pour la réception UART afin d'éviter la perte de caractères. pendant la réception de fichier avec SendFile.
