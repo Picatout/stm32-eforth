@@ -141,6 +141,11 @@
 	POP {LR}
 	.endm
 	
+	.macro _MOV32 R V 
+	MOV \R, #\V&0xffff
+	MOVT \R, #\V>>16
+	.endm
+
 	.macro	_RET /*exit low level call */
 	BX LR 
 	.endm
@@ -334,22 +339,14 @@ ULAST:
 default_handler:
 // search last executed word 
 	LDMFD R2!,{R4}
-	mov r3,#UPP&0xffff
-	movt r3,#UPP>>16 
-	add R2,R3,#RPP&0xffff	// Forth return stack
-	add R1,R3,#SPP&0xffff // Forth data stack
-	eor R5,R5,R5			//  tos=0
-	str r5,[r3,#RX_HEAD_OFS]
-	str r5,[r3,#RX_TAIL_OFS]
+	bl vm_init
 	_PUSH
 	ldr r5,[r4,#-4]
 	sub r5,#1 
 	ldr r0,word_that_crashed
 	b INEXT 	
 1:	ldr r5,exception_msg 
-	push {lr}
-	bl uart_puts 
-	pop {lr}
+	_CALL uart_puts 
 // wait transmission completed
 	b reboot  
 	.p2align 2 
@@ -359,6 +356,10 @@ exception_msg:
 	.ascii "\rexception reboot!"
 	.p2align 2
 
+/*****************************
+ report where it crashed 
+ if name found in dictinary 
+*****************************/
 word_that_crashed:
 	.word .+4
 	_ADR CR 
@@ -370,7 +371,6 @@ word_that_crashed:
 	_BRAN 2f
 2:
 	_ADR 1b 
-
 
 /****************
    MCU reset 
@@ -397,24 +397,21 @@ scb_adr:
 	.type uart_init, %function
 uart_init:
 /* set GPIOA PIN 9, uart TX  */
-  mov r0,#GPIOA_BASE_ADR&0XFFFF
-  movt r0,#GPIOA_BASE_ADR>>16	
+  _MOV32 r0,GPIOA_BASE_ADR
   ldr r1,[r0,#GPIO_CRH]
   mvn r2,#(15<<4)
   and r1,r1,r2
   mov r2,#(0xA<<4)
   orr r1,r1,r2 
   str r1,[r0,#GPIO_CRH]
-  mov r0,#UART&0xFFFF
-  movt r0,#UART>>16	
+  _MOV32 r0,UART 
 /* BAUD rate */
   mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
   str r1,[r0,#USART_BRR]
   mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
   str r1,[r0,#USART_CR1] /*enable usart*/
 /* enable interrupt in NVIC */
-  mov r0,#NVIC_BASE_ADR&0xffff
-  movt r0,#NVIC_BASE_ADR>>16 
+  _MOV32 r0,NVIC_BASE_ADR
   ldr r1,[r0,#NVIC_ISER1]
   orr r1,#32   
   str r1,[r0,#NVIC_ISER1]
@@ -442,16 +439,13 @@ uart_puts
 	.p2align 2 
 	.type uart_puts, %function 
 uart_puts:
-	mov r4,#UART&0xFFFF
-	movt r4,#UART>>16
+	_MOV32 r4,UART 
 	mov r7,r5 
 	ldrb r9,[r7],#1
 	ands r9,r9 
 	b 2f 
 1:  ldrb r5,[r7],#1
-	push {lr}
-	bl uart_tx 
-	pop {lr} 
+	_CALL uart_tx 
 	subs r9,#1 
 2:	bne 1b 
 3:	ldr r6,[r4,#USART_SR]
@@ -466,8 +460,7 @@ uart_puts:
 	.type uart_rx_handler, %function
 uart_rx_handler:
 	push {r4,r6,r7,r9}
-	mov r4,#USART1_BASE_ADR&0xffff
-	movt r4,#USART1_BASE_ADR>>16
+	_MOV32 r4,UART 
 	ldr r6,[r4,#USART_SR]
 	ldr r9,[r4,#USART_DR]
 	tst r6,#(1<<5) // RXNE 
@@ -502,8 +495,6 @@ user_reboot_msg:
   .p2align 2 
   .global systick_handler
 systick_handler:
-  mov r3,#UPP&0xffff
-  movt r3,#UPP>>16  	
   ldr r0,[r3,#TICKS_OFS]  
   add r0,#1
   str r0,[r3,#TICKS_OFS]
@@ -528,9 +519,24 @@ reset_handler:
 	bl	init_devices	 	/* RCC, GPIOs */
 	bl	uart_init 
 	bl	unlock			/* unlock flash memory */
+	b	COLD
+
+/************************************
+ initialize Forth virtual machine
+ registers.
+************************************/
+	.type vm_init, %function
+vm_init:
+	_MOV32 r3,UPP 
+	add R2,R3,#RPP&0xffff	// Forth return stack
+	add R1,R3,#SPP&0xffff // Forth data stack
+	eor R5,R5,R5			//  tos=0
+// reset UART queue 
+	str r5,[r3,#RX_HEAD_OFS]
+	str r5,[r3,#RX_TAIL_OFS]
 	ldr r8,nest_adr 
 	orr r8,r8,#1  
-	bl	COLD
+	bx lr 
 nest_adr: 
 	.word NEST 
 
@@ -539,14 +545,12 @@ nest_adr:
 init_devices:
 /* init clock to HSE 72 Mhz */
 /* set 2 wait states in FLASH_ACR_LATENCY */
-	mov r0,#FLASH_BASE_ADR&0xffff
-	movt r0,#FLASH_BASE_ADR>>16 
+	_MOV32 r0,FLASH_BASE_ADR
   mov r2,#0x12
   str r2,[r0,#FLASH_ACR]
 /* configure clock for HSE, 8 Mhz crystal */
 /* enable HSE in RCC_CR */
-  mov r0,#RCC_BASE_ADR&0xFFFF
-  movt r0,#RCC_BASE_ADR>>16
+  _MOV32 r0,RCC_BASE_ADR
   ldr r1,[r0,#RCC_CR]
   orr r1,r1,#(1<<16) /* HSEON bit */
   str r1,[r0,#RCC_CR] /* enable HSE */
@@ -577,8 +581,7 @@ wait_pllrdy:
   beq wait_pllrdy 
 /* select PLL as sysclock */
   ldr r1,[r0,#RCC_CFGR]
-  mov r2,#0xfffc
-  movt r2,#0xffff
+  mvn r3,#3 
   and r1,r1,r2 
   mov r2,#2
   orr r1,r1,r2
@@ -591,14 +594,12 @@ wait_sws:
 /* now sysclock is 72 Mhz */
 
 /* enable peripheral clock for GPIOA, GPIOC and USART1 */
-  mov r0,#RCC_BASE_ADR&0xFFFF
-  movt r0,#RCC_BASE_ADR>>16
+  _MOV32 r0,RCC_BASE_ADR 
   mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
   str	r1, [r0, #RCC_APB2ENR]
 
 /* configure GPIOC:13 as output for user LED */
-  mov r0,#GPIOC_BASE_ADR&0xffff
-  movt r0,#GPIOC_BASE_ADR>>16
+  _MOV32 r0,GPIOC_BASE_ADR
   ldr r1,[r0,#GPIO_CRH]
   mvn r2,#(15<<20)
   and r1,r1,r2
@@ -607,8 +608,7 @@ wait_sws:
   str r1,[r0,#GPIO_CRH]
 
 /* configure systicks for 1msec ticks */
-  mov r0,#STK_BASE_ADR&0xFFFF
-  movt r0,#STK_BASE_ADR>>16	
+  _MOV32 r0,STK_BASE_ADR 
   mov r1,#9000 /* reload value for 1msec */
   str r1,[r0,#STK_LOAD]
   mov r1,#3
@@ -626,8 +626,7 @@ remap:
 	subs R2,#4 
 	bne 1b
 // zero end of RAM 
-	mov r2,#0x5000
-	movt r2,#0x2000
+	_MOV32 r2,RAM_END
 	eor r3,r3,r3 
 2:  str r3,[r0],#4
 	cmp r0,r2 
@@ -708,20 +707,12 @@ NEST:
 	ADD R0,R4,#3
 // inner interprer
 INEXT: 
-/*
-	ADD R6,R3,#FTRACE_OFS
-	LDR R6,[R6]
-	CBZ r6, 1f
-	_PUSH 
-	LDR R5,[R0]
-	SUB R5,#1
-	B DBG_PRT
-*/
-1:	LDR R4,[R0],#4 
-	BLX R4 
+	LDR R4,[R0],#4 
+	BX R4 
 UNNEST:
 	LDMFD R2!,{R0}
-	B INEXT 
+	LDR R4,[R0],#4 
+	BX R4 
 
 	.p2align 2 
 
@@ -742,7 +733,7 @@ COMPI_NEST:
 	str r6,[r7]
 	_NEXT  
 
-// RANDOM ( n1 -- {0..n1-1} )
+// RANDOM ( n+ -- {0..n+ - 1} )
 // return pseudo random number 
 // REF: https://en.wikipedia.org/wiki/Xorshift
 
@@ -751,7 +742,8 @@ _RAND: .byte 6
 	.ascii "RANDOM"
 	.p2align 2 
 RAND:
-	_NEST 
+	_NEST
+	_ADR ABSS   
 	_ADR SEED 
 	_ADR AT 
 	_ADR DUPP 
@@ -769,7 +761,8 @@ RAND:
 	_ADR DUPP 
 	_ADR SEED 
 	_ADR STORE 
-	_ADR ABSS
+	_DOLIT 0x7FFFFFFF
+	_ADR ANDD 
 	_ADR SWAP 
 	_ADR MODD 
 	_UNNEST 
@@ -802,8 +795,7 @@ _ULED: .byte 4
 	.type ULED, %function 
 ULED:
 	mov r6,#(1<<LED_PIN)
-	mov r4,#LED_GPIO&0xffff
-	movt r4,#LED_GPIO>>16
+	_MOV32 r4,LED_GPIO 
 	movs r5,r5 
 	_POP
 	beq ULED_OFF 
@@ -846,9 +838,8 @@ _TXSTO:	.byte 4
 TXSTO:
 EMIT:
 TECHO:
-	mov r4,#UART&0xFFFF
-	movt r4,#UART>>16
-	bl uart_tx 
+	_MOV32 r4,UART 
+	_CALL uart_tx 
 	_POP
 	_NEXT 
 	
@@ -2151,8 +2142,7 @@ _DEPTH:	.byte  5
 	.ascii "DEPTH"
 	.p2align 2 	
 DEPTH:
-	MOVW	R6,#SPP&0xffff
- 	MOVT	R6,#SPP>>16 
+	_MOV32 R6,SPP 
 	SUB	R6,R6,R1
 	_PUSH
 	ASR	R5,R6,#2
@@ -4803,18 +4793,12 @@ HI:
 	.word	_HI
 LASTN:	.byte  4
 	.ascii "COLD"
-	.p2align 2,0	
+	.p2align 2	
 COLD:
-//  Initiate Forth registers
-	mov r3,#UPP&0xffff
-	movt r3,#UPP>>16 
-	add R2,R3,#RPP&0xffff	// Forth return stack
-	add R1,R3,#SPP&0xffff // Forth data stack
-	eor R5,R5,R5			//  tos=0
-	str r5,[r3,#RX_HEAD_OFS]
-	str r5,[r3,#RX_TAIL_OFS]
+	_CALL vm_init 
 	ldr R0,=COLD1 
 	_NEXT
+	.p2align 2 
 COLD1:
 	_DOLIT  0 
 	_ADR ULED // turn off user LED 

@@ -1,8 +1,26 @@
+### 2020-12-27
+
+#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+
+* modifié mot **RANDOM**, remplacé valeur absolue de *ABS(SEED)* par un *SEED AND 0x7fffffff*. Appliqué fonction **ABS** à l'argument pour s'assurer qu'il est positif. 
+
+* Débogué [snake](snake.f)
+
+
+### 2020-12-26
+
+#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+
+* Modifié initialisation, création de la procédure **vm_init**.
+
 ### 2020-12-23
 
 * travail sur snake.f   
 
 ### 2020-12-23 
+
+#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+
 
 * Débogage code UART bas niveau.
 
@@ -12,10 +30,16 @@
 
 ### 2020-12-22
 
+#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+
+
 * Ajouter une file pour la réception UART afin d'éviter la perte de caractères. pendant la réception de fichier avec SendFile.
 
 
 ### 2020-12-20
+
+#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+
 
 * Adapté jeu snake à partir de [snake.fx](https://github.com/Picatout/ForthEx/blob/master/docs/html/snake.fx).<BR/>Pour l'utilisé sur la blue pill il faut le charger avec la commande:
 ```

@@ -33,3 +33,8 @@
 \ true B/W vidéo inverse, caractère noir/blanc 
 \ false B/W video normal, caractère blanc/noir 
 : B/W IF ESC[ ." 7m" ELSE ESC[ ." 0m" THEN ; 
+
+\ CLREOL ( -- )
+\ efface du curseur jusqu'à la fin de ligne 
+: CLREOL
+    ESC[ [ CHAR K ] LITERAL EMIT ;
