@@ -120,12 +120,29 @@
   .equ USER_CTOP_OFS, FORTH_CTOP_OFS+4  // ram free dictionary address
   .equ LASTN_OFS, USER_CTOP_OFS+4     // last word in dictionary link nfa 
   .equ VARS_END_OFS, LASTN_OFS+4 // end of system variables  
+  
+  .equ RX_QUEUE_SIZE, 16 // uart_rx queue size 16 characters 
+  .equ RX_QUEUE_OFS, VARS_END_OFS+4 // rx queue 
+  .equ RX_HEAD_OFS, RX_QUEUE_OFS+RX_QUEUE_SIZE // queue head indice 
+  .equ RX_TAIL_OFS, RX_HEAD_OFS+4 // queue tail indice 
+
 
 /***********************************************
 * MACROS
 *	Assemble inline direct threaded code ending.
 ***********************************************/
- 	.macro	_NEXT /*end low level word */
+	.macro _CALL fn /* low level routine call */ 
+ 	PUSH {LR}
+	BL \fn  
+	POP {LR}
+	.endm
+	
+	.macro _MOV32 R V 
+	MOV \R, #\V&0xffff
+	MOVT \R, #\V>>16
+	.endm
+
+	.macro	_NEXT /*end low level word */
 	BX	LR
 	.endm
 
@@ -212,7 +229,7 @@ isr_vectors:
   .word      default_handler /* IRQ34, I2C2 Error */                            
   .word      default_handler /* IRQ35, SPI1 */                   
   .word      default_handler /* IRQ36, SPI2 */                   
-  .word      default_handler /* IRQ37, USART1 */                   
+  .word      uart_rx_handler /* IRQ37, USART1 */                   
   .word      default_handler /* IRQ38, USART2 */                   
   .word      default_handler /* IRQ39, USART3 */                   
   .word      default_handler /* IRQ40, External Line[15:10]s */                          
@@ -247,14 +264,9 @@ isr_vectors:
   .p2align 2 
   .global default_handler
 default_handler:
-	ldr r7,exception_msg 
-	ldrb r0,[r7],#1 
-1:	_PUSH 
-	ldrb r5,[r7],#1
-	bl EMIT 
-	subs r0,r0,#1 
-	bne 1b 	
-	b reset_handler   
+	ldr r5,exception_msg 
+	bl uart_puts 
+	b reset_mcu    
   .size  default_handler, .-default_handler
 exception_msg:
 	.word .+4 
@@ -282,6 +294,72 @@ systick_exit:
   bx lr
 
 
+
+/**************************
+	UART RX handler
+**************************/
+	.p2align 2
+	.type uart_rx_handler, %function
+uart_rx_handler:
+	push {r4,r6,r7,r9}
+	_MOV32 r4,UART 
+	ldr r6,[r4,#USART_SR]
+	ldr r9,[r4,#USART_DR]
+	tst r6,#(1<<5) // RXNE 
+	beq 2f // no char received 
+	cmp r9,#3
+	beq user_reboot // received CTRL-C then reboot MCU 
+	add r7,r3,#RX_QUEUE_OFS
+	ldr r4,[r3,#RX_TAIL_OFS]
+	add r7,r7,r4 
+	strb r9,[r7]
+	add r4,#1 
+	and r4,#(RX_QUEUE_SIZE-1)
+	str r4,[r3,#RX_TAIL_OFS]
+2:	
+	pop {r4,r6,r7,r9}
+	bx lr 
+
+user_reboot:
+	ldr r5,user_reboot_msg
+	bl uart_puts 
+reset_mcu: 
+	ldr r0,scb_adr 
+	ldr r1,[r0,#SCB_AIRCR]
+	orr r1,#(1<<2)
+	movt r1,#SCB_VECTKEY
+	str r1,[r0,#SCB_AIRCR]
+	b . 
+	.p2align 2 
+scb_adr:
+	.word SCB_BASE_ADR 
+user_reboot_msg:
+	.word .+4
+	.byte 13 
+	.ascii "\ruser reboot!"
+	.p2align 2 
+
+// send counted string to uart 
+// input: r5 string* 
+	.type uart_puts,%function 
+uart_puts:
+	_MOV32 r0,UART 
+	ldrb r1,[r5],#1 // string length
+	ands r1,r1
+1:	beq 9f 
+2:  ldr r2,[r0,#USART_SR]
+	ands r2,#0x80 
+	beq 2b 	
+	ldrb r2,[r5],#1
+	strb r2,[r0,#USART_DR]
+	subs r1,r1,#1 
+	bne 2b 
+3:	ldr r2,[r0,#USART_SR]
+	ands r2,#(1<<6)
+	beq 3b 
+9:  bx lr 
+
+
 /**************************************
   reset_handler execute at MCU reset
 ***************************************/
@@ -292,6 +370,7 @@ systick_exit:
 reset_handler:
 	bl	remap 
 	bl	init_devices	 	/* RCC, GPIOs, USART */
+	bl  uart_init
 //	bl	UNLOCK			/* unlock flash memory */
 	ldr r0,forth_entry
 	orr r0,#1
@@ -371,24 +450,6 @@ wait_sws:
   orr r1,r1,r2
   str r1,[r0,#GPIO_CRH]
 
-/* configure USART1 */
-/* set GPIOA PIN 9, uart TX  */
-  mov r0,#GPIOA_BASE_ADR&0XFFFF
-  movt r0,#GPIOA_BASE_ADR>>16	
-  ldr r1,[r0,#GPIO_CRH]
-  mvn r2,#(15<<4)
-  and r1,r1,r2
-  mov r2,#(0xA<<4)
-  orr r1,r1,r2 
-  str r1,[r0,#GPIO_CRH]
-
-  mov r0,#UART&0xFFFF
-  movt r0,#UART>>16	
-/* BAUD rate */
-  mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
-  str r1,[r0,#USART_BRR]
-  mov r1,#(3<<2)+(1<<13)
-  str r1,[r0,#USART_CR1] /*enable usart*/
 /* configure systicks for 1msec ticks */
   mov r0,#STK_BASE_ADR&0xFFFF
   movt r0,#STK_BASE_ADR>>16	
@@ -397,6 +458,32 @@ wait_sws:
   mov r1,#3
   str r1,[r0,STK_CTL]
   _NEXT  
+
+/*******************************
+  initialize UART peripheral 
+********************************/
+	.type uart_init, %function
+uart_init:
+/* set GPIOA PIN 9, uart TX  */
+  _MOV32 r0,GPIOA_BASE_ADR
+  ldr r1,[r0,#GPIO_CRH]
+  mvn r2,#(15<<4)
+  and r1,r1,r2
+  mov r2,#(0xA<<4)
+  orr r1,r1,r2 
+  str r1,[r0,#GPIO_CRH]
+  _MOV32 r0,UART 
+/* BAUD rate */
+  mov r1,#(39<<4)+1  /* (72Mhz/16)/115200=39,0625, quotient=39, reste=0,0625*16=1 */
+  str r1,[r0,#USART_BRR]
+  mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
+  str r1,[r0,#USART_CR1] /*enable usart*/
+/* enable interrupt in NVIC */
+  _MOV32 r0,NVIC_BASE_ADR
+  ldr r1,[r0,#NVIC_ISER1]
+  orr r1,#32   
+  str r1,[r0,#NVIC_ISER1]
+  bx lr 
 
 /* copy system to RAM */ 
 	.type remap, %function 
@@ -489,6 +576,7 @@ UZERO:
 	.word LASTN+MAPOFFSET	/*LAST word in dictionary */
 	.word 0,0			/*reserved */
 ULAST:
+	.space  RX_QUEUE_SIZE+8 /* space reserved for rx_queue,head and tail pointer.
 
 
 /***********************************
@@ -523,25 +611,9 @@ RAND:
 	bl MODD 
 	_UNNEST 
 
-// REBOOT ( -- )
-// hardware reset 
-	.word _RAND+MAPOFFSET
-_REBOOT: .byte 6
-	.ascii "REBOOT"
-	.p2align 2 
-REBOOT:
-	ldr r0,scb_adr 
-	ldr r1,[r0,#SCB_AIRCR]
-	orr r1,#(1<<2)
-	movt r1,#SCB_VECTKEY
-	str r1,[r0,#SCB_AIRCR]
-	b . 
-scb_adr:
-	.word SCB_BASE_ADR 
-
 // PAUSE ( u -- ) 
 // suspend execution for u milliseconds
-	.word _REBOOT+MAPOFFSET
+	.word _RAND+MAPOFFSET
 _PAUSE: .byte 5
 	.ascii "PAUSE"
 	.p2align 2
@@ -588,19 +660,19 @@ _QRX:	.byte   4
 QKEY:
 QRX: 
 	_PUSH
-	mov r4,#UART&0xFFFF
-	movt r4,#UART>>16
-	ldrh	r6, [r4, #USART_SR]
-	ands	r6, #0x20		//  RXE
-	BEQ	QRX1
- 	LDR	R5, [R4, #USART_DR]
-	_PUSH
-    IT NE 
-	MVNNE	R5,#0
-QRX1:
-	IT EQ 
-    MOVEQ	R5,#0
-	_NEXT
+	ldr r7,[r3,#RX_TAIL_OFS] 
+	ldr r6,[r3,#RX_HEAD_OFS]
+	eors r5,r6,r7 
+	beq 1f
+	add r7,r3,#RX_QUEUE_OFS 
+	add r7,r6 
+	ldrb r5,[r7]
+	add r6,#1 
+	and r6,#(RX_QUEUE_SIZE-1)
+	str r6,[R3,#RX_HEAD_OFS]
+	_PUSH 
+	mov r5,#-1
+1:	_NEXT 
 	.p2align 2 
 
 //    TX!	 ( c -- )
@@ -613,15 +685,13 @@ _TXSTO:	.byte 4
 TXSTO:
 EMIT:
 TECHO:
-	mov r4,#UART&0xFFFF
-	movt r4,#UART>>16
-TX1:
-	ldrh	r6, [r4, #USART_SR]	
+	_MOV32 r4,UART 
+1:	ldr	r6, [r4, #USART_SR]	
 	ands	r6, #0x80		//  TXE bit 
-	beq	TX1
-	strh	r5, [r4, #USART_DR]	
+	beq	1b
+	strb	r5, [r4, #USART_DR]	
 	_POP
-	_NEXT
+	_NEXT 
 	
 // **************************************************************************
 //  The kernel
@@ -2415,14 +2485,6 @@ KEY1:
 	BL	QRX
 	BL	QBRAN
 	.word	KEY1+MAPOFFSET
-// CTRL-C reboot
-	BL DUPP 
-	BL DOLIT 
-	.word 3 
-	BL EQUAL 
-	BL INVER
-	BL QBRAN
-	.word REBOOT+MAPOFFSET 
 	_UNNEST
 
 //    SPACE	( -- )
@@ -2802,7 +2864,7 @@ PAREN:
 
 	.word	_PAREN+MAPOFFSET
 _BKSLA:	.byte  IMEDD+1
-	.byte	'\'
+	.ascii	"\\"
 	.p2align 2 	
 BKSLA:
 	_NEST
@@ -4210,9 +4272,28 @@ RBRAC:
 	BL	STORE
 	_UNNEST
 
-//    BL.W	( ca -- )
+
+//    BL.W	( ca -- asm_code )
 // 	Assemble a branch-link long instruction to ca.
-// 	BL.W is split into 2 16 bit instructions with 11 bit address fields.
+COMPILE_BLW:
+	_NEST 
+	ASR R5,R5,#1 
+	_MOV32 R4,0xF000D000 
+	BFI R4,R5,#0,#11
+	LSR R5,#11
+	BFI R4,R5,#16,#10
+	ASR R5,#10
+	BFI R4,R5,#11,#1
+	ASR R5,#1
+	BFI R4,R5,#13,#1
+	ASR R5,#1
+	BFI R4,R5,#26,#1
+	TST R4,#(1<<26)
+	BNE 1f
+	NOP 
+	EOR R4,R4,#(5<<11)
+1:  ROR R5,R4,#16 
+	_UNNEST 
 
 // 	.word	_RBRAC+MAPOFFSET
 // _CALLC	.byte  5
@@ -4220,18 +4301,11 @@ RBRAC:
 // 	.p2align 2 	
 CALLC:
 	_NEST
-	BIC	R5,R5,#1		//  clear b0 of address from R>
-	BL	HERE
-	BL	SUBB
-	SUB	R5,R5,#4		//  pc offset
-	MOVW	R0,#0x7FF		//  11 bit mask
-	MOV	R4,R5
-	LSR	R5,R5,#12		//  get bits 22-12
-	AND	R5,R5,R0
-	LSL	R4,R4,#15		//  get bits 11-1
-	ORR	R5,R5,R4
-	ORR	R5,R5,#0xF8000000
-	ORR	R5,R5,#0xF000
+	BIC R5,R5,#1 
+	BL HERE 
+	BL SUBB 
+	SUB R5,R5,#4 
+	BL COMPILE_BLW 
 	BL	COMMA			//  assemble BL.W instruction
 	_UNNEST
 
@@ -4297,10 +4371,61 @@ CONST:
 	BL	COMMA
 	_UNNEST
 
+	.p2align 2 
+// doDOES> ( -- a )
+// runtime action of DOES> 
+// leave parameter field address on stack 
+DODOES:
+	_NEST 
+	BL RAT 
+	BL ONEM 
+	BL	CELLP
+	BL LAST 
+	BL AT
+	BL NAMET 
+	BL CELLP 
+	BL DUPP
+	BL TOR 
+	BL SUBB 
+	SUB R5,R5,#4
+	BL	COMPILE_BLW
+	BL RFROM
+	BL STORE  
+	_UNNEST 
+
+	
+
+	.p2align 2
+//  DOES> ( -- )
+//  compile time action 
+	.word _CONST   
+_DOES: .byte IMEDD+COMPO+5 
+	.ascii "DOES>"
+	.p2align 2
+DOES: 
+	_NEST 
+	_DOLIT 
+	.word DODOES + MAPOFFSET
+	BL CALLC 
+	_DOLIT	
+	_UNNEST 
+	BL	COMMA  
+	_DOLIT 
+	_NEST 
+	BL COMMA 
+	_DOLIT 
+	.word RFROM+MAPOFFSET  
+	BL	CALLC
+	_DOLIT 
+	.word ONEM+MAPOFFSET 
+	BL CALLC 
+	_UNNEST 
+
+
 //    CREATE	( -- //  string> )
 // 	Compile a new array entry without allocating code space.
 
-	.word	_CONST+MAPOFFSET
+	.word	_DOES+MAPOFFSET
 _CREAT:	.byte  6
 	.ascii "CREATE"
 	.p2align 2 	
@@ -4481,7 +4606,7 @@ DOTI1:
 	.p2align 2 	
 	_UNNEST
 
-	.equ WANT_SEE, 0  // set to 1 if you want SEE 
+	.equ WANT_SEE, 1  // set to 1 if you want SEE 
 .if WANT_SEE 
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.

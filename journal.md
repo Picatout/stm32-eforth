@@ -1,6 +1,25 @@
+### 2020-12-29 
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
+* Modifié routine **CALLC** en créant **COMPILE_BLW** afin que **DODOES** puisse utilisé ce facteur commun. 
+
+* Débogué  **DOES>** 
+
+* Testé avec [snake.f](snake.f)  **OK**.
+
+### 2020-12-28 
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
+* Ajout d'une file pour la réception UART.
+
+* Ajout de **DOES>** .
+
+
 ### 2020-12-27
 
-#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+#### travail sur [stm32eforth-fl.s](stm32eforth0-fl.s)
 
 * modifié mot **RANDOM**, remplacé valeur absolue de *ABS(SEED)* par un *SEED AND 0x7fffffff*. Appliqué fonction **ABS** à l'argument pour s'assurer qu'il est positif. 
 
@@ -9,7 +28,7 @@
 
 ### 2020-12-26
 
-#### travail sur [stm32eforth-fl](stm32eforth0-fl.s)
+#### travail sur [stm32eforth-fl.s](stm32eforth0-fl.s)
 
 * Modifié initialisation, création de la procédure **vm_init**.
 
