@@ -4276,10 +4276,10 @@ RBRAC:
 	_UNNEST
 
 
-//    BL.W	( ca -- asm_code )
+//    COMPILE_BLW	( ca -- asm_code )
 // 	Assemble a branch-link long instruction to ca.
+// ref: ARM-v7M architecture reference, section A7.7.18 
 COMPILE_BLW:
-	_NEST 
 	ASR R5,R5,#1 
 	_MOV32 R4,0xF000D000 
 	BFI R4,R5,#0,#11
@@ -4296,7 +4296,7 @@ COMPILE_BLW:
 	NOP 
 	EOR R4,R4,#(5<<11)
 1:  ROR R5,R4,#16 
-	_UNNEST 
+	_NEXT 
 
 // 	.word	_RBRAC+MAPOFFSET
 // _CALLC	.byte  5
@@ -4460,8 +4460,9 @@ VARIA:
 	BL	COMMA
 	_UNNEST
 
-// **************************************************************************
-//  Tools
+/*************
+   Tools
+*************/
 
 //    dm+	 ( a u -- a )
 // 	Dump u bytes from , leaving a+u on the stack.
@@ -4612,43 +4613,60 @@ DOTI1:
 	.equ WANT_SEE, 1  // set to 1 if you want SEE 
 	.if WANT_SEE 
 
-// .CA ( ca -- )
+// .CA ( ca -- ca )
 // print code field address 
 DOTCA:
 	_NEST 
+	BL  DUPP
 	BL UDOT 
 	_DOLIT 
 	.word 2 
 	BL SPACS 
 	_UNNEST 
 
-// COLON? ( ca --  )
-// is this a colon definition
-// abort if not 
-COLONQ:
+// CODE_ABORT ( ca -- f )
+// abort if code definition
+CODE_ABORT:
 	_NEST 
+	BL DOTCA  
+	BL DUPP 
 	BL AT 
 	_DOLIT 
-	.word 0xed04f842 
+	.word 0xed04f842 // _NEST code 
 	BL XORR 
 	BL QBRAN 
 	.word 1f+MAPOFFSET 
-	BL DOTQP 
+	BL ABORQ 
 	.byte 9 
 	.ascii "code word"
-	.p2align 2  
-1:	_UNNEST 
+	.p2align 2
+1:	 
+	BL DOTQP 
+	.byte 4
+	.ascii "nest"
+	.p2align 2 
+	BL CR 
+	_UNNEST 
 
 
-// UNNEST? ( ca -- f )
+// UNNEST? ( ca -- ca f )
 // check if UNNEST 
 UNNESTQ:
 	_NEST 
+	BL DUPP 
 	BL AT 
 	_DOLIT 
-	.word 0xFE81F7FD
-	BL EQUAL 
-	_UNNEST 
+	.word 0xfb04f852 
+	BL EQUAL
+	BL DUPP 
+	BL QBRAN
+	.word 1f+MAPOFFSET  
+	BL DOTQP
+	.byte 6
+	.ascii "unnest" 
+	.p2align 2
+	BL CR  
+1:	_UNNEST 
 
 
 // search no name routine from code address. 
@@ -4748,24 +4766,18 @@ SEE:
 	BL HEX 
 	BL	TICK	//  ca --, starting address
 	BL	CR	
-	BL	DUPP 
-	BL  COLONQ
+	BL  CODE_ABORT
 	_DOLIT
-	.word	32
+	.word	32 // maximum 33 address 
 	BL	TOR
 SEE1:
 	BL	CELLP			//  a
-	BL  DUPP
 	BL  DOTCA 
-	BL	DUPP 
 	BL  UNNESTQ
 	BL	QBRAN 
 	.word 1f+MAPOFFSET  
-	BL  RFROM 
 	BL	DROP 
-	BL	RFROM 
-	BL	BASE 
-	BL	STORE 
+	BL  RFROM 
 	BL	BRAN 
 	.word 2f+MAPOFFSET 
 1:	BL	DUPP			//  a a
@@ -4773,8 +4785,34 @@ SEE1:
 	BL	CR 
 	BL	DONXT
 	.word	SEE1+MAPOFFSET
-	BL	DROP
-2:	_UNNEST
+2:	BL	DROP
+	BL  RFROM 
+	BL 	BASE 
+	BL	STORE 
+	_UNNEST
+
+
+// BL-ADR ( asm_code -- rel_adr )
+// get absolute address from asm_code 
+// ref: ARM-v7M architecture reference, section A7.7.18 
+BLADR: 
+	MOV.W R4,R5
+	ROR R4,#16 
+	BFI R5,R4,#0,#11 
+	ASR R4,#11 
+	BFI R5,R4,#21,#1 
+	ASR R4,#2
+	BFI R5,R4,#22,#1
+	ASR R4,#3
+	BFI R5,R4,#11,#10
+	ASR R4,#10 
+	BFI R5,R4,#23,#1
+	TST R5,#(1<<23)
+	BNE.W 1f
+	EOR R5,R5,#(3<<21)
+1:	LSL R5,#8
+	ASR R5,#7 
+	_NEXT 
 
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
@@ -4797,39 +4835,16 @@ DECOMP:
 	BL RFROM  
 	BL EQUAL   
 	BL	QBRAN
-	.word	DECOM2+MAPOFFSET	//  not a command
+	.word	DECOM2+MAPOFFSET	//  not a BL instruction 
 	//  a valid_code --, extract address and display name
 	BL DOTQP  
 	.byte 3
 	.ascii "BL "
 	.p2align 2 
-	MOV.W R4,R5
-	ROR R4,#16 
-	BFI R5,R4,#0,#11 
-	ASR R4,#11 
-	BFI R5,R4,#21,#1 
-	ASR R4,#2
-	BFI R5,R4,#22,#1
-	ASR R4,#3
-	BFI R5,R4,#11,#10
-	ASR R4,#10 
-	BFI R5,R4,#23,#1
-	LSL R5,#8
-	ASR R5,#7 
-/*
-	MOVW	R0,#0xFFE
-	MOV	R4,R5
-	LSL	R5,R5,#21		//  get bits 22-12
-	ASR	R5,R5,#9		//  with sign extension
-	LSR	R4,R4,#15		//  get bits 11-1
-	AND	R4,R4,R0		//  retain only bits 11-1
-	ORR	R5,R5,R4		//  get bits 22-1
-*/
-//	NOP
+	BL  BLADR   // extract relative address from BL code
 	BL	OVER			//  a offset a
 	BL	PLUS			//  a target-4
 	BL	CELLP			//  a target
-	BL	DUPP  
 	BL  DOTCA 
 	BL	TNAME			//  a na/0 --, is it a name?
 	BL	QDUP			//  name address or zero
@@ -4837,7 +4852,6 @@ DECOMP:
 	.word	DECOM1+MAPOFFSET
 	BL	SPACE			//  a na
 	BL	DOTID			//  a --, display name
-// 	BL	RFROM			//  a
 	BL	DROP
 	_UNNEST
 DECOM1:	// BL	RFROM		//  a
