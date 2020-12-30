@@ -961,8 +961,9 @@ _ANDD:	.byte   3
 	.p2align 2 	
 ANDD:
 	LDR	R4,[R1],#4
-	AND	R5,R5,R4
+	AND	R5,R4
 	_NEXT
+	.p2align 2
 
 //    OR	  ( w w -- w )
 // 	Bitwise inclusive OR.
@@ -973,8 +974,9 @@ _ORR:	.byte   2
 	.p2align 2 	
 ORR:
 	LDR	R4,[R1],#4
-	ORR	R5,R5,R4
+	ORR	R5,R4
 	_NEXT
+	.p2align 2
 
 //    XOR	 ( w w -- w )
 // 	Bitwise exclusive OR.
@@ -985,8 +987,9 @@ _XORR:	.byte   3
 	.p2align 2 	
 XORR:
 	LDR	R4,[R1],#4
-	EOR	R5,R5,R4
+	EOR	R5,R4
 	_NEXT
+	.p2align 2
 
 //    UM+	 ( w w -- w cy )
 // 	Add two numbers, return the sum and carry flag.
@@ -4607,7 +4610,129 @@ DOTI1:
 	_UNNEST
 
 	.equ WANT_SEE, 1  // set to 1 if you want SEE 
-.if WANT_SEE 
+	.if WANT_SEE 
+
+// .CA ( ca -- )
+// print code field address 
+DOTCA:
+	_NEST 
+	BL UDOT 
+	_DOLIT 
+	.word 2 
+	BL SPACS 
+	_UNNEST 
+
+// COLON? ( ca --  )
+// is this a colon definition
+// abort if not 
+COLONQ:
+	_NEST 
+	BL AT 
+	_DOLIT 
+	.word 0xed04f842 
+	BL XORR 
+	BL QBRAN 
+	.word 1f+MAPOFFSET 
+	BL DOTQP 
+	.byte 9 
+	.ascii "code word"
+	.p2align 2  
+1:	_UNNEST 
+
+
+// UNNEST? ( ca -- f )
+// check if UNNEST 
+UNNESTQ:
+	_NEST 
+	BL AT 
+	_DOLIT 
+	.word 0xFE81F7FD
+	BL EQUAL 
+	_UNNEST 
+
+
+// search no name routine from code address. 
+NONAMEQ: // ( ca -- id | -1  )
+	_NEST 
+	_DOLIT 
+	.word -1 // not found flag 
+	BL SWAP 
+0:	BL DUPP // ( -1 ca ca -- )  
+	_DOLIT 
+	.word NONAME_SUB+MAPOFFSET  
+	BL DUPP 
+	BL TOR 
+	BL AT 
+	BL QDUP 
+	BL QBRAN 
+	.word 2f+MAPOFFSET 
+	BL XORR 
+	BL QBRAN 
+	.word 1f+MAPOFFSET 
+	BL RFROM 
+	BL CELLP 
+	BL BRAN 
+	.word 0b+MAPOFFSET 
+1:  _DOLIT 
+	.word NONAME_SUB+MAPOFFSET
+	BL SWAP 
+	BL SUBB 
+	BL SWAP 
+2:	BL RFROM 
+	BL DDROP
+	_UNNEST 
+
+	.p2align 2
+NONAME_SUB: // routine not in the dictionary 
+	.word BRAN,QBRAN, DOLIT,DONXT,DODOES, DOVAR,DOCON 
+	.word 0 
+
+ANONYMOUS: // anonymous routines 
+	.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
+
+BRAN_LBL:
+	.byte 6 
+	.ascii "branch"
+	.p2align 2 
+QBRAN_LBL:
+	.byte 7
+	.ascii "0branch"
+	.p2align 2
+DOLIT_LBL:
+	.byte 5 
+	.ascii "dolit"
+	.p2align 2 
+DONEXT_LBL:
+	.byte 6
+	.ascii "donext"
+	.p2align 2 
+DODOES_LBL:
+	.byte 6
+	.ascii "dodoes"
+	.p2align 2 
+DOVAR_LBL:
+	.byte 5
+	.ascii "dovar"
+	.p2align 2 
+DOCON_LBL:
+	.byte 5
+	.ascii "docon"
+	.p2align 2 
+
+
+// print noname routine label ( n -- )
+// n is offset in ANONYMOUS array 
+DOTNONAME:
+	_NEST 
+	_PUSH 
+	_DOLIT 
+	.word ANONYMOUS 
+	BL PLUS 
+	BL AT 
+	BL TYPEE 
+	_UNNEST 
+
+
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
 
@@ -4617,19 +4742,39 @@ _SEE:	.byte  3
 	.p2align 2 	
 SEE:
 	_NEST
+	BL BASE 
+	BL AT 
+	BL TOR 
+	BL HEX 
 	BL	TICK	//  ca --, starting address
 	BL	CR	
+	BL	DUPP 
+	BL  COLONQ
 	_DOLIT
-	.word	20
+	.word	32
 	BL	TOR
 SEE1:
 	BL	CELLP			//  a
-	BL	DUPP			//  a a
+	BL  DUPP
+	BL  DOTCA 
+	BL	DUPP 
+	BL  UNNESTQ
+	BL	QBRAN 
+	.word 1f+MAPOFFSET  
+	BL  RFROM 
+	BL	DROP 
+	BL	RFROM 
+	BL	BASE 
+	BL	STORE 
+	BL	BRAN 
+	.word 2f+MAPOFFSET 
+1:	BL	DUPP			//  a a
 	BL	DECOMP		//  a
+	BL	CR 
 	BL	DONXT
 	.word	SEE1+MAPOFFSET
 	BL	DROP
-	_UNNEST
+2:	_UNNEST
 
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
@@ -4642,19 +4787,36 @@ _DECOM:	.byte  9
 DECOMP:	
 	_NEST
 	BL	DUPP			//  a a
-// 	BL	TOR			//  a
 	BL	AT			//  a code
 	BL	DUPP			//  a code code
-	_DOLIT
-	.word	0xF800D000 //0xF800F800
-	BL	ANDD
-	_DOLIT
-	.word	0xF000D000 //0xF800F000
-	BL	EQUAL			//  a code ?
-	BL	INVER 
+	_DOLIT 
+	.word 0xD000F000
+	BL DUPP 
+	BL TOR 
+	BL ANDD
+	BL RFROM  
+	BL EQUAL   
 	BL	QBRAN
 	.word	DECOM2+MAPOFFSET	//  not a command
 	//  a valid_code --, extract address and display name
+	BL DOTQP  
+	.byte 3
+	.ascii "BL "
+	.p2align 2 
+	MOV.W R4,R5
+	ROR R4,#16 
+	BFI R5,R4,#0,#11 
+	ASR R4,#11 
+	BFI R5,R4,#21,#1 
+	ASR R4,#2
+	BFI R5,R4,#22,#1
+	ASR R4,#3
+	BFI R5,R4,#11,#10
+	ASR R4,#10 
+	BFI R5,R4,#23,#1
+	LSL R5,#8
+	ASR R5,#7 
+/*
 	MOVW	R0,#0xFFE
 	MOV	R4,R5
 	LSL	R5,R5,#21		//  get bits 22-12
@@ -4662,10 +4824,13 @@ DECOMP:
 	LSR	R4,R4,#15		//  get bits 11-1
 	AND	R4,R4,R0		//  retain only bits 11-1
 	ORR	R5,R5,R4		//  get bits 22-1
-	NOP
+*/
+//	NOP
 	BL	OVER			//  a offset a
 	BL	PLUS			//  a target-4
 	BL	CELLP			//  a target
+	BL	DUPP  
+	BL  DOTCA 
 	BL	TNAME			//  a na/0 --, is it a name?
 	BL	QDUP			//  name address or zero
 	BL	QBRAN
