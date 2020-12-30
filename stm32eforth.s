@@ -4636,6 +4636,7 @@ CODE_ABORT:
 	BL XORR 
 	BL QBRAN 
 	.word 1f+MAPOFFSET 
+	BL DECIM
 	BL ABORQ 
 	.byte 9 
 	.ascii "code word"
@@ -4709,32 +4710,32 @@ ANONYMOUS: // anonymous routines
 	.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
 
 BRAN_LBL:
-	.byte 6 
-	.ascii "branch"
+	.byte 9 
+	.ascii " {branch}"
 	.p2align 2 
 QBRAN_LBL:
-	.byte 7
-	.ascii "0branch"
+	.byte 10
+	.ascii " {?branch}"
 	.p2align 2
 DOLIT_LBL:
-	.byte 5 
-	.ascii "dolit"
+	.byte 8 
+	.ascii " {doLit}"
 	.p2align 2 
 DONEXT_LBL:
-	.byte 6
-	.ascii "donext"
+	.byte 9
+	.ascii " {doNext}"
 	.p2align 2 
 DODOES_LBL:
-	.byte 6
-	.ascii "dodoes"
+	.byte 9
+	.ascii " {doDoes}"
 	.p2align 2 
 DOVAR_LBL:
-	.byte 5
-	.ascii "dovar"
+	.byte 8
+	.ascii " {doVar}"
 	.p2align 2 
 DOCON_LBL:
-	.byte 5
-	.ascii "docon"
+	.byte 10
+	.ascii " {doConst}"
 	.p2align 2 
 
 
@@ -4750,6 +4751,18 @@ DOTNONAME:
 	BL TYPEE 
 	_UNNEST 
 
+// IS_BLW ( code -- f )
+// check if it is a BL instruction 
+IS_BLW:
+	_NEST 
+	_DOLIT 
+	.word 0xD000F000
+	BL DUPP 
+	BL TOR 
+	BL ANDD
+	BL RFROM  
+	BL EQUAL   
+	_UNNEST 
 
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
@@ -4767,24 +4780,37 @@ SEE:
 	BL	TICK	//  ca --, starting address
 	BL	CR	
 	BL  CODE_ABORT
-	_DOLIT
-	.word	32 // maximum 33 address 
-	BL	TOR
+	_DOLIT 
+	.word 0  
+	BL TOR // not a BL counter limit to 10 consecutives 
 SEE1:
 	BL	CELLP			//  a
 	BL  DOTCA 
 	BL  UNNESTQ
 	BL	QBRAN 
 	.word 1f+MAPOFFSET  
+	BL	DUPP 
+	BL	CELLP
+	BL	AT 
+	BL	IS_BLW
+	BL	INVER  
+	BL	QBRAN 
+	.word SEE1+MAPOFFSET 
+	BL	RFROM 
 	BL	DROP 
-	BL  RFROM 
 	BL	BRAN 
 	.word 2f+MAPOFFSET 
 1:	BL	DUPP			//  a a
 	BL	DECOMP		//  a
 	BL	CR 
-	BL	DONXT
+	BL	RAT 
+	_DOLIT 
+	.word 10 
+	BL 	GREAT 
+	BL	QBRAN 
 	.word	SEE1+MAPOFFSET
+	BL	RFROM 
+	BL	DROP 
 2:	BL	DROP
 	BL  RFROM 
 	BL 	BASE 
@@ -4827,13 +4853,7 @@ DECOMP:
 	BL	DUPP			//  a a
 	BL	AT			//  a code
 	BL	DUPP			//  a code code
-	_DOLIT 
-	.word 0xD000F000
-	BL DUPP 
-	BL TOR 
-	BL ANDD
-	BL RFROM  
-	BL EQUAL   
+	BL	IS_BLW
 	BL	QBRAN
 	.word	DECOM2+MAPOFFSET	//  not a BL instruction 
 	//  a valid_code --, extract address and display name
@@ -4848,20 +4868,24 @@ DECOMP:
 	BL  DOTCA 
 	BL	TNAME			//  a na/0 --, is it a name?
 	BL	QDUP			//  name address or zero
-	BL	QBRAN
-	.word	DECOM1+MAPOFFSET
-	BL	SPACE			//  a na
 	BL	DOTID			//  a --, display name
 	BL	DROP
+// reset not BL counter 
+	BL	RFROM 
+	BL	RFROM 
+	BL	DUPP 
+	BL	SUBB 
+	BL	TOR 
+	BL	TOR 	
 	_UNNEST
-DECOM1:	// BL	RFROM		//  a
-	BL	AT			//  data
-	BL	UDOT			//  display data
-	_UNNEST
-DECOM2:
+DECOM2: // not a BL 
 	BL	UDOT
-// 	BL	RFROM
 	BL	DROP
+	BL	RFROM // unnest address 
+	BL	RFROM // not BL counter 
+	BL	ONEP  // increment counter 
+	BL	TOR 
+	BL	TOR 
 	_UNNEST
 
 //    WORDS	( -- )

@@ -2,6 +2,12 @@
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
+*  Modification au à l'outil **SEE** pour le rendre plus utile. 
+
+### 2020-12-29 
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
 * Modifié routine **CALLC** en créant **COMPILE_BLW** afin que **DODOES** puisse utilisé ce facteur commun. 
 
 * Débogué  **DOES>** 
