@@ -1,8 +1,29 @@
 ### 2020-12-30  
 
+
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
-*  Modification au à l'outil **SEE** pour le rendre plus utile. 
+*  Modification au à l'outil **SEE** pour le rendre plus utile. Grosse amélioration même si le déseemblage est incomplet:
+```
+SEE TYPE
+ 20000F10  nest
+ 20000F14  BL  2000025C  >R
+ 20000F18   B806F000
+ 20000F1C  BL  200005F4  COUNT
+ 20000F20  BL  2000097C  >CHAR
+ 20000F24  BL  20000158  EMIT
+ 20000F28  BL  200001A2   {doNext}
+ 20000F2C   20000F1C
+ 20000F30  BL  20000284  DROP
+ 20000F34  unnest
+ ok
+
+```
+
+#### À faire
+
+* créer le mot **FCALL** pour réduire l'utilisation de la RAM en gardant les mots 
+les moins utilisé dans la mémoire FLASH. 
 
 ### 2020-12-29 
 
