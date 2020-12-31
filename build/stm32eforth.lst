@@ -557,7 +557,7 @@ ARM GAS  stm32eforth.s 			page 1
  376 000e 40F00100 		orr r0,#1
  377 0012 0047     		bx r0 
  378              	forth_entry:
- 379 0014 E41F0018 		.word COLD+MAPOFFSET 
+ 379 0014 8C200018 		.word COLD+MAPOFFSET 
  380              	
  381              	  .type init_devices, %function
  382              	  .p2align 2 
@@ -681,7 +681,7 @@ ARM GAS  stm32eforth.s 			page 1
  491              	remap:
  492 00fa 0D48     		ldr r0,remap_dest  
  493 00fc 0B49     		ldr r1,remap_src 
- 494 00fe 42F64802 		mov r2,#CTOP-UZERO 
+ 494 00fe 42F6F002 		mov r2,#CTOP-UZERO 
  495 0102 02F10302 		add r2,r2,#3
  496 0106 22F00302 		and r2,r2,#~3 
  497 010a 51F8043B 	1:	ldr r3,[r1],#4 
@@ -758,7 +758,7 @@ ARM GAS  stm32eforth.s 			page 1
  561 040c 00000000 	    .word 0     /* TIMER */
  562 0410 FFFFFFFF 		.word -1    /* >RAM */ 
  563 0414 494D4147 		.ascii "IMAG" /* signature */ 
- 564 0418 701F0018 		.word HI+MAPOFFSET  /*'BOOT */
+ 564 0418 18200018 		.word HI+MAPOFFSET  /*'BOOT */
  565 041c 0A000000 		.word BASEE 	/*BASE */
  566 0420 00000000 		.word 0			/*tmp */
  567 0424 00000000 		.word 0			/*SPAN */
@@ -767,10 +767,10 @@ ARM GAS  stm32eforth.s 			page 1
  570 0430 804E0020 		.word TIBB	/*TIB */
  571 0434 100E0018 		.word INTER+MAPOFFSET	/*'EVAL */
  572 0438 00000000 		.word 0			/*HLD */
- 573 043c DC1F0018 		.word LASTN+MAPOFFSET	/*CONTEXT */
- 574 0440 48200018 		.word CTOP+MAPOFFSET	/* FCP end of system dictionnary */
- 575 0444 48200018 		.word CTOP+MAPOFFSET	/* CP end of RAM dictionary RAM */
- 576 0448 DC1F0018 		.word LASTN+MAPOFFSET	/*LAST word in dictionary */
+ 573 043c 84200018 		.word LASTN+MAPOFFSET	/*CONTEXT */
+ 574 0440 F0200018 		.word CTOP+MAPOFFSET	/* FCP end of system dictionnary */
+ 575 0444 F0200018 		.word CTOP+MAPOFFSET	/* CP end of RAM dictionary RAM */
+ 576 0448 84200018 		.word LASTN+MAPOFFSET	/*LAST word in dictionary */
  577 044c 00000000 		.word 0,0			/*reserved */
  577      00000000 
  578              	ULAST:
@@ -2013,7 +2013,7 @@ ARM GAS  stm32eforth.s 			page 1
  1728 0b88 004D     		ldr r5,USR_BGN_ADR 
  1729 0b8a 7047     		_NEXT 
  1730              	USR_BGN_ADR:
- 1731 0b8c 48200018 	.word CTOP+MAPOFFSET 
+ 1731 0b8c F0200018 	.word CTOP+MAPOFFSET 
  1732              	
  1733              	//  USER_END ( -- a )
  1734              	//  where user area end in RAM 
@@ -2884,24 +2884,24 @@ ARM GAS  stm32eforth.s 			page 1
  2534              	TYPEE:
  2535 1310 42F804ED 		_NEST
  2536 1314 FFF7A2F9 		BL  TOR   // ( a+1 -- R: u )
- 2537 1318 05E0     		B	TYPE2
+ 2537 1318 00F006B8 		B.W	TYPE2
  2538              	TYPE1:  
- 2539 131a FFF76BFB 		BL  COUNT
- 2540 131e FFF72DFD 		BL	TCHAR
- 2541 1322 FFF719F9 		BL	EMIT
+ 2539 131c FFF76AFB 		BL  COUNT
+ 2540 1320 FFF72CFD 		BL	TCHAR
+ 2541 1324 FFF718F9 		BL	EMIT
  2542              	TYPE2:  
- 2543 1326 FFF73CF9 		BL  DONXT  
- 2544 132a 1A070018 		.word	TYPE1+MAPOFFSET
- 2545 132e FFF7A9F9 		BL	DROP
- 2546 1332 52F804FB 		_UNNEST
+ 2543 1328 FFF73BF9 		BL  DONXT  
+ 2544 132c 1C070018 		.word	TYPE1+MAPOFFSET
+ 2545 1330 FFF7A8F9 		BL	DROP
+ 2546 1334 52F804FB 		_UNNEST
  2547              	
  2548              	//    CR	  ( -- )
  2549              	// 	Output a carriage return and a line feed.
  2550              	
- 2551 1336 08070018 		.word	_TYPEE+MAPOFFSET
- 2552 133a 02       	_CR:	.byte  2
- 2553 133b 4352     		.ascii "CR"
- 2554 133d 0000BF   		.p2align 2 	
+ 2551 1338 08070018 		.word	_TYPEE+MAPOFFSET
+ 2552 133c 02       	_CR:	.byte  2
+ 2553 133d 4352     		.ascii "CR"
+ 2554 133f 00       		.p2align 2 	
  2555              	CR:
  2556 1340 42F804ED 		_NEST
  2557 1344 FFF719F9 		_DOLIT
@@ -2980,7 +2980,7 @@ ARM GAS  stm32eforth.s 			page 1
  2627              	//    .R	  ( n +n -- )
  2628              	// 	Display an integer in a field of n columns, right justified.
  2629              	
- 2630 13c0 3A070018 		.word	_CR+MAPOFFSET
+ 2630 13c0 3C070018 		.word	_CR+MAPOFFSET
  2631 13c4 02       	_DOTR:	.byte  2
  2632 13c5 2E52     		.ascii ".R"
  2633 13c7 00       		.p2align 2 	
@@ -5203,397 +5203,463 @@ ARM GAS  stm32eforth.s 			page 1
  4671              	
  4672              	
  4673              	// search no name routine from code address. 
- 4674              	NONAMEQ: // ( ca -- id | -1  )
+ 4674              	NONAMEQ: // ( ca -- na|ca f )
  4675 2848 42F804ED 		_NEST 
  4676 284c FDF795FE 		_DOLIT 
- 4677 2850 FFFFFFFF 		.word -1 // not found flag 
+ 4677 2850 00000000 		.word 0 
  4678 2854 FDF726FF 		BL SWAP 
- 4679 2858 FDF71CFF 	0:	BL DUPP // ( -1 ca ca -- )  
- 4680 285c FDF78DFE 		_DOLIT 
- 4681 2860 B81C0018 		.word NONAME_SUB+MAPOFFSET  
- 4682 2864 FDF716FF 		BL DUPP 
- 4683 2868 FDF7F8FE 		BL TOR 
+ 4679 2858 FDF78FFE 		_DOLIT 
+ 4680 285c E41C0018 		.word NONAME_SUB+MAPOFFSET
+ 4681 2860 FDF7FCFE 		BL TOR   
+ 4682 2864 FDF716FF 	0:	BL DUPP // ( 0 ca ca -- )  
+ 4683 2868 FDF7F0FE 		BL RAT  
  4684 286c FDF7CEFE 		BL AT 
  4685 2870 FDF7FCFF 		BL QDUP 
  4686 2874 FDF7A4FE 		BL QBRAN 
- 4687 2878 AC1C0018 		.word 2f+MAPOFFSET 
+ 4687 2878 D01C0018 		.word 2f+MAPOFFSET 
  4688 287c FDF742FF 		BL XORR 
 ARM GAS  stm32eforth.s 			page 88
 
 
  4689 2880 FDF79EFE 		BL QBRAN 
- 4690 2884 981C0018 		.word 1f+MAPOFFSET 
+ 4690 2884 9C1C0018 		.word 1f+MAPOFFSET 
  4691 2888 FDF7D6FE 		BL RFROM 
- 4692 288c FDF7B4FF 		BL CELLP 
- 4693 2890 FDF7A2FE 		BL BRAN 
- 4694 2894 581C0018 		.word 0b+MAPOFFSET 
- 4695 2898 FDF76FFE 	1:  _DOLIT 
- 4696 289c B81C0018 		.word NONAME_SUB+MAPOFFSET
- 4697 28a0 FDF700FF 		BL SWAP 
- 4698 28a4 FDF762FF 		BL SUBB 
- 4699 28a8 FDF7FCFE 		BL SWAP 
- 4700 28ac FDF7C4FE 	2:	BL RFROM 
- 4701 28b0 FDF7F0FF 		BL DDROP
- 4702 28b4 52F804FB 		_UNNEST 
- 4703              	
- 4704              		.p2align 2
- 4705              	NONAME_SUB: // routine not in the dictionary 
- 4706 28b8 D8050000 		.word BRAN,QBRAN, DOLIT,DONXT,DODOES, DOVAR,DOCON 
- 4706      C0050000 
- 4706      7A050000 
- 4706      A2050000 
- 4706      28250000 
- 4707 28d4 00000000 		.word 0 
- 4708              	
- 4709              	ANONYMOUS: // anonymous routines 
- 4710 28d8 F4280000 		.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
- 4710      00290000 
- 4710      0C290000 
- 4710      18290000 
- 4710      24290000 
- 4711              	
- 4712              	BRAN_LBL:
- 4713 28f4 09       		.byte 9 
- 4714 28f5 207B6272 		.ascii " {branch}"
- 4714      616E6368 
- 4714      7D
- 4715 28fe 00BF     		.p2align 2 
- 4716              	QBRAN_LBL:
- 4717 2900 0A       		.byte 10
- 4718 2901 207B3F62 		.ascii " {?branch}"
- 4718      72616E63 
- 4718      687D
- 4719 290b 00       		.p2align 2
- 4720              	DOLIT_LBL:
- 4721 290c 08       		.byte 8 
- 4722 290d 207B646F 		.ascii " {doLit}"
- 4722      4C69747D 
- 4723 2915 0000BF   		.p2align 2 
- 4724              	DONEXT_LBL:
- 4725 2918 09       		.byte 9
- 4726 2919 207B646F 		.ascii " {doNext}"
- 4726      4E657874 
- 4726      7D
- 4727 2922 00BF     		.p2align 2 
- 4728              	DODOES_LBL:
- 4729 2924 09       		.byte 9
- 4730 2925 207B646F 		.ascii " {doDoes}"
+ 4692 288c FDF7B4FF 		BL CELLP
+ 4693 2890 FDF7E4FE 		BL TOR  
+ 4694 2894 FDF7A0FE 		BL BRAN 
+ 4695 2898 641C0018 		.word 0b+MAPOFFSET 
+ 4696 289c FDF7CCFE 	1:  BL RFROM 
+ 4697 28a0 FDF76BFE 		_DOLIT 
+ 4698 28a4 E41C0018 		.word NONAME_SUB+MAPOFFSET
+ 4699 28a8 FDF760FF 		BL SUBB
+ 4700 28ac FDF765FE 		_DOLIT 
+ 4701 28b0 1C1D0018 		.word ANONYMOUS+MAPOFFSET 
+ 4702 28b4 FDF752FF 		BL	PLUS
+ 4703 28b8 FDF7A8FE 		BL	AT   
+ 4704 28bc FDF7F2FE 		BL	SWAP 
+ 4705 28c0 FDF7E0FE 		BL	DROP
+ 4706 28c4 FDF7EEFE 		BL	SWAP 
+ 4707 28c8 FEF706F8 		BL	INVER 
+ 4708 28cc 52F804FB 		_UNNEST 
+ 4709 28d0 FDF7D8FE 	2:	BL DROP 
+ 4710 28d4 FDF7E6FE 		BL SWAP 
+ 4711 28d8 FDF7AEFE 		BL RFROM
+ 4712 28dc FDF7D2FE 		BL DROP 
+ 4713 28e0 52F804FB 		_UNNEST 
+ 4714              	
+ 4715              		.p2align 2
+ 4716              	NONAME_SUB: // routine not in the dictionary 
+ 4717 28e4 D8F9FF17 		.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
+ 4717      C0F9FF17 
+ 4717      7AF9FF17 
+ 4717      A2F9FF17 
+ 4717      28190018 
+ 4718 28f8 1CFEFF17 		.word DOVAR+MAPOFFSET,DOCON+MAPOFFSET,IS_BLW+MAPOFFSET,DOTQP+MAPOFFSET,BLADR+MAPOFFSET  
+ 4718      28FEFF17 
+ 4718      001E0018 
+ 4718      B0070018 
+ 4718      D81E0018 
+ 4719 290c A81B0018 		.word DOTCA+MAPOFFSET,NONAMEQ+MAPOFFSET,STRCQ+MAPOFFSET  
+ 4719      481C0018 
+ 4719      70140018 
+ 4720 2918 00000000 		.word 0 
+ 4721              	
+ 4722              	ANONYMOUS: // anonymous routines 
+ 4723 291c 50290000 		.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
+ 4723      5C290000 
+ 4723      68290000 
+ 4723      74290000 
+ 4723      80290000 
+ 4724 2938 A4290000 		.word IS_BLW_LBL,DOTQP_LBL,BLADR_LBL,DOTCA_LBL,NONAMEQ_LBL,STRCQ_LBL   
+ 4724      B0290000 
+ 4724      B4290000 
+ 4724      C0290000 
+ 4724      CC290000 
+ 4725              	
+ 4726              	BRAN_LBL:
+ 4727 2950 09       		.byte 9 
 ARM GAS  stm32eforth.s 			page 89
 
 
- 4730      446F6573 
- 4730      7D
- 4731 292e 00BF     		.p2align 2 
- 4732              	DOVAR_LBL:
- 4733 2930 08       		.byte 8
- 4734 2931 207B646F 		.ascii " {doVar}"
- 4734      5661727D 
- 4735 2939 0000BF   		.p2align 2 
- 4736              	DOCON_LBL:
- 4737 293c 0A       		.byte 10
- 4738 293d 207B646F 		.ascii " {doConst}"
- 4738      436F6E73 
- 4738      747D
- 4739 2947 00       		.p2align 2 
- 4740              	
- 4741              	
- 4742              	// print noname routine label ( n -- )
- 4743              	// n is offset in ANONYMOUS array 
- 4744              	DOTNONAME:
- 4745 2948 42F804ED 		_NEST 
- 4746 294c 41F8045D 		_PUSH 
- 4747 2950 FDF713FE 		_DOLIT 
- 4748 2954 D8280000 		.word ANONYMOUS 
- 4749 2958 FDF700FF 		BL PLUS 
- 4750 295c FDF756FE 		BL AT 
- 4751 2960 FEF7D6FC 		BL TYPEE 
- 4752 2964 52F804FB 		_UNNEST 
- 4753              	
- 4754              	// IS_BLW ( code -- f )
- 4755              	// check if it is a BL instruction 
- 4756              	IS_BLW:
- 4757 2968 42F804ED 		_NEST 
- 4758 296c FDF705FE 		_DOLIT 
- 4759 2970 00F000D0 		.word 0xD000F000
- 4760 2974 FDF78EFE 		BL DUPP 
- 4761 2978 FDF770FE 		BL TOR 
- 4762 297c FDF7AEFE 		BL ANDD
- 4763 2980 FDF75AFE 		BL RFROM  
- 4764 2984 FDF7CEFF 		BL EQUAL   
- 4765 2988 52F804FB 		_UNNEST 
- 4766              	
- 4767              	//    SEE	 ( -- //  string> )
- 4768              	// 	A simple decompiler.
- 4769              	
- 4770 298c 681B0018 		.word	_DOTID+MAPOFFSET
- 4771 2990 03       	_SEE:	.byte  3
- 4772 2991 534545   		.ascii "SEE"
- 4773              		.p2align 2 	
- 4774              	SEE:
- 4775 2994 42F804ED 		_NEST
- 4776 2998 FEF784F8 		BL BASE 
- 4777 299c FDF736FE 		BL AT 
- 4778 29a0 FDF75CFE 		BL TOR 
- 4779 29a4 FEF78AFB 		BL HEX 
- 4780 29a8 FFF7F8FA 		BL	TICK	//  ca --, starting address
- 4781 29ac FEF7C8FC 		BL	CR	
- 4782 29b0 FFF708FF 		BL  CODE_ABORT
+ 4728 2951 207B6272 		.ascii " {branch}"
+ 4728      616E6368 
+ 4728      7D
+ 4729 295a 00BF     		.p2align 2 
+ 4730              	QBRAN_LBL:
+ 4731 295c 0A       		.byte 10
+ 4732 295d 207B3F62 		.ascii " {?branch}"
+ 4732      72616E63 
+ 4732      687D
+ 4733 2967 00       		.p2align 2
+ 4734              	DOLIT_LBL:
+ 4735 2968 08       		.byte 8 
+ 4736 2969 207B646F 		.ascii " {doLit}"
+ 4736      4C69747D 
+ 4737 2971 0000BF   		.p2align 2 
+ 4738              	DONEXT_LBL:
+ 4739 2974 09       		.byte 9
+ 4740 2975 207B646F 		.ascii " {doNext}"
+ 4740      4E657874 
+ 4740      7D
+ 4741 297e 00BF     		.p2align 2 
+ 4742              	DODOES_LBL:
+ 4743 2980 09       		.byte 9
+ 4744 2981 207B646F 		.ascii " {doDoes}"
+ 4744      446F6573 
+ 4744      7D
+ 4745 298a 00BF     		.p2align 2 
+ 4746              	DOVAR_LBL:
+ 4747 298c 08       		.byte 8
+ 4748 298d 207B646F 		.ascii " {doVar}"
+ 4748      5661727D 
+ 4749 2995 0000BF   		.p2align 2 
+ 4750              	DOCON_LBL:
+ 4751 2998 0A       		.byte 10
+ 4752 2999 207B646F 		.ascii " {doConst}"
+ 4752      436F6E73 
+ 4752      747D
+ 4753 29a3 00       		.p2align 2 
+ 4754              	IS_BLW_LBL:
+ 4755 29a4 0B       		.byte 11 
+ 4756 29a5 207B424C 		.ascii " {BL code?}"
+ 4756      20636F64 
+ 4756      653F7D
+ 4757              		.p2align 2 
+ 4758              	DOTQP_LBL:
+ 4759 29b0 03       		.byte 3
+ 4760 29b1 202E22   		.ascii " .\""
+ 4761              		.p2align 
+ 4762              	BLADR_LBL:
+ 4763 29b4 09       		.byte 9
+ 4764 29b5 207B424C 		.ascii " {BL>ADR}"
+ 4764      3E414452 
+ 4764      7D
+ 4765 29be 00BF     		.p2align 2 
+ 4766              	DOTCA_LBL:
+ 4767 29c0 08       		.byte  8
+ 4768 29c1 207B646F 		.ascii " {dotca}"
 ARM GAS  stm32eforth.s 			page 90
 
 
- 4783 29b4 FDF7E1FD 		_DOLIT 
- 4784 29b8 00000000 		.word 0  
- 4785 29bc FDF74EFE 		BL TOR // not a BL counter limit to 10 consecutives 
- 4786              	SEE1:
- 4787 29c0 FDF71AFF 		BL	CELLP			//  a
- 4788 29c4 FFF7F0FE 		BL  DOTCA 
- 4789 29c8 FFF722FF 		BL  UNNESTQ
- 4790 29cc FDF7F8FD 		BL	QBRAN 
- 4791 29d0 001E0018 		.word 1f+MAPOFFSET  
- 4792 29d4 FDF75EFE 		BL	DUPP 
- 4793 29d8 FDF70EFF 		BL	CELLP
- 4794 29dc FDF716FE 		BL	AT 
- 4795 29e0 FFF7C2FF 		BL	IS_BLW
- 4796 29e4 FDF778FF 		BL	INVER  
- 4797 29e8 FDF7EAFD 		BL	QBRAN 
- 4798 29ec C01D0018 		.word SEE1+MAPOFFSET 
- 4799 29f0 FDF722FE 		BL	RFROM 
- 4800 29f4 FDF746FE 		BL	DROP 
- 4801 29f8 FDF7EEFD 		BL	BRAN 
- 4802 29fc 2C1E0018 		.word 2f+MAPOFFSET 
- 4803 2a00 FDF748FE 	1:	BL	DUPP			//  a a
- 4804 2a04 00F044F8 		BL	DECOMP		//  a
- 4805 2a08 FEF79AFC 		BL	CR 
- 4806 2a0c FDF71EFE 		BL	RAT 
- 4807 2a10 FDF7B3FD 		_DOLIT 
- 4808 2a14 0A000000 		.word 10 
- 4809 2a18 FDF7A8FF 		BL 	GREAT 
- 4810 2a1c FDF7D0FD 		BL	QBRAN 
- 4811 2a20 C01D0018 		.word	SEE1+MAPOFFSET
- 4812 2a24 FDF708FE 		BL	RFROM 
- 4813 2a28 FDF72CFE 		BL	DROP 
- 4814 2a2c FDF72AFE 	2:	BL	DROP
- 4815 2a30 FDF702FE 		BL  RFROM 
- 4816 2a34 FEF736F8 		BL 	BASE 
- 4817 2a38 FDF7DEFD 		BL	STORE 
- 4818 2a3c 52F804FB 		_UNNEST
- 4819              	
- 4820              	
- 4821              	// BL-ADR ( asm_code -- rel_adr )
- 4822              	// get absolute address from asm_code 
- 4823              	// ref: ARM-v7M architecture reference, section A7.7.18 
- 4824              	BLADR: 
- 4825 2a40 4FEA0504 		MOV.W R4,R5
- 4826 2a44 4FEA3444 		ROR R4,#16 
- 4827 2a48 64F30A05 		BFI R5,R4,#0,#11 
- 4828 2a4c 4FEAE424 		ASR R4,#11 
- 4829 2a50 64F35555 		BFI R5,R4,#21,#1 
- 4830 2a54 4FEAA404 		ASR R4,#2
- 4831 2a58 64F39655 		BFI R5,R4,#22,#1
- 4832 2a5c 4FEAE404 		ASR R4,#3
- 4833 2a60 64F3D425 		BFI R5,R4,#11,#10
- 4834 2a64 4FEAA424 		ASR R4,#10 
- 4835 2a68 64F3D755 		BFI R5,R4,#23,#1
- 4836 2a6c 15F4000F 		TST R5,#(1<<23)
- 4837 2a70 40F00280 		BNE.W 1f
- 4838 2a74 85F4C005 		EOR R5,R5,#(3<<21)
- 4839 2a78 4FEA0525 	1:	LSL R5,#8
+ 4768      7463617D 
+ 4769 29c9 0000BF   		.p2align 2 
+ 4770              	NONAMEQ_LBL:
+ 4771 29cc 0A       		.byte  10
+ 4772 29cd 207B6E6F 		.ascii " {noname?}"
+ 4772      6E616D65 
+ 4772      3F7D
+ 4773 29d7 00       		.p2align 2 
+ 4774              	STRCQ_LBL:
+ 4775 29d8 06       		.byte  6
+ 4776 29d9 207B242C 		.ascii " {$,\"}"
+ 4776      227D
+ 4777 29df 00       		.p2align 2 
+ 4778              	
+ 4779              	
+ 4780              	// print noname routine label ( n -- )
+ 4781              	// n is offset in ANONYMOUS array 
+ 4782              	DOTNONAME:
+ 4783 29e0 42F804ED 		_NEST 
+ 4784 29e4 41F8045D 		_PUSH 
+ 4785 29e8 FDF7C7FD 		_DOLIT 
+ 4786 29ec 1C290000 		.word ANONYMOUS 
+ 4787 29f0 FDF7B4FE 		BL PLUS 
+ 4788 29f4 FDF70AFE 		BL AT 
+ 4789 29f8 FEF78AFC 		BL TYPEE 
+ 4790 29fc 52F804FB 		_UNNEST 
+ 4791              	
+ 4792              	// IS_BLW ( code -- f )
+ 4793              	// check if it is a BL instruction 
+ 4794              	IS_BLW:
+ 4795 2a00 42F804ED 		_NEST 
+ 4796 2a04 FDF7B9FD 		_DOLIT 
+ 4797 2a08 00F000D0 		.word 0xD000F000
+ 4798 2a0c FDF742FE 		BL DUPP 
+ 4799 2a10 FDF724FE 		BL TOR 
+ 4800 2a14 FDF762FE 		BL ANDD
+ 4801 2a18 FDF70EFE 		BL RFROM  
+ 4802 2a1c FDF782FF 		BL EQUAL   
+ 4803 2a20 52F804FB 		_UNNEST 
+ 4804              	
+ 4805              	//    SEE	 ( -- //  string> )
+ 4806              	// 	A simple decompiler.
+ 4807              	
+ 4808 2a24 681B0018 		.word	_DOTID+MAPOFFSET
+ 4809 2a28 03       	_SEE:	.byte  3
+ 4810 2a29 534545   		.ascii "SEE"
+ 4811              		.p2align 2 	
+ 4812              	SEE:
+ 4813 2a2c 42F804ED 		_NEST
+ 4814 2a30 FEF738F8 		BL BASE 
+ 4815 2a34 FDF7EAFD 		BL AT 
+ 4816 2a38 FDF710FE 		BL TOR 
+ 4817 2a3c FEF73EFB 		BL HEX 
+ 4818 2a40 FFF7ACFA 		BL	TICK	//  ca --, starting address
+ 4819 2a44 FEF77CFC 		BL	CR	
+ 4820 2a48 FFF7BCFE 		BL  CODE_ABORT
+ 4821 2a4c FDF795FD 		_DOLIT 
 ARM GAS  stm32eforth.s 			page 91
 
 
- 4840 2a7c 4FEAE515 		ASR R5,#7 
- 4841 2a80 7047     		_NEXT 
- 4842              	
- 4843              	// 	DECOMPILE ( a -- )
- 4844              	// 	Convert code in a.  Display name of command or as data.
- 4845              	
- 4846 2a82 901D0018 		.word	_SEE+MAPOFFSET
- 4847 2a86 09       	_DECOM:	.byte  9
- 4848 2a87 4445434F 		.ascii "DECOMPILE"
- 4848      4D50494C 
- 4848      45
- 4849              		.p2align 2 
- 4850              		
- 4851              	DECOMP:	
- 4852 2a90 42F804ED 		_NEST
- 4853 2a94 FDF7FEFD 		BL	DUPP			//  a a
- 4854 2a98 FDF7B8FD 		BL	AT			//  a code
- 4855 2a9c FDF7FAFD 		BL	DUPP			//  a code code
- 4856 2aa0 FFF762FF 		BL	IS_BLW
- 4857 2aa4 FDF78CFD 		BL	QBRAN
- 4858 2aa8 F41E0018 		.word	DECOM2+MAPOFFSET	//  not a BL instruction 
- 4859              		//  a valid_code --, extract address and display name
- 4860 2aac FEF780FC 		BL DOTQP  
- 4861 2ab0 03       		.byte 3
- 4862 2ab1 424C20   		.ascii "BL "
- 4863              		.p2align 2 
- 4864 2ab4 FFF7C4FF 		BL  BLADR   // extract relative address from BL code
- 4865 2ab8 FDF7FEFD 		BL	OVER			//  a offset a
- 4866 2abc FDF74EFE 		BL	PLUS			//  a target-4
- 4867 2ac0 FDF79AFE 		BL	CELLP			//  a target
- 4868 2ac4 FFF770FE 		BL  DOTCA 
- 4869 2ac8 FFF726FE 		BL	TNAME			//  a na/0 --, is it a name?
- 4870 2acc FDF7CEFE 		BL	QDUP			//  name address or zero
- 4871 2ad0 FFF74CFE 		BL	DOTID			//  a --, display name
- 4872 2ad4 FDF7D6FD 		BL	DROP
- 4873              	// reset not BL counter 
- 4874 2ad8 FDF7AEFD 		BL	RFROM 
- 4875 2adc FDF7ACFD 		BL	RFROM 
- 4876 2ae0 FDF7D8FD 		BL	DUPP 
- 4877 2ae4 FDF742FE 		BL	SUBB 
- 4878 2ae8 FDF7B8FD 		BL	TOR 
- 4879 2aec FDF7B6FD 		BL	TOR 	
- 4880 2af0 52F804FB 		_UNNEST
- 4881              	DECOM2: // not a BL 
- 4882 2af4 FEF798FC 		BL	UDOT
- 4883 2af8 FDF7C4FD 		BL	DROP
- 4884 2afc FDF79CFD 		BL	RFROM // unnest address 
- 4885 2b00 FDF79AFD 		BL	RFROM // not BL counter 
- 4886 2b04 FDF758FE 		BL	ONEP  // increment counter 
- 4887 2b08 FDF7A8FD 		BL	TOR 
- 4888 2b0c FDF7A6FD 		BL	TOR 
- 4889 2b10 52F804FB 		_UNNEST
- 4890              	
- 4891              	//    WORDS	( -- )
- 4892              	// 	Display the names in the context vocabulary.
- 4893              	
- 4894 2b14 861E0018 		.word	_DECOM+MAPOFFSET
+ 4822 2a50 00000000 		.word 0  
+ 4823 2a54 FDF702FE 		BL TOR // not a BL counter limit to 10 consecutives 
+ 4824              	SEE1:
+ 4825 2a58 FDF7CEFE 		BL	CELLP			//  a
+ 4826 2a5c FFF7A4FE 		BL  DOTCA 
+ 4827 2a60 FFF7D6FE 		BL  UNNESTQ
+ 4828 2a64 FDF7ACFD 		BL	QBRAN 
+ 4829 2a68 981E0018 		.word 1f+MAPOFFSET  
+ 4830 2a6c FDF712FE 		BL	DUPP 
+ 4831 2a70 FDF7C2FE 		BL	CELLP
+ 4832 2a74 FDF7CAFD 		BL	AT 
+ 4833 2a78 FFF7C2FF 		BL	IS_BLW
+ 4834 2a7c FDF72CFF 		BL	INVER  
+ 4835 2a80 FDF79EFD 		BL	QBRAN 
+ 4836 2a84 581E0018 		.word SEE1+MAPOFFSET 
+ 4837 2a88 FDF7D6FD 		BL	RFROM 
+ 4838 2a8c FDF7FAFD 		BL	DROP 
+ 4839 2a90 FDF7A2FD 		BL	BRAN 
+ 4840 2a94 C41E0018 		.word 2f+MAPOFFSET 
+ 4841 2a98 FDF7FCFD 	1:	BL	DUPP			//  a a
+ 4842 2a9c 00F044F8 		BL	DECOMP		//  a
+ 4843 2aa0 FEF74EFC 		BL	CR 
+ 4844 2aa4 FDF7D2FD 		BL	RAT 
+ 4845 2aa8 FDF767FD 		_DOLIT 
+ 4846 2aac 0A000000 		.word 10 
+ 4847 2ab0 FDF75CFF 		BL 	GREAT 
+ 4848 2ab4 FDF784FD 		BL	QBRAN 
+ 4849 2ab8 581E0018 		.word	SEE1+MAPOFFSET
+ 4850 2abc FDF7BCFD 		BL	RFROM 
+ 4851 2ac0 FDF7E0FD 		BL	DROP 
+ 4852 2ac4 FDF7DEFD 	2:	BL	DROP
+ 4853 2ac8 FDF7B6FD 		BL  RFROM 
+ 4854 2acc FDF7EAFF 		BL 	BASE 
+ 4855 2ad0 FDF792FD 		BL	STORE 
+ 4856 2ad4 52F804FB 		_UNNEST
+ 4857              	
+ 4858              	
+ 4859              	// BL-ADR ( asm_code -- rel_adr )
+ 4860              	// get absolute address from asm_code 
+ 4861              	// ref: ARM-v7M architecture reference, section A7.7.18 
+ 4862              	BLADR: 
+ 4863 2ad8 4FEA0504 		MOV.W R4,R5
+ 4864 2adc 4FEA3444 		ROR R4,#16 
+ 4865 2ae0 64F30A05 		BFI R5,R4,#0,#11 
+ 4866 2ae4 4FEAE424 		ASR R4,#11 
+ 4867 2ae8 64F35555 		BFI R5,R4,#21,#1 
+ 4868 2aec 4FEAA404 		ASR R4,#2
+ 4869 2af0 64F39655 		BFI R5,R4,#22,#1
+ 4870 2af4 4FEAE404 		ASR R4,#3
+ 4871 2af8 64F3D425 		BFI R5,R4,#11,#10
+ 4872 2afc 4FEAA424 		ASR R4,#10 
+ 4873 2b00 64F3D755 		BFI R5,R4,#23,#1
+ 4874 2b04 15F4000F 		TST R5,#(1<<23)
+ 4875 2b08 40F00280 		BNE.W 1f
+ 4876 2b0c 85F4C005 		EOR R5,R5,#(3<<21)
+ 4877 2b10 4FEA0525 	1:	LSL R5,#8
+ 4878 2b14 4FEAE515 		ASR R5,#7 
 ARM GAS  stm32eforth.s 			page 92
 
 
- 4895              	.else 
- 4896              		.word _DOTID+MAPOFFSET 
- 4897              	.endif 
- 4898 2b18 05       	_WORDS:	.byte  5
- 4899 2b19 574F5244 		.ascii "WORDS"
- 4899      53
- 4900 2b1e 00BF     		.p2align 2 	
- 4901              	WORDS:
- 4902 2b20 42F804ED 		_NEST
- 4903 2b24 FEF70CFC 		BL	CR
- 4904 2b28 FEF700F8 		BL	CNTXT
- 4905 2b2c FDF76EFD 		BL	AT			// only in context
- 4906              	WORS1:
- 4907 2b30 FDF79CFE 		BL	QDUP			// ?at end of list
- 4908 2b34 FDF744FD 		BL	QBRAN
- 4909 2b38 541F0018 		.word	WORS2+MAPOFFSET
- 4910 2b3c FDF7AAFD 		BL	DUPP
- 4911 2b40 FEF7BEFB 		BL	SPACE
- 4912 2b44 FFF712FE 		BL	DOTID			// display a name
- 4913 2b48 FDF75EFE 		BL	CELLM
- 4914 2b4c FDF75EFD 		BL	AT
- 4915 2b50 FFF7EEBF 		B.W	WORS1
- 4916              	WORS2:
- 4917 2b54 52F804FB 		_UNNEST
- 4918              	
- 4919              	// **************************************************************************
- 4920              	//  cold start
- 4921              	
- 4922              	//    VER	 ( -- n )
- 4923              	// 	Return the version number of this implementation.
- 4924              	
- 4925              	// 	.word	_WORDS+MAPOFFSET
- 4926              	// _VERSN	.byte  3
- 4927              	// 	.ascii "VER"
- 4928              	// 	.p2align 2 	
- 4929              	VERSN:
- 4930 2b58 42F804ED 		_NEST
- 4931 2b5c FDF70DFD 		_DOLIT
- 4932 2b60 00010000 		.word	VER*256+EXT
- 4933 2b64 52F804FB 		_UNNEST
- 4934              	
- 4935              	//    hi	  ( -- )
- 4936              	// 	Display the sign-on message of eForth.
- 4937              	
- 4938 2b68 181F0018 		.word	_WORDS+MAPOFFSET
- 4939 2b6c 02       	_HI:	.byte  2
- 4940 2b6d 4849     		.ascii "HI"
- 4941 2b6f 00       		.p2align 2 	
- 4942              	HI:
- 4943 2b70 42F804ED 		_NEST
- 4944 2b74 FEF7E4FB 		BL	CR	// initialize I/O
- 4945 2b78 FEF71AFC 		BL	DOTQP
- 4946 2b7c 17       		.byte	23
- 4947 2b7d 626C7565 		.ascii "blue pill stm32eForth v" 
- 4947      2070696C 
- 4947      6C207374 
- 4947      6D333265 
+ 4879 2b18 7047     		_NEXT 
+ 4880              	
+ 4881              	// 	DECOMPILE ( a -- )
+ 4882              	// 	Convert code in a.  Display name of command or as data.
+ 4883              	
+ 4884 2b1a 281E0018 		.word	_SEE+MAPOFFSET
+ 4885 2b1e 09       	_DECOM:	.byte  9
+ 4886 2b1f 4445434F 		.ascii "DECOMPILE"
+ 4886      4D50494C 
+ 4886      45
+ 4887              		.p2align 2 
+ 4888              		
+ 4889              	DECOMP:	
+ 4890 2b28 42F804ED 		_NEST
+ 4891 2b2c FDF7B2FD 		BL	DUPP			//  a a
+ 4892 2b30 FDF76CFD 		BL	AT			//  a code
+ 4893 2b34 FDF7AEFD 		BL	DUPP			//  a code code
+ 4894 2b38 FFF762FF 		BL	IS_BLW
+ 4895 2b3c FDF740FD 		BL	QBRAN
+ 4896 2b40 9C1F0018 		.word	DECOM2+MAPOFFSET	//  not a BL instruction 
+ 4897              		//  a valid_code --, extract address and display name
+ 4898 2b44 FEF734FC 		BL DOTQP  
+ 4899 2b48 03       		.byte 3
+ 4900 2b49 424C20   		.ascii "BL "
+ 4901              		.p2align 2 
+ 4902 2b4c FFF7C4FF 		BL  BLADR   // extract relative address from BL code
+ 4903 2b50 FDF7B2FD 		BL	OVER			//  a offset a
+ 4904 2b54 FDF702FE 		BL	PLUS			//  a target-4
+ 4905 2b58 FDF74EFE 		BL	CELLP			//  a target
+ 4906 2b5c FFF724FE 		BL  DOTCA 
+ 4907 2b60 FFF772FE 		BL	NONAMEQ 
+ 4908 2b64 FDF72CFD 		BL	QBRAN 
+ 4909 2b68 741F0018 		.word DECOMP1+MAPOFFSET  
+ 4910 2b6c FDF734FD 		BL	BRAN 
+ 4911 2b70 781F0018 		.word DECOMP3+MAPOFFSET 
+ 4912              	DECOMP1:
+ 4913 2b74 FFF7D0FD 		BL	TNAME			//  a na/0 --, is it a name?
+ 4914              	DECOMP3:
+ 4915 2b78 FFF7F8FD 		BL	DOTID			//  a --, display name
+ 4916 2b7c FDF782FD 		BL	DROP
+ 4917              	// reset not BL counter 
+ 4918 2b80 FDF75AFD 		BL	RFROM 
+ 4919 2b84 FDF758FD 		BL	RFROM 
+ 4920 2b88 FDF784FD 		BL	DUPP 
+ 4921 2b8c FDF7EEFD 		BL	SUBB 
+ 4922 2b90 FDF764FD 		BL	TOR 
+ 4923 2b94 FDF762FD 		BL	TOR 	
+ 4924 2b98 52F804FB 		_UNNEST
+ 4925              			
+ 4926              	DECOM2: // not a BL 
+ 4927 2b9c FEF744FC 		BL	UDOT
+ 4928 2ba0 FDF770FD 		BL	DROP
+ 4929 2ba4 FDF748FD 		BL	RFROM // unnest address 
+ 4930 2ba8 FDF746FD 		BL	RFROM // not BL counter 
+ 4931 2bac FDF704FE 		BL	ONEP  // increment counter 
+ 4932 2bb0 FDF754FD 		BL	TOR 
+ 4933 2bb4 FDF752FD 		BL	TOR 
 ARM GAS  stm32eforth.s 			page 93
 
 
- 4947      466F7274 
- 4948              		.p2align 2
- 4949 2b94 FDF786FF 		BL	BASE
- 4950 2b98 FDF738FD 		BL	AT
- 4951 2b9c FEF78EFA 		BL	HEX	// save radix
- 4952 2ba0 FFF7DAFF 		BL	VERSN
- 4953 2ba4 FEF706FA 		BL	BDIGS
- 4954 2ba8 FEF72AFA 		BL	DIG
- 4955 2bac FEF728FA 		BL	DIG
- 4956 2bb0 FDF7E3FC 		_DOLIT
- 4957 2bb4 2E000000 		.word	'.'
- 4958 2bb8 FEF70CFA 		BL	HOLD
- 4959 2bbc FEF730FA 		BL	DIGS
- 4960 2bc0 FEF754FA 		BL	EDIGS
- 4961 2bc4 FEF7A4FB 		BL	TYPEE	// format version number
- 4962 2bc8 FDF76CFF 		BL	BASE
- 4963 2bcc FDF714FD 		BL	STORE
- 4964 2bd0 FEF7B6FB 		BL	CR
- 4965 2bd4 52F804FB 		_UNNEST			// restore radix
+ 4934 2bb8 52F804FB 		_UNNEST
+ 4935              	
+ 4936              	//    WORDS	( -- )
+ 4937              	// 	Display the names in the context vocabulary.
+ 4938              	
+ 4939 2bbc 1E1F0018 		.word	_DECOM+MAPOFFSET
+ 4940              	.else 
+ 4941              		.word _DOTID+MAPOFFSET 
+ 4942              	.endif 
+ 4943 2bc0 05       	_WORDS:	.byte  5
+ 4944 2bc1 574F5244 		.ascii "WORDS"
+ 4944      53
+ 4945 2bc6 00BF     		.p2align 2 	
+ 4946              	WORDS:
+ 4947 2bc8 42F804ED 		_NEST
+ 4948 2bcc FEF7B8FB 		BL	CR
+ 4949 2bd0 FDF7ACFF 		BL	CNTXT
+ 4950 2bd4 FDF71AFD 		BL	AT			// only in context
+ 4951              	WORS1:
+ 4952 2bd8 FDF748FE 		BL	QDUP			// ?at end of list
+ 4953 2bdc FDF7F0FC 		BL	QBRAN
+ 4954 2be0 FC1F0018 		.word	WORS2+MAPOFFSET
+ 4955 2be4 FDF756FD 		BL	DUPP
+ 4956 2be8 FEF76AFB 		BL	SPACE
+ 4957 2bec FFF7BEFD 		BL	DOTID			// display a name
+ 4958 2bf0 FDF70AFE 		BL	CELLM
+ 4959 2bf4 FDF70AFD 		BL	AT
+ 4960 2bf8 FFF7EEBF 		B.W	WORS1
+ 4961              	WORS2:
+ 4962 2bfc 52F804FB 		_UNNEST
+ 4963              	
+ 4964              	// **************************************************************************
+ 4965              	//  cold start
  4966              	
- 4967              	//    COLD	( -- )
- 4968              	// 	The high level cold start sequence.
+ 4967              	//    VER	 ( -- n )
+ 4968              	// 	Return the version number of this implementation.
  4969              	
- 4970 2bd8 6C1F0018 		.word	_HI+MAPOFFSET
- 4971 2bdc 04       	LASTN:	.byte  4
- 4972 2bdd 434F4C44 		.ascii "COLD"
- 4973 2be1 000000   		.p2align 2,0	
- 4974              	COLD:
- 4975              	//  Initiate Forth registers
- 4976 2be4 4FF00003 		MOV R3,#UPP&0xffff	//  user area 
- 4977 2be8 C2F20003 	 	MOVT R3,#UPP>>16		  
- 4978 2bec 03F59F42 		ADD R2,R3,#RPP&0xffff	// Forth return stack
- 4979 2bf0 03F59D41 		ADD R1,R3,#SPP&0xffff // Forth data stack
- 4980 2bf4 85EA0505 		EOR R5,R5,R5			//  tos=0
- 4981 2bf8 42F804ED 		_NEST
- 4982              	COLD1:
- 4983 2bfc FDF7BDFC 		_DOLIT 
- 4984 2c00 00000000 		.word 0 
- 4985 2c04 FDF778FC 		BL ULED // turn off user LED 
- 4986 2c08 FDF7B7FC 		_DOLIT
- 4987 2c0c 00040000 		.word	UZERO
- 4988 2c10 FDF7B3FC 		_DOLIT
- 4989 2c14 00000020 		.word	UPP
- 4990 2c18 FDF7AFFC 		_DOLIT
- 4991 2c1c 54000000 		.word	ULAST-UZERO
- 4992 2c20 FEF73CF9 		BL	MOVE 			// initialize user area
- 4993 2c24 FEF786FF 		BL	PRESE			// initialize stack
- 4994              		// check if user image saved in slot 0 
- 4995 2c28 FFF76AF8 		BL IMGQ 
- 4996 2c2c FDF7C8FC 		BL	QBRAN 
- 4997 2c30 38200018 		.word 1f+MAPOFFSET
- 4998 2c34 FFF77CF8 		BL	LOAD_IMG 
- 4999 2c38 FDF72AFF 	1:	BL	TBOOT
- 5000 2c3c FEF70AF9 		BL	ATEXE			// application boot
- 5001 2c40 FFF7C2FB 		BL	OVERT
- 5002 2c44 FEF780BF 		B.W	QUIT			// start interpretation
- 5003              	COLD2:
+ 4970              	// 	.word	_WORDS+MAPOFFSET
+ 4971              	// _VERSN	.byte  3
+ 4972              	// 	.ascii "VER"
+ 4973              	// 	.p2align 2 	
+ 4974              	VERSN:
+ 4975 2c00 42F804ED 		_NEST
+ 4976 2c04 FDF7B9FC 		_DOLIT
+ 4977 2c08 00010000 		.word	VER*256+EXT
+ 4978 2c0c 52F804FB 		_UNNEST
+ 4979              	
+ 4980              	//    hi	  ( -- )
+ 4981              	// 	Display the sign-on message of eForth.
+ 4982              	
+ 4983 2c10 C01F0018 		.word	_WORDS+MAPOFFSET
+ 4984 2c14 02       	_HI:	.byte  2
+ 4985 2c15 4849     		.ascii "HI"
+ 4986 2c17 00       		.p2align 2 	
+ 4987              	HI:
+ 4988 2c18 42F804ED 		_NEST
+ 4989 2c1c FEF790FB 		BL	CR	// initialize I/O
 ARM GAS  stm32eforth.s 			page 94
 
 
- 5004              		.p2align 3 	
- 5005              	CTOP:
- 5006 2c48 FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
- 5007 2c4c AFF30080 		.p2align 10 
- 5007      AFF30080 
- 5007      AFF30080 
- 5007      AFF30080 
- 5007      AFF30080 
- 5008              	USER_SPACE: // save user image here.  
- 5009 3000 FFFFFFFF 		.word 0XFFFFFFFF
- 5010              	
- 5011              	  .end 
+ 4990 2c20 FEF7C6FB 		BL	DOTQP
+ 4991 2c24 17       		.byte	23
+ 4992 2c25 626C7565 		.ascii "blue pill stm32eForth v" 
+ 4992      2070696C 
+ 4992      6C207374 
+ 4992      6D333265 
+ 4992      466F7274 
+ 4993              		.p2align 2
+ 4994 2c3c FDF732FF 		BL	BASE
+ 4995 2c40 FDF7E4FC 		BL	AT
+ 4996 2c44 FEF73AFA 		BL	HEX	// save radix
+ 4997 2c48 FFF7DAFF 		BL	VERSN
+ 4998 2c4c FEF7B2F9 		BL	BDIGS
+ 4999 2c50 FEF7D6F9 		BL	DIG
+ 5000 2c54 FEF7D4F9 		BL	DIG
+ 5001 2c58 FDF78FFC 		_DOLIT
+ 5002 2c5c 2E000000 		.word	'.'
+ 5003 2c60 FEF7B8F9 		BL	HOLD
+ 5004 2c64 FEF7DCF9 		BL	DIGS
+ 5005 2c68 FEF700FA 		BL	EDIGS
+ 5006 2c6c FEF750FB 		BL	TYPEE	// format version number
+ 5007 2c70 FDF718FF 		BL	BASE
+ 5008 2c74 FDF7C0FC 		BL	STORE
+ 5009 2c78 FEF762FB 		BL	CR
+ 5010 2c7c 52F804FB 		_UNNEST			// restore radix
+ 5011              	
+ 5012              	//    COLD	( -- )
+ 5013              	// 	The high level cold start sequence.
+ 5014              	
+ 5015 2c80 14200018 		.word	_HI+MAPOFFSET
+ 5016 2c84 04       	LASTN:	.byte  4
+ 5017 2c85 434F4C44 		.ascii "COLD"
+ 5018 2c89 000000   		.p2align 2,0	
+ 5019              	COLD:
+ 5020              	//  Initiate Forth registers
+ 5021 2c8c 4FF00003 		MOV R3,#UPP&0xffff	//  user area 
+ 5022 2c90 C2F20003 	 	MOVT R3,#UPP>>16		  
+ 5023 2c94 03F59F42 		ADD R2,R3,#RPP&0xffff	// Forth return stack
+ 5024 2c98 03F59D41 		ADD R1,R3,#SPP&0xffff // Forth data stack
+ 5025 2c9c 85EA0505 		EOR R5,R5,R5			//  tos=0
+ 5026 2ca0 42F804ED 		_NEST
+ 5027              	COLD1:
+ 5028 2ca4 FDF769FC 		_DOLIT 
+ 5029 2ca8 00000000 		.word 0 
+ 5030 2cac FDF724FC 		BL ULED // turn off user LED 
+ 5031 2cb0 FDF763FC 		_DOLIT
+ 5032 2cb4 00040000 		.word	UZERO
+ 5033 2cb8 FDF75FFC 		_DOLIT
+ 5034 2cbc 00000020 		.word	UPP
+ 5035 2cc0 FDF75BFC 		_DOLIT
+ 5036 2cc4 54000000 		.word	ULAST-UZERO
+ 5037 2cc8 FEF7E8F8 		BL	MOVE 			// initialize user area
+ 5038 2ccc FEF732FF 		BL	PRESE			// initialize stack
+ 5039              		// check if user image saved in slot 0 
+ 5040 2cd0 FFF716F8 		BL IMGQ 
+ 5041 2cd4 FDF774FC 		BL	QBRAN 
+ 5042 2cd8 E0200018 		.word 1f+MAPOFFSET
 ARM GAS  stm32eforth.s 			page 95
+
+
+ 5043 2cdc FFF728F8 		BL	LOAD_IMG 
+ 5044 2ce0 FDF7D6FE 	1:	BL	TBOOT
+ 5045 2ce4 FEF7B6F8 		BL	ATEXE			// application boot
+ 5046 2ce8 FFF76EFB 		BL	OVERT
+ 5047 2cec FEF72CBF 		B.W	QUIT			// start interpretation
+ 5048              	COLD2:
+ 5049              		.p2align 3 	
+ 5050              	CTOP:
+ 5051 2cf0 FFFFFFFF 		.word	0XFFFFFFFF		//  keep CTOP even
+ 5052 2cf4 AFF30080 		.p2align 10 
+ 5052      AFF30080 
+ 5052      AFF30080 
+ 5052      00000000 
+ 5052      00000000 
+ 5053              	USER_SPACE: // save user image here.  
+ 5054 3000 FFFFFFFF 		.word 0XFFFFFFFF
+ 5055              	
+ 5056              	  .end 
+ARM GAS  stm32eforth.s 			page 96
 
 
 DEFINED SYMBOLS
@@ -5653,7 +5719,7 @@ board/blue-pill/stm32f103.inc:82     *ABS*:0000000000000014 GPIO_BRR
 board/blue-pill/stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LOCKR
 board/blue-pill/stm32f103.inc:87     *ABS*:0000000040013800 USART1_BASE_ADR
 board/blue-pill/stm32f103.inc:89     *ABS*:0000000000000000 USART_SR
-ARM GAS  stm32eforth.s 			page 96
+ARM GAS  stm32eforth.s 			page 97
 
 
 board/blue-pill/stm32f103.inc:90     *ABS*:0000000000000004 USART_DR
@@ -5713,7 +5779,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:95     *ABS*:0000000020005000 RAMEND
        stm32eforth.s:96     *ABS*:0000000008000c00 FLASHOFFSET
        stm32eforth.s:99     *ABS*:0000000017fff400 MAPOFFSET
-ARM GAS  stm32eforth.s 			page 97
+ARM GAS  stm32eforth.s 			page 98
 
 
        stm32eforth.s:104    *ABS*:0000000000000004 SEED_OFS
@@ -5761,19 +5827,19 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:466    .text.reset_handler:00000000000000b8 uart_init
        stm32eforth.s:378    .text.reset_handler:0000000000000014 forth_entry
        stm32eforth.s:379    .text.reset_handler:0000000000000014 $d
-       stm32eforth.s:4974   .text.reset_handler:0000000000002be4 COLD
+       stm32eforth.s:5019   .text.reset_handler:0000000000002c8c COLD
        stm32eforth.s:382    .text.reset_handler:0000000000000018 $t
        stm32eforth.s:398    .text.reset_handler:0000000000000036 wait_hserdy
        stm32eforth.s:418    .text.reset_handler:0000000000000050 wait_pllrdy
        stm32eforth.s:431    .text.reset_handler:0000000000000070 wait_sws
        stm32eforth.s:511    .text.reset_handler:0000000000000130 remap_dest
        stm32eforth.s:509    .text.reset_handler:000000000000012c remap_src
-       stm32eforth.s:5005   .text.reset_handler:0000000000002c48 CTOP
+       stm32eforth.s:5050   .text.reset_handler:0000000000002cf0 CTOP
        stm32eforth.s:557    .text.reset_handler:0000000000000400 UZERO
        stm32eforth.s:510    .text.reset_handler:000000000000012c $d
        stm32eforth.s:517    *ABS*:0000000000000001 VER
        stm32eforth.s:518    *ABS*:0000000000000000 EXT
-ARM GAS  stm32eforth.s 			page 98
+ARM GAS  stm32eforth.s 			page 99
 
 
        stm32eforth.s:522    *ABS*:0000000000000040 COMPO
@@ -5789,9 +5855,9 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:534    *ABS*:0000000000000027 TIC
        stm32eforth.s:555    .text.reset_handler:0000000000000134 $t
        stm32eforth.s:558    .text.reset_handler:0000000000000400 $d
-       stm32eforth.s:4942   .text.reset_handler:0000000000002b70 HI
+       stm32eforth.s:4987   .text.reset_handler:0000000000002c18 HI
        stm32eforth.s:3261   .text.reset_handler:0000000000001a10 INTER
-       stm32eforth.s:4971   .text.reset_handler:0000000000002bdc LASTN
+       stm32eforth.s:5016   .text.reset_handler:0000000000002c84 LASTN
        stm32eforth.s:578    .text.reset_handler:0000000000000454 ULAST
        stm32eforth.s:592    .text.reset_handler:000000000000046c $d
        stm32eforth.s:593    .text.reset_handler:0000000000000470 _RAND
@@ -5833,7 +5899,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:703    .text.reset_handler:0000000000000574 _NOP
        stm32eforth.s:705    .text.reset_handler:0000000000000578 $t
        stm32eforth.s:706    .text.reset_handler:0000000000000578 NOP
-ARM GAS  stm32eforth.s 			page 99
+ARM GAS  stm32eforth.s 			page 100
 
 
        stm32eforth.s:717    .text.reset_handler:000000000000057a DOLIT
@@ -5893,7 +5959,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:971    .text.reset_handler:00000000000006e8 $d
        stm32eforth.s:972    .text.reset_handler:00000000000006ec _ORR
        stm32eforth.s:975    .text.reset_handler:00000000000006f0 ORR
-ARM GAS  stm32eforth.s 			page 100
+ARM GAS  stm32eforth.s 			page 101
 
 
        stm32eforth.s:984    .text.reset_handler:00000000000006fc $d
@@ -5953,7 +6019,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1167   .text.reset_handler:0000000000000812 _BLANK
        stm32eforth.s:1170   .text.reset_handler:0000000000000818 BLANK
        stm32eforth.s:1178   .text.reset_handler:0000000000000822 $d
-ARM GAS  stm32eforth.s 			page 101
+ARM GAS  stm32eforth.s 			page 102
 
 
        stm32eforth.s:1179   .text.reset_handler:0000000000000826 _CELLS
@@ -6013,7 +6079,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1384   .text.reset_handler:0000000000000964 $d
        stm32eforth.s:1385   .text.reset_handler:0000000000000968 _GREAT
        stm32eforth.s:1387   .text.reset_handler:000000000000096a $t
-ARM GAS  stm32eforth.s 			page 102
+ARM GAS  stm32eforth.s 			page 103
 
 
        stm32eforth.s:1388   .text.reset_handler:000000000000096c GREAT
@@ -6073,7 +6139,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1635   .text.reset_handler:0000000000000ae2 $d
        stm32eforth.s:1636   .text.reset_handler:0000000000000ae6 _NTIB
        stm32eforth.s:1639   .text.reset_handler:0000000000000aec NTIB
-ARM GAS  stm32eforth.s 			page 103
+ARM GAS  stm32eforth.s 			page 104
 
 
        stm32eforth.s:1647   .text.reset_handler:0000000000000af6 $d
@@ -6112,7 +6178,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1751   .text.reset_handler:0000000000000bbc IMG_ADR
        stm32eforth.s:1755   .text.reset_handler:0000000000000bc4 USR_IMG_ADR
        stm32eforth.s:1756   .text.reset_handler:0000000000000bc4 $d
-       stm32eforth.s:5008   .text.reset_handler:0000000000003000 USER_SPACE
+       stm32eforth.s:5053   .text.reset_handler:0000000000003000 USER_SPACE
        stm32eforth.s:1760   .text.reset_handler:0000000000000bcc _IMG_SIGN
        stm32eforth.s:1763   .text.reset_handler:0000000000000bd8 IMG_SIGN
        stm32eforth.s:1775   .text.reset_handler:0000000000000be2 $d
@@ -6133,7 +6199,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1837   .text.reset_handler:0000000000000c70 $t
        stm32eforth.s:1846   .text.reset_handler:0000000000000c90 $d
        stm32eforth.s:1849   .text.reset_handler:0000000000000c9c MMOD2
-ARM GAS  stm32eforth.s 			page 104
+ARM GAS  stm32eforth.s 			page 105
 
 
        stm32eforth.s:1847   .text.reset_handler:0000000000000c94 $t
@@ -6193,7 +6259,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2039   .text.reset_handler:0000000000000e3c $t
        stm32eforth.s:2040   .text.reset_handler:0000000000000e3c TIB
        stm32eforth.s:2048   .text.reset_handler:0000000000000e44 $d
-ARM GAS  stm32eforth.s 			page 105
+ARM GAS  stm32eforth.s 			page 106
 
 
        stm32eforth.s:2049   .text.reset_handler:0000000000000e48 _ATEXE
@@ -6253,7 +6319,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2260   .text.reset_handler:0000000000001030 $d
        stm32eforth.s:2262   .text.reset_handler:0000000000001036 DIGS2
        stm32eforth.s:2261   .text.reset_handler:0000000000001034 $t
-ARM GAS  stm32eforth.s 			page 106
+ARM GAS  stm32eforth.s 			page 107
 
 
        stm32eforth.s:2268   .text.reset_handler:000000000000103a $d
@@ -6313,7 +6379,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2431   .text.reset_handler:0000000000001200 NUMQ2
        stm32eforth.s:2439   .text.reset_handler:000000000000121c $d
        stm32eforth.s:2458   .text.reset_handler:0000000000001264 NUMQ4
-ARM GAS  stm32eforth.s 			page 107
+ARM GAS  stm32eforth.s 			page 108
 
 
        stm32eforth.s:2440   .text.reset_handler:0000000000001220 $t
@@ -6348,12 +6414,12 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2530   .text.reset_handler:0000000000001304 $d
        stm32eforth.s:2531   .text.reset_handler:0000000000001308 _TYPEE
        stm32eforth.s:2534   .text.reset_handler:0000000000001310 TYPEE
-       stm32eforth.s:2542   .text.reset_handler:0000000000001326 TYPE2
-       stm32eforth.s:2538   .text.reset_handler:000000000000131a TYPE1
-       stm32eforth.s:2544   .text.reset_handler:000000000000132a $d
-       stm32eforth.s:2545   .text.reset_handler:000000000000132e $t
-       stm32eforth.s:2551   .text.reset_handler:0000000000001336 $d
-       stm32eforth.s:2552   .text.reset_handler:000000000000133a _CR
+       stm32eforth.s:2542   .text.reset_handler:0000000000001328 TYPE2
+       stm32eforth.s:2538   .text.reset_handler:000000000000131c TYPE1
+       stm32eforth.s:2544   .text.reset_handler:000000000000132c $d
+       stm32eforth.s:2545   .text.reset_handler:0000000000001330 $t
+       stm32eforth.s:2551   .text.reset_handler:0000000000001338 $d
+       stm32eforth.s:2552   .text.reset_handler:000000000000133c _CR
        stm32eforth.s:2555   .text.reset_handler:0000000000001340 CR
        stm32eforth.s:2558   .text.reset_handler:0000000000001348 $d
        stm32eforth.s:2559   .text.reset_handler:000000000000134c $t
@@ -6373,7 +6439,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2668   .text.reset_handler:0000000000001420 $d
        stm32eforth.s:2669   .text.reset_handler:0000000000001424 _UDOT
        stm32eforth.s:2672   .text.reset_handler:0000000000001428 UDOT
-ARM GAS  stm32eforth.s 			page 108
+ARM GAS  stm32eforth.s 			page 109
 
 
        stm32eforth.s:2684   .text.reset_handler:0000000000001444 $d
@@ -6433,7 +6499,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2869   .text.reset_handler:0000000000001648 _BKSLA
        stm32eforth.s:2871   .text.reset_handler:000000000000164a $t
        stm32eforth.s:2872   .text.reset_handler:000000000000164c BKSLA
-ARM GAS  stm32eforth.s 			page 109
+ARM GAS  stm32eforth.s 			page 110
 
 
        stm32eforth.s:2883   .text.reset_handler:0000000000001664 $d
@@ -6493,7 +6559,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3093   .text.reset_handler:0000000000001884 $t
        stm32eforth.s:3105   .text.reset_handler:000000000000188c TAP
        stm32eforth.s:3122   .text.reset_handler:00000000000018a8 KTAP
-ARM GAS  stm32eforth.s 			page 110
+ARM GAS  stm32eforth.s 			page 111
 
 
        stm32eforth.s:3123   .text.reset_handler:00000000000018a8 TTAP
@@ -6553,7 +6619,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3272   .text.reset_handler:0000000000001a38 $d
        stm32eforth.s:3274   .text.reset_handler:0000000000001a46 $t
        stm32eforth.s:3280   .text.reset_handler:0000000000001a58 $d
-ARM GAS  stm32eforth.s 			page 111
+ARM GAS  stm32eforth.s 			page 112
 
 
        stm32eforth.s:3282   .text.reset_handler:0000000000001a60 INTE2
@@ -6613,7 +6679,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3483   .text.reset_handler:0000000000001c1c HWORD_WRITE
        stm32eforth.s:3496   .text.reset_handler:0000000000001c3e $d
        stm32eforth.s:3497   .text.reset_handler:0000000000001c42 $t
-ARM GAS  stm32eforth.s 			page 112
+ARM GAS  stm32eforth.s 			page 113
 
 
        stm32eforth.s:3498   .text.reset_handler:0000000000001c46 $d
@@ -6673,7 +6739,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3698   .text.reset_handler:0000000000001e88 $d
        stm32eforth.s:3699   .text.reset_handler:0000000000001e8c $t
        stm32eforth.s:3704   .text.reset_handler:0000000000001e94 $d
-ARM GAS  stm32eforth.s 			page 113
+ARM GAS  stm32eforth.s 			page 114
 
 
        stm32eforth.s:3705   .text.reset_handler:0000000000001e98 _SAVE_IMG
@@ -6733,7 +6799,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3910   .text.reset_handler:00000000000020ac _FOR
        stm32eforth.s:3912   .text.reset_handler:00000000000020b0 $t
        stm32eforth.s:3913   .text.reset_handler:00000000000020b0 FOR
-ARM GAS  stm32eforth.s 			page 114
+ARM GAS  stm32eforth.s 			page 115
 
 
        stm32eforth.s:3916   .text.reset_handler:00000000000020b8 $d
@@ -6793,7 +6859,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4075   .text.reset_handler:0000000000002228 WHILE
        stm32eforth.s:4084   .text.reset_handler:0000000000002238 $d
        stm32eforth.s:4085   .text.reset_handler:000000000000223c _ABRTQ
-ARM GAS  stm32eforth.s 			page 115
+ARM GAS  stm32eforth.s 			page 116
 
 
        stm32eforth.s:4088   .text.reset_handler:0000000000002244 ABRTQ
@@ -6853,7 +6919,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4273   .text.reset_handler:0000000000002414 $d
        stm32eforth.s:4274   .text.reset_handler:0000000000002418 $t
        stm32eforth.s:4282   .text.reset_handler:0000000000002424 COMPILE_BLW
-ARM GAS  stm32eforth.s 			page 116
+ARM GAS  stm32eforth.s 			page 117
 
 
        stm32eforth.s:4319   .text.reset_handler:0000000000002486 $d
@@ -6913,7 +6979,7 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4526   .text.reset_handler:00000000000026bc $d
        stm32eforth.s:4527   .text.reset_handler:00000000000026c0 DUMP3
        stm32eforth.s:4528   .text.reset_handler:00000000000026c0 $t
-ARM GAS  stm32eforth.s 			page 117
+ARM GAS  stm32eforth.s 			page 118
 
 
        stm32eforth.s:4537   .text.reset_handler:00000000000026d4 $d
@@ -6965,114 +7031,137 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4674   .text.reset_handler:0000000000002848 NONAMEQ
        stm32eforth.s:4677   .text.reset_handler:0000000000002850 $d
        stm32eforth.s:4678   .text.reset_handler:0000000000002854 $t
-       stm32eforth.s:4681   .text.reset_handler:0000000000002860 $d
-       stm32eforth.s:4705   .text.reset_handler:00000000000028b8 NONAME_SUB
-       stm32eforth.s:4682   .text.reset_handler:0000000000002864 $t
+       stm32eforth.s:4680   .text.reset_handler:000000000000285c $d
+       stm32eforth.s:4716   .text.reset_handler:00000000000028e4 NONAME_SUB
+       stm32eforth.s:4681   .text.reset_handler:0000000000002860 $t
        stm32eforth.s:4687   .text.reset_handler:0000000000002878 $d
        stm32eforth.s:4688   .text.reset_handler:000000000000287c $t
        stm32eforth.s:4690   .text.reset_handler:0000000000002884 $d
        stm32eforth.s:4691   .text.reset_handler:0000000000002888 $t
-       stm32eforth.s:4694   .text.reset_handler:0000000000002894 $d
-ARM GAS  stm32eforth.s 			page 118
-
-
-       stm32eforth.s:4695   .text.reset_handler:0000000000002898 $t
-       stm32eforth.s:4696   .text.reset_handler:000000000000289c $d
-       stm32eforth.s:4697   .text.reset_handler:00000000000028a0 $t
-       stm32eforth.s:4706   .text.reset_handler:00000000000028b8 $d
-       stm32eforth.s:4709   .text.reset_handler:00000000000028d8 ANONYMOUS
-       stm32eforth.s:4712   .text.reset_handler:00000000000028f4 BRAN_LBL
-       stm32eforth.s:4716   .text.reset_handler:0000000000002900 QBRAN_LBL
-       stm32eforth.s:4720   .text.reset_handler:000000000000290c DOLIT_LBL
-       stm32eforth.s:4724   .text.reset_handler:0000000000002918 DONEXT_LBL
-       stm32eforth.s:4728   .text.reset_handler:0000000000002924 DODOES_LBL
-       stm32eforth.s:4732   .text.reset_handler:0000000000002930 DOVAR_LBL
-       stm32eforth.s:4736   .text.reset_handler:000000000000293c DOCON_LBL
-       stm32eforth.s:4715   .text.reset_handler:00000000000028fe $t
-       stm32eforth.s:4717   .text.reset_handler:0000000000002900 $d
-       stm32eforth.s:4721   .text.reset_handler:000000000000290c $d
-       stm32eforth.s:4725   .text.reset_handler:0000000000002918 $d
-       stm32eforth.s:4727   .text.reset_handler:0000000000002922 $t
-       stm32eforth.s:4729   .text.reset_handler:0000000000002924 $d
-       stm32eforth.s:4731   .text.reset_handler:000000000000292e $t
-       stm32eforth.s:4733   .text.reset_handler:0000000000002930 $d
-       stm32eforth.s:4737   .text.reset_handler:000000000000293c $d
-       stm32eforth.s:4744   .text.reset_handler:0000000000002948 DOTNONAME
-       stm32eforth.s:4748   .text.reset_handler:0000000000002954 $d
-       stm32eforth.s:4749   .text.reset_handler:0000000000002958 $t
-       stm32eforth.s:4756   .text.reset_handler:0000000000002968 IS_BLW
-       stm32eforth.s:4759   .text.reset_handler:0000000000002970 $d
-       stm32eforth.s:4760   .text.reset_handler:0000000000002974 $t
-       stm32eforth.s:4770   .text.reset_handler:000000000000298c $d
-       stm32eforth.s:4771   .text.reset_handler:0000000000002990 _SEE
-       stm32eforth.s:4773   .text.reset_handler:0000000000002994 $t
-       stm32eforth.s:4774   .text.reset_handler:0000000000002994 SEE
-       stm32eforth.s:4784   .text.reset_handler:00000000000029b8 $d
-       stm32eforth.s:4785   .text.reset_handler:00000000000029bc $t
-       stm32eforth.s:4786   .text.reset_handler:00000000000029c0 SEE1
-       stm32eforth.s:4791   .text.reset_handler:00000000000029d0 $d
-       stm32eforth.s:4792   .text.reset_handler:00000000000029d4 $t
-       stm32eforth.s:4798   .text.reset_handler:00000000000029ec $d
-       stm32eforth.s:4799   .text.reset_handler:00000000000029f0 $t
-       stm32eforth.s:4802   .text.reset_handler:00000000000029fc $d
-       stm32eforth.s:4803   .text.reset_handler:0000000000002a00 $t
-       stm32eforth.s:4851   .text.reset_handler:0000000000002a90 DECOMP
-       stm32eforth.s:4808   .text.reset_handler:0000000000002a14 $d
-       stm32eforth.s:4809   .text.reset_handler:0000000000002a18 $t
-       stm32eforth.s:4811   .text.reset_handler:0000000000002a20 $d
-       stm32eforth.s:4812   .text.reset_handler:0000000000002a24 $t
-       stm32eforth.s:4824   .text.reset_handler:0000000000002a40 BLADR
-       stm32eforth.s:4846   .text.reset_handler:0000000000002a82 $d
-       stm32eforth.s:4847   .text.reset_handler:0000000000002a86 _DECOM
-       stm32eforth.s:4849   .text.reset_handler:0000000000002a90 $t
-       stm32eforth.s:4858   .text.reset_handler:0000000000002aa8 $d
-       stm32eforth.s:4881   .text.reset_handler:0000000000002af4 DECOM2
-       stm32eforth.s:4860   .text.reset_handler:0000000000002aac $t
-       stm32eforth.s:4861   .text.reset_handler:0000000000002ab0 $d
-       stm32eforth.s:4863   .text.reset_handler:0000000000002ab4 $t
-       stm32eforth.s:4894   .text.reset_handler:0000000000002b14 $d
-       stm32eforth.s:4898   .text.reset_handler:0000000000002b18 _WORDS
-       stm32eforth.s:4900   .text.reset_handler:0000000000002b1e $t
+       stm32eforth.s:4695   .text.reset_handler:0000000000002898 $d
 ARM GAS  stm32eforth.s 			page 119
 
 
-       stm32eforth.s:4901   .text.reset_handler:0000000000002b20 WORDS
-       stm32eforth.s:4906   .text.reset_handler:0000000000002b30 WORS1
-       stm32eforth.s:4909   .text.reset_handler:0000000000002b38 $d
-       stm32eforth.s:4916   .text.reset_handler:0000000000002b54 WORS2
-       stm32eforth.s:4910   .text.reset_handler:0000000000002b3c $t
-       stm32eforth.s:4929   .text.reset_handler:0000000000002b58 VERSN
-       stm32eforth.s:4932   .text.reset_handler:0000000000002b60 $d
-       stm32eforth.s:4933   .text.reset_handler:0000000000002b64 $t
-       stm32eforth.s:4938   .text.reset_handler:0000000000002b68 $d
-       stm32eforth.s:4939   .text.reset_handler:0000000000002b6c _HI
-       stm32eforth.s:4946   .text.reset_handler:0000000000002b7c $d
-       stm32eforth.s:4948   .text.reset_handler:0000000000002b94 $t
-       stm32eforth.s:4957   .text.reset_handler:0000000000002bb4 $d
-       stm32eforth.s:4958   .text.reset_handler:0000000000002bb8 $t
-       stm32eforth.s:4970   .text.reset_handler:0000000000002bd8 $d
-       stm32eforth.s:4976   .text.reset_handler:0000000000002be4 $t
-       stm32eforth.s:4982   .text.reset_handler:0000000000002bfc COLD1
-       stm32eforth.s:4984   .text.reset_handler:0000000000002c00 $d
-       stm32eforth.s:4985   .text.reset_handler:0000000000002c04 $t
-       stm32eforth.s:4987   .text.reset_handler:0000000000002c0c $d
-       stm32eforth.s:4988   .text.reset_handler:0000000000002c10 $t
-       stm32eforth.s:4989   .text.reset_handler:0000000000002c14 $d
-       stm32eforth.s:4990   .text.reset_handler:0000000000002c18 $t
-       stm32eforth.s:4991   .text.reset_handler:0000000000002c1c $d
-       stm32eforth.s:4992   .text.reset_handler:0000000000002c20 $t
-       stm32eforth.s:4997   .text.reset_handler:0000000000002c30 $d
-       stm32eforth.s:4998   .text.reset_handler:0000000000002c34 $t
-       stm32eforth.s:5003   .text.reset_handler:0000000000002c48 COLD2
-       stm32eforth.s:5006   .text.reset_handler:0000000000002c48 $d
-       stm32eforth.s:5007   .text.reset_handler:0000000000002c4c $t
-       stm32eforth.s:5009   .text.reset_handler:0000000000003000 $d
+       stm32eforth.s:4696   .text.reset_handler:000000000000289c $t
+       stm32eforth.s:4698   .text.reset_handler:00000000000028a4 $d
+       stm32eforth.s:4699   .text.reset_handler:00000000000028a8 $t
+       stm32eforth.s:4701   .text.reset_handler:00000000000028b0 $d
+       stm32eforth.s:4722   .text.reset_handler:000000000000291c ANONYMOUS
+       stm32eforth.s:4702   .text.reset_handler:00000000000028b4 $t
+       stm32eforth.s:4717   .text.reset_handler:00000000000028e4 $d
+       stm32eforth.s:4794   .text.reset_handler:0000000000002a00 IS_BLW
+       stm32eforth.s:4862   .text.reset_handler:0000000000002ad8 BLADR
+       stm32eforth.s:4726   .text.reset_handler:0000000000002950 BRAN_LBL
+       stm32eforth.s:4730   .text.reset_handler:000000000000295c QBRAN_LBL
+       stm32eforth.s:4734   .text.reset_handler:0000000000002968 DOLIT_LBL
+       stm32eforth.s:4738   .text.reset_handler:0000000000002974 DONEXT_LBL
+       stm32eforth.s:4742   .text.reset_handler:0000000000002980 DODOES_LBL
+       stm32eforth.s:4746   .text.reset_handler:000000000000298c DOVAR_LBL
+       stm32eforth.s:4750   .text.reset_handler:0000000000002998 DOCON_LBL
+       stm32eforth.s:4754   .text.reset_handler:00000000000029a4 IS_BLW_LBL
+       stm32eforth.s:4758   .text.reset_handler:00000000000029b0 DOTQP_LBL
+       stm32eforth.s:4762   .text.reset_handler:00000000000029b4 BLADR_LBL
+       stm32eforth.s:4766   .text.reset_handler:00000000000029c0 DOTCA_LBL
+       stm32eforth.s:4770   .text.reset_handler:00000000000029cc NONAMEQ_LBL
+       stm32eforth.s:4774   .text.reset_handler:00000000000029d8 STRCQ_LBL
+       stm32eforth.s:4729   .text.reset_handler:000000000000295a $t
+       stm32eforth.s:4731   .text.reset_handler:000000000000295c $d
+       stm32eforth.s:4735   .text.reset_handler:0000000000002968 $d
+       stm32eforth.s:4739   .text.reset_handler:0000000000002974 $d
+       stm32eforth.s:4741   .text.reset_handler:000000000000297e $t
+       stm32eforth.s:4743   .text.reset_handler:0000000000002980 $d
+       stm32eforth.s:4745   .text.reset_handler:000000000000298a $t
+       stm32eforth.s:4747   .text.reset_handler:000000000000298c $d
+       stm32eforth.s:4751   .text.reset_handler:0000000000002998 $d
+       stm32eforth.s:4755   .text.reset_handler:00000000000029a4 $d
+       stm32eforth.s:4759   .text.reset_handler:00000000000029b0 $d
+       stm32eforth.s:4765   .text.reset_handler:00000000000029be $t
+       stm32eforth.s:4767   .text.reset_handler:00000000000029c0 $d
+       stm32eforth.s:4771   .text.reset_handler:00000000000029cc $d
+       stm32eforth.s:4775   .text.reset_handler:00000000000029d8 $d
+       stm32eforth.s:4782   .text.reset_handler:00000000000029e0 DOTNONAME
+       stm32eforth.s:4786   .text.reset_handler:00000000000029ec $d
+       stm32eforth.s:4787   .text.reset_handler:00000000000029f0 $t
+       stm32eforth.s:4797   .text.reset_handler:0000000000002a08 $d
+       stm32eforth.s:4798   .text.reset_handler:0000000000002a0c $t
+       stm32eforth.s:4808   .text.reset_handler:0000000000002a24 $d
+       stm32eforth.s:4809   .text.reset_handler:0000000000002a28 _SEE
+       stm32eforth.s:4811   .text.reset_handler:0000000000002a2c $t
+       stm32eforth.s:4812   .text.reset_handler:0000000000002a2c SEE
+       stm32eforth.s:4822   .text.reset_handler:0000000000002a50 $d
+       stm32eforth.s:4823   .text.reset_handler:0000000000002a54 $t
+       stm32eforth.s:4824   .text.reset_handler:0000000000002a58 SEE1
+       stm32eforth.s:4829   .text.reset_handler:0000000000002a68 $d
+       stm32eforth.s:4830   .text.reset_handler:0000000000002a6c $t
+       stm32eforth.s:4836   .text.reset_handler:0000000000002a84 $d
+       stm32eforth.s:4837   .text.reset_handler:0000000000002a88 $t
+       stm32eforth.s:4840   .text.reset_handler:0000000000002a94 $d
+       stm32eforth.s:4841   .text.reset_handler:0000000000002a98 $t
+       stm32eforth.s:4889   .text.reset_handler:0000000000002b28 DECOMP
+       stm32eforth.s:4846   .text.reset_handler:0000000000002aac $d
+ARM GAS  stm32eforth.s 			page 120
+
+
+       stm32eforth.s:4847   .text.reset_handler:0000000000002ab0 $t
+       stm32eforth.s:4849   .text.reset_handler:0000000000002ab8 $d
+       stm32eforth.s:4850   .text.reset_handler:0000000000002abc $t
+       stm32eforth.s:4884   .text.reset_handler:0000000000002b1a $d
+       stm32eforth.s:4885   .text.reset_handler:0000000000002b1e _DECOM
+       stm32eforth.s:4887   .text.reset_handler:0000000000002b28 $t
+       stm32eforth.s:4896   .text.reset_handler:0000000000002b40 $d
+       stm32eforth.s:4926   .text.reset_handler:0000000000002b9c DECOM2
+       stm32eforth.s:4898   .text.reset_handler:0000000000002b44 $t
+       stm32eforth.s:4899   .text.reset_handler:0000000000002b48 $d
+       stm32eforth.s:4901   .text.reset_handler:0000000000002b4c $t
+       stm32eforth.s:4909   .text.reset_handler:0000000000002b68 $d
+       stm32eforth.s:4912   .text.reset_handler:0000000000002b74 DECOMP1
+       stm32eforth.s:4910   .text.reset_handler:0000000000002b6c $t
+       stm32eforth.s:4911   .text.reset_handler:0000000000002b70 $d
+       stm32eforth.s:4914   .text.reset_handler:0000000000002b78 DECOMP3
+       stm32eforth.s:4913   .text.reset_handler:0000000000002b74 $t
+       stm32eforth.s:4939   .text.reset_handler:0000000000002bbc $d
+       stm32eforth.s:4943   .text.reset_handler:0000000000002bc0 _WORDS
+       stm32eforth.s:4945   .text.reset_handler:0000000000002bc6 $t
+       stm32eforth.s:4946   .text.reset_handler:0000000000002bc8 WORDS
+       stm32eforth.s:4951   .text.reset_handler:0000000000002bd8 WORS1
+       stm32eforth.s:4954   .text.reset_handler:0000000000002be0 $d
+       stm32eforth.s:4961   .text.reset_handler:0000000000002bfc WORS2
+       stm32eforth.s:4955   .text.reset_handler:0000000000002be4 $t
+       stm32eforth.s:4974   .text.reset_handler:0000000000002c00 VERSN
+       stm32eforth.s:4977   .text.reset_handler:0000000000002c08 $d
+       stm32eforth.s:4978   .text.reset_handler:0000000000002c0c $t
+       stm32eforth.s:4983   .text.reset_handler:0000000000002c10 $d
+       stm32eforth.s:4984   .text.reset_handler:0000000000002c14 _HI
+       stm32eforth.s:4991   .text.reset_handler:0000000000002c24 $d
+       stm32eforth.s:4993   .text.reset_handler:0000000000002c3c $t
+       stm32eforth.s:5002   .text.reset_handler:0000000000002c5c $d
+       stm32eforth.s:5003   .text.reset_handler:0000000000002c60 $t
+       stm32eforth.s:5015   .text.reset_handler:0000000000002c80 $d
+       stm32eforth.s:5021   .text.reset_handler:0000000000002c8c $t
+       stm32eforth.s:5027   .text.reset_handler:0000000000002ca4 COLD1
+       stm32eforth.s:5029   .text.reset_handler:0000000000002ca8 $d
+       stm32eforth.s:5030   .text.reset_handler:0000000000002cac $t
+       stm32eforth.s:5032   .text.reset_handler:0000000000002cb4 $d
+       stm32eforth.s:5033   .text.reset_handler:0000000000002cb8 $t
+       stm32eforth.s:5034   .text.reset_handler:0000000000002cbc $d
+       stm32eforth.s:5035   .text.reset_handler:0000000000002cc0 $t
+       stm32eforth.s:5036   .text.reset_handler:0000000000002cc4 $d
+       stm32eforth.s:5037   .text.reset_handler:0000000000002cc8 $t
+       stm32eforth.s:5042   .text.reset_handler:0000000000002cd8 $d
+       stm32eforth.s:5043   .text.reset_handler:0000000000002cdc $t
+       stm32eforth.s:5048   .text.reset_handler:0000000000002cf0 COLD2
+       stm32eforth.s:5051   .text.reset_handler:0000000000002cf0 $d
+       stm32eforth.s:5052   .text.reset_handler:0000000000002cf4 $t
+       stm32eforth.s:5054   .text.reset_handler:0000000000003000 $d
        stm32eforth.s:275    .text.default_handler:000000000000001f $d
        stm32eforth.s:275    .text.default_handler:0000000000000020 $t
        stm32eforth.s:595    .text.reset_handler:0000000000000477 $d
        stm32eforth.s:595    .text.reset_handler:0000000000000478 $t
        stm32eforth.s:639    .text.reset_handler:00000000000004f5 $d
        stm32eforth.s:639    .text.reset_handler:00000000000004f6 $t
+ARM GAS  stm32eforth.s 			page 121
+
+
        stm32eforth.s:659    .text.reset_handler:000000000000051d $d
        stm32eforth.s:659    .text.reset_handler:000000000000051e $t
        stm32eforth.s:684    .text.reset_handler:0000000000000555 $d
@@ -7093,9 +7182,6 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:902    .text.reset_handler:0000000000000682 $t
        stm32eforth.s:924    .text.reset_handler:00000000000006a3 $d
        stm32eforth.s:924    .text.reset_handler:00000000000006a4 $t
-ARM GAS  stm32eforth.s 			page 120
-
-
        stm32eforth.s:937    .text.reset_handler:00000000000006b5 $d
        stm32eforth.s:937    .text.reset_handler:00000000000006b6 $t
        stm32eforth.s:949    .text.reset_handler:00000000000006c7 $d
@@ -7133,6 +7219,9 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1328   .text.reset_handler:000000000000090d $d
        stm32eforth.s:1328   .text.reset_handler:000000000000090e $t
        stm32eforth.s:1357   .text.reset_handler:000000000000093b $d
+ARM GAS  stm32eforth.s 			page 122
+
+
        stm32eforth.s:1357   .text.reset_handler:000000000000093c $t
        stm32eforth.s:1430   .text.reset_handler:00000000000009ab $d
        stm32eforth.s:1430   .text.reset_handler:00000000000009ac $t
@@ -7153,9 +7242,6 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:1638   .text.reset_handler:0000000000000aeb $d
        stm32eforth.s:1638   .text.reset_handler:0000000000000aec $t
        stm32eforth.s:1687   .text.reset_handler:0000000000000b3d $d
-ARM GAS  stm32eforth.s 			page 121
-
-
        stm32eforth.s:1687   .text.reset_handler:0000000000000b3e $t
        stm32eforth.s:1710   .text.reset_handler:0000000000000b67 $d
        stm32eforth.s:1710   .text.reset_handler:0000000000000b68 $t
@@ -7193,6 +7279,9 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2253   .text.reset_handler:0000000000001020 $t
        stm32eforth.s:2271   .text.reset_handler:0000000000001043 $d
        stm32eforth.s:2271   .text.reset_handler:0000000000001044 $t
+ARM GAS  stm32eforth.s 			page 123
+
+
        stm32eforth.s:2289   .text.reset_handler:000000000000106b $d
        stm32eforth.s:2289   .text.reset_handler:000000000000106c $t
        stm32eforth.s:2358   .text.reset_handler:0000000000001103 $d
@@ -7201,8 +7290,8 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2512   .text.reset_handler:00000000000012dc $t
        stm32eforth.s:2533   .text.reset_handler:000000000000130d $d
        stm32eforth.s:2533   .text.reset_handler:000000000000130e $t
-       stm32eforth.s:2554   .text.reset_handler:000000000000133d $d
-       stm32eforth.s:2554   .text.reset_handler:000000000000133e $t
+       stm32eforth.s:2554   .text.reset_handler:000000000000133f $d
+       stm32eforth.s:2554   .text.reset_handler:0000000000001340 $t
        stm32eforth.s:2633   .text.reset_handler:00000000000013c7 $d
        stm32eforth.s:2633   .text.reset_handler:00000000000013c8 $t
        stm32eforth.s:2671   .text.reset_handler:0000000000001427 $d
@@ -7213,9 +7302,6 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:2886   .text.reset_handler:000000000000166e $t
        stm32eforth.s:2901   .text.reset_handler:0000000000001691 $d
        stm32eforth.s:2901   .text.reset_handler:0000000000001692 $t
-ARM GAS  stm32eforth.s 			page 122
-
-
        stm32eforth.s:3156   .text.reset_handler:000000000000190f $d
        stm32eforth.s:3156   .text.reset_handler:0000000000001910 $t
        stm32eforth.s:3329   .text.reset_handler:0000000000001ac7 $d
@@ -7253,6 +7339,9 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:3980   .text.reset_handler:0000000000002143 $d
        stm32eforth.s:3980   .text.reset_handler:0000000000002144 $t
        stm32eforth.s:4016   .text.reset_handler:00000000000021a3 $d
+ARM GAS  stm32eforth.s 			page 124
+
+
        stm32eforth.s:4016   .text.reset_handler:00000000000021a4 $t
        stm32eforth.s:4031   .text.reset_handler:00000000000021c5 $d
        stm32eforth.s:4031   .text.reset_handler:00000000000021c6 $t
@@ -7273,9 +7362,6 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4454   .text.reset_handler:00000000000025fd $d
        stm32eforth.s:4454   .text.reset_handler:00000000000025fe $t
        stm32eforth.s:4501   .text.reset_handler:0000000000002665 $d
-ARM GAS  stm32eforth.s 			page 123
-
-
        stm32eforth.s:4501   .text.reset_handler:0000000000002666 $t
        stm32eforth.s:4541   .text.reset_handler:00000000000026db $d
        stm32eforth.s:4541   .text.reset_handler:00000000000026dc $t
@@ -7283,15 +7369,19 @@ board/blue-pill/stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
        stm32eforth.s:4648   .text.reset_handler:0000000000002806 $t
        stm32eforth.s:4668   .text.reset_handler:000000000000283f $d
        stm32eforth.s:4668   .text.reset_handler:0000000000002840 $t
-       stm32eforth.s:4719   .text.reset_handler:000000000000290b $d
-       stm32eforth.s:4723   .text.reset_handler:0000000000002915 $d
-       stm32eforth.s:4723   .text.reset_handler:0000000000002916 $t
-       stm32eforth.s:4735   .text.reset_handler:0000000000002939 $d
-       stm32eforth.s:4735   .text.reset_handler:000000000000293a $t
-       stm32eforth.s:4739   .text.reset_handler:0000000000002947 $d
-       stm32eforth.s:4739   .text.reset_handler:0000000000002948 $t
-       stm32eforth.s:4941   .text.reset_handler:0000000000002b6f $d
-       stm32eforth.s:4941   .text.reset_handler:0000000000002b70 $t
+       stm32eforth.s:4733   .text.reset_handler:0000000000002967 $d
+       stm32eforth.s:4737   .text.reset_handler:0000000000002971 $d
+       stm32eforth.s:4737   .text.reset_handler:0000000000002972 $t
+       stm32eforth.s:4749   .text.reset_handler:0000000000002995 $d
+       stm32eforth.s:4749   .text.reset_handler:0000000000002996 $t
+       stm32eforth.s:4753   .text.reset_handler:00000000000029a3 $d
+       stm32eforth.s:4769   .text.reset_handler:00000000000029c9 $d
+       stm32eforth.s:4769   .text.reset_handler:00000000000029ca $t
+       stm32eforth.s:4773   .text.reset_handler:00000000000029d7 $d
+       stm32eforth.s:4777   .text.reset_handler:00000000000029df $d
+       stm32eforth.s:4777   .text.reset_handler:00000000000029e0 $t
+       stm32eforth.s:4986   .text.reset_handler:0000000000002c17 $d
+       stm32eforth.s:4986   .text.reset_handler:0000000000002c18 $t
 
 UNDEFINED SYMBOLS
 _mstack

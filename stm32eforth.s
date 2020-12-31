@@ -2534,7 +2534,7 @@ _TYPEE:	.byte	4
 TYPEE:
 	_NEST
 	BL  TOR   // ( a+1 -- R: u )
-	B	TYPE2
+	B.W	TYPE2
 TYPE1:  
 	BL  COUNT
 	BL	TCHAR
@@ -4671,16 +4671,16 @@ UNNESTQ:
 
 
 // search no name routine from code address. 
-NONAMEQ: // ( ca -- id | -1  )
+NONAMEQ: // ( ca -- na|ca f )
 	_NEST 
 	_DOLIT 
-	.word -1 // not found flag 
+	.word 0 
 	BL SWAP 
-0:	BL DUPP // ( -1 ca ca -- )  
 	_DOLIT 
-	.word NONAME_SUB+MAPOFFSET  
-	BL DUPP 
-	BL TOR 
+	.word NONAME_SUB+MAPOFFSET
+	BL TOR   
+0:	BL DUPP // ( 0 ca ca -- )  
+	BL RAT  
 	BL AT 
 	BL QDUP 
 	BL QBRAN 
@@ -4689,25 +4689,39 @@ NONAMEQ: // ( ca -- id | -1  )
 	BL QBRAN 
 	.word 1f+MAPOFFSET 
 	BL RFROM 
-	BL CELLP 
+	BL CELLP
+	BL TOR  
 	BL BRAN 
 	.word 0b+MAPOFFSET 
-1:  _DOLIT 
+1:  BL RFROM 
+	_DOLIT 
 	.word NONAME_SUB+MAPOFFSET
+	BL SUBB
+	_DOLIT 
+	.word ANONYMOUS+MAPOFFSET 
+	BL	PLUS
+	BL	AT   
+	BL	SWAP 
+	BL	DROP
+	BL	SWAP 
+	BL	INVER 
+	_UNNEST 
+2:	BL DROP 
 	BL SWAP 
-	BL SUBB 
-	BL SWAP 
-2:	BL RFROM 
-	BL DDROP
+	BL RFROM
+	BL DROP 
 	_UNNEST 
 
 	.p2align 2
 NONAME_SUB: // routine not in the dictionary 
-	.word BRAN,QBRAN, DOLIT,DONXT,DODOES, DOVAR,DOCON 
+	.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
+	.word DOVAR+MAPOFFSET,DOCON+MAPOFFSET,IS_BLW+MAPOFFSET,DOTQP+MAPOFFSET,BLADR+MAPOFFSET  
+	.word DOTCA+MAPOFFSET,NONAMEQ+MAPOFFSET,STRCQ+MAPOFFSET  
 	.word 0 
 
 ANONYMOUS: // anonymous routines 
 	.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
+	.word IS_BLW_LBL,DOTQP_LBL,BLADR_LBL,DOTCA_LBL,NONAMEQ_LBL,STRCQ_LBL   
 
 BRAN_LBL:
 	.byte 9 
@@ -4736,6 +4750,30 @@ DOVAR_LBL:
 DOCON_LBL:
 	.byte 10
 	.ascii " {doConst}"
+	.p2align 2 
+IS_BLW_LBL:
+	.byte 11 
+	.ascii " {BL code?}"
+	.p2align 2 
+DOTQP_LBL:
+	.byte 3
+	.ascii " .\""
+	.p2align 
+BLADR_LBL:
+	.byte 9
+	.ascii " {BL>ADR}"
+	.p2align 2 
+DOTCA_LBL:
+	.byte  8
+	.ascii " {dotca}"
+	.p2align 2 
+NONAMEQ_LBL:
+	.byte  10
+	.ascii " {noname?}"
+	.p2align 2 
+STRCQ_LBL:
+	.byte  6
+	.ascii " {$,\"}"
 	.p2align 2 
 
 
@@ -4866,8 +4904,14 @@ DECOMP:
 	BL	PLUS			//  a target-4
 	BL	CELLP			//  a target
 	BL  DOTCA 
+	BL	NONAMEQ 
+	BL	QBRAN 
+	.word DECOMP1+MAPOFFSET  
+	BL	BRAN 
+	.word DECOMP3+MAPOFFSET 
+DECOMP1:
 	BL	TNAME			//  a na/0 --, is it a name?
-	BL	QDUP			//  name address or zero
+DECOMP3:
 	BL	DOTID			//  a --, display name
 	BL	DROP
 // reset not BL counter 
@@ -4878,6 +4922,7 @@ DECOMP:
 	BL	TOR 
 	BL	TOR 	
 	_UNNEST
+		
 DECOM2: // not a BL 
 	BL	UDOT
 	BL	DROP
