@@ -4677,7 +4677,7 @@ NONAMEQ: // ( ca -- na|ca f )
 	.word 0 
 	BL SWAP 
 	_DOLIT 
-	.word NONAME_SUB+MAPOFFSET
+	.word NONAME_SUB
 	BL TOR   
 0:	BL DUPP // ( 0 ca ca -- )  
 	BL RAT  
@@ -4695,10 +4695,10 @@ NONAMEQ: // ( ca -- na|ca f )
 	.word 0b+MAPOFFSET 
 1:  BL RFROM 
 	_DOLIT 
-	.word NONAME_SUB+MAPOFFSET
+	.word NONAME_SUB
 	BL SUBB
 	_DOLIT 
-	.word ANONYMOUS+MAPOFFSET 
+	.word ANONYMOUS 
 	BL	PLUS
 	BL	AT   
 	BL	SWAP 
@@ -4712,68 +4712,6 @@ NONAMEQ: // ( ca -- na|ca f )
 	BL DROP 
 	_UNNEST 
 
-	.p2align 2
-NONAME_SUB: // routine not in the dictionary 
-	.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
-	.word DOVAR+MAPOFFSET,DOCON+MAPOFFSET,IS_BLW+MAPOFFSET,DOTQP+MAPOFFSET,BLADR+MAPOFFSET  
-	.word DOTCA+MAPOFFSET,NONAMEQ+MAPOFFSET,STRCQ+MAPOFFSET  
-	.word 0 
-
-ANONYMOUS: // anonymous routines 
-	.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
-	.word IS_BLW_LBL,DOTQP_LBL,BLADR_LBL,DOTCA_LBL,NONAMEQ_LBL,STRCQ_LBL   
-
-BRAN_LBL:
-	.byte 9 
-	.ascii " {branch}"
-	.p2align 2 
-QBRAN_LBL:
-	.byte 10
-	.ascii " {?branch}"
-	.p2align 2
-DOLIT_LBL:
-	.byte 8 
-	.ascii " {doLit}"
-	.p2align 2 
-DONEXT_LBL:
-	.byte 9
-	.ascii " {doNext}"
-	.p2align 2 
-DODOES_LBL:
-	.byte 9
-	.ascii " {doDoes}"
-	.p2align 2 
-DOVAR_LBL:
-	.byte 8
-	.ascii " {doVar}"
-	.p2align 2 
-DOCON_LBL:
-	.byte 10
-	.ascii " {doConst}"
-	.p2align 2 
-IS_BLW_LBL:
-	.byte 11 
-	.ascii " {BL code?}"
-	.p2align 2 
-DOTQP_LBL:
-	.byte 3
-	.ascii " .\""
-	.p2align 
-BLADR_LBL:
-	.byte 9
-	.ascii " {BL>ADR}"
-	.p2align 2 
-DOTCA_LBL:
-	.byte  8
-	.ascii " {dotca}"
-	.p2align 2 
-NONAMEQ_LBL:
-	.byte  10
-	.ascii " {noname?}"
-	.p2align 2 
-STRCQ_LBL:
-	.byte  6
-	.ascii " {$,\"}"
 	.p2align 2 
 
 
@@ -5049,6 +4987,74 @@ COLD2:
 	.p2align 3 	
 CTOP:
 	.word	0XFFFFFFFF		//  keep CTOP even
+
+/********************************
+  data that doesn't need to be 
+  copied in RAM 
+*******************************/
+	.p2align 2
+NONAME_SUB: // routine not in the dictionary 
+	.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
+	.word DOVAR+MAPOFFSET,DOCON+MAPOFFSET,IS_BLW+MAPOFFSET,DOTQP+MAPOFFSET,BLADR+MAPOFFSET  
+	.word DOTCA+MAPOFFSET,NONAMEQ+MAPOFFSET,STRCQ+MAPOFFSET  
+	.word 0 
+
+ANONYMOUS: // anonymous routines 
+	.word BRAN_LBL,QBRAN_LBL,DOLIT_LBL,DONEXT_LBL,DODOES_LBL,DOVAR_LBL,DOCON_LBL
+	.word IS_BLW_LBL,DOTQP_LBL,BLADR_LBL,DOTCA_LBL,NONAMEQ_LBL,STRCQ_LBL   
+
+BRAN_LBL:
+	.byte 9 
+	.ascii " {branch}"
+	.p2align 2 
+QBRAN_LBL:
+	.byte 10
+	.ascii " {?branch}"
+	.p2align 2
+DOLIT_LBL:
+	.byte 8 
+	.ascii " {doLit}"
+	.p2align 2 
+DONEXT_LBL:
+	.byte 9
+	.ascii " {doNext}"
+	.p2align 2 
+DODOES_LBL:
+	.byte 9
+	.ascii " {doDoes}"
+	.p2align 2 
+DOVAR_LBL:
+	.byte 8
+	.ascii " {doVar}"
+	.p2align 2 
+DOCON_LBL:
+	.byte 10
+	.ascii " {doConst}"
+	.p2align 2 
+IS_BLW_LBL:
+	.byte 11 
+	.ascii " {BL code?}"
+	.p2align 2 
+DOTQP_LBL:
+	.byte 3
+	.ascii " .\""
+	.p2align 
+BLADR_LBL:
+	.byte 9
+	.ascii " {BL>ADR}"
+	.p2align 2 
+DOTCA_LBL:
+	.byte  8
+	.ascii " {dotca}"
+	.p2align 2 
+NONAMEQ_LBL:
+	.byte  10
+	.ascii " {noname?}"
+	.p2align 2 
+STRCQ_LBL:
+	.byte  6
+	.ascii " {$,\"}"
+
 	.p2align 10 
 USER_SPACE: // save user image here.  
 	.word 0XFFFFFFFF
