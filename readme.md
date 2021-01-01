@@ -2,6 +2,8 @@
 
 Adaptation de eforth pour sur la carte **blue-pill**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. 
 
+Pour le suivit de mises à jours consultez le fichier [journal.md](journal.md)
+
 ## 2020-12-10
 
 Il y a maintenant 2 versions du eForth.  

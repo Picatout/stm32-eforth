@@ -371,23 +371,34 @@ reset_handler:
 	bl	init_devices	 	/* RCC, GPIOs, USART */
 	bl  uart_init
 //	bl	UNLOCK			/* unlock flash memory */
+	bl forth_init 
 	ldr r0,forth_entry
 	orr r0,#1
-	bx r0 
+	blx r0
+	b.w .  
+	.p2align 2 
 forth_entry:
 	.word COLD+MAPOFFSET 
+
+	.type forth_init, %function 
+forth_init:
+	_MOV32 r3,UPP 
+	_MOV32 R1,SPP
+	_MOV32 R2,RPP
+	EOR R5,R5  
+	BX LR 
 
   .type init_devices, %function
   .p2align 2 
 init_devices:
 /* init clock to HSE 72 Mhz */
 /* set 2 wait states in FLASH_ACR_LATENCY */
-  _MOV32 R0,FLASH_BASE-ADR 
+  _MOV32 R0,FLASH_BASE_ADR 
   mov r2,#0x12
   str r2,[r0,#FLASH_ACR]
 /* configure clock for HSE, 8 Mhz crystal */
 /* enable HSE in RCC_CR */
-  _MOV32 R0,RCC_BASEADR 
+  _MOV32 R0,RCC_BASE_ADR 
   ldr r1,[r0,#RCC_CR]
   orr r1,r1,#(1<<16) /* HSEON bit */
   str r1,[r0,#RCC_CR] /* enable HSE */
@@ -490,6 +501,10 @@ remap:
 	str r3,[r0],#4
 	subs r2,#4
 	bne 1b
+// set new vector table address
+	_MOV32 r0,SCB_BASE_ADR
+	_MOV32 r1,RAM_ADR 
+	str r1,[r0,#SCB_VTOR]
 // copy system variable and code 	
 	ldr r0,remap_dest
 	ldr r1,remap_src 
@@ -641,7 +656,7 @@ _ULED: .byte 4
 	.type ULED, %function 
 ULED:
 	mov r6,#(1<<LED_PIN)
-	_MOV32, r4,LED_GPIO 
+	_MOV32 r4,LED_GPIO 
 	movs r0,r5 
 	_POP
 	beq ULED_OFF 
@@ -3368,11 +3383,10 @@ _PRESE:	.byte  6
 	.ascii "PRESET"
 	.p2align 2 	
 PRESE:
-//	_NEST
-	ADD	R1,R3,#SPP&0xffff		//  init SP
-	EOR	R5,R5,R5			//  init TOS=0
-//	_UNNEST
-	_NEXT
+	_NEST
+	_MOV32 R1,SPP // init SP 
+	EOR	R5,R5,R5//  init TOS=0
+	_UNNEST 
 
 //    QUIT	( -- )
 // 	Reset return stack pointer and start text interpreter.
@@ -4955,10 +4969,11 @@ LASTN:	.byte  4
 COLD:
 //  Initiate Forth registers
 	_MOV32 R3,UPP // system variables area 
-	ADD R2,R3,#RPP&0xffff	// Forth return stack
-	ADD R1,R3,#SPP&0xffff // Forth data stack
+	_MOV32 R1,SPP // Forth data stack 
+	_MOV32 R2,RPP // Forth return stack 
 	EOR R5,R5,R5			//  tos=0
 	_NEST
+	
 COLD1:
 	_DOLIT 
 	.word 0 
@@ -4971,6 +4986,7 @@ COLD1:
 	.word	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack
+
 	// check if user image saved in slot 0 
 	BL IMGQ 
 	BL	QBRAN 
@@ -4981,7 +4997,7 @@ COLD1:
 	BL	OVERT
 	B.W	QUIT			// start interpretation
 COLD2:
-	.p2align 3 	
+	.p2align 2 	
 CTOP:
 	.word	0XFFFFFFFF		//  keep CTOP even
 
