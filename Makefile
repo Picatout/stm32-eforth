@@ -26,7 +26,7 @@ SERIAL=$(STV2_DUNGLE_SN)
 
 all: clean build dasm
 
-build:  *.s Makefile
+build:  *.s Makefile $(LD_FILE)
 	$(AS) -a=$(BUILD_DIR)$(NAME).lst $(SRC) -g -o$(BUILD_DIR)$(NAME).o
 	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o -o $(BUILD_DIR)$(NAME).elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).bin 
@@ -34,7 +34,7 @@ build:  *.s Makefile
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 # version that run in FLASH memory
-build_fl: *.s Makefile 
+build_fl: *.s Makefile  $(LD_FILE)
 	$(AS) -a=$(BUILD_DIR)$(NAME)-fl.lst $(SRC_FL) -g -o$(BUILD_DIR)$(NAME)-fl.o
 	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME)-fl.o -o $(BUILD_DIR)$(NAME)-fl.elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME)-fl.elf $(BUILD_DIR)$(NAME)-fl.bin 

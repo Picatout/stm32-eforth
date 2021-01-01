@@ -1,3 +1,20 @@
+### 2021-01-01  
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
+* ajout des mots suivants:
+
+    * **I:**&nbsp;&nbsp;( -- a )  Débute la création d'une routine d'interruption *a* est l'adresse de la routine. 
+
+    * **I;**&nbsp;&nbsp;( a -- a ) Termine la compilation d'une routine d'interruption. *a* est l'adresse de la routine qui
+    doit-être inscrite dans le vecteur d'interruption. 
+
+    * **SET-IVEC**&nbsp;&nbsp;( a n -- )  Iniitalise le vecteur d'interruption *n' avec l'adresse *a*. 
+
+    * **RST-IVEC**&nbsp;&nbsp;( n -- )  Réinitialise le vecteur d'interruption *n* avec l'adresse du *default_handler*.
+
+    * **FCALL**&nbsp;&nbsp;( a -- )  Appelle la routine en mémoire flash, *a* est l'adresse de la routine. 
+
 ### 2020-12-31  
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
@@ -8,7 +25,7 @@
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
-*  Modification au à l'outil **SEE** pour le rendre plus utile. Grosse amélioration même si le déseemblage est incomplet:
+*  Modification au à l'outil **SEE** pour le rendre plus utile. Grosse amélioration même si le désassemblage est incomplet:
 ```
 SEE TYPE
  20000F10  nest

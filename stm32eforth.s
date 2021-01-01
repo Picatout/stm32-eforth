@@ -88,12 +88,12 @@
 .equ SPP ,	0x20004E80	/*top of data stack (SP0) */
 .equ TIBB ,	0x20004E80	/*terminal input buffer (TIB) */
 .equ RPP ,	0x20004F80	/*top of return stack (RP0) */
-.equ UPP ,	0x20000140	/*start of user area (UP0) */
-.equ DTOP ,	0x20000240	/*start of usable RAM area (HERE) */
+.equ UPP ,	0x20000130	/*start of user area (UP0) */
+// .equ DTOP ,	0x20000240	/*start of usable RAM area (HERE) */
 .equ DEND , 0x20004E00  /*usable RAM end */
  .equ RAMOFFSET ,	UPP 	// remap
  .equ RAMEND, 0x20005000 // 20Ko
- .equ FLASHOFFSET ,	0x08000c00	// remap
+ .equ FLASHOFFSET ,	0x08000130	// remap
 //.equ RAMOFFSET  ,	0x00000000	/* absolute */
 //.equ MAPOFFSET  ,	0x00000000	/* absolute */
   .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
@@ -258,8 +258,8 @@ isr_end:
 /*****************************************************
 * default isr handler called on unexpected interrupt
 *****************************************************/
-    .section  .text.default_handler,"ax",%progbits
-
+   .section  .inflash, "ax", %progbits 
+   
   .type default_handler, %function
   .p2align 2 
   .global default_handler
@@ -362,7 +362,6 @@ uart_puts:
 /**************************************
   reset_handler execute at MCU reset
 ***************************************/
-    .section  .text.reset_handler
   .type  reset_handler, %function
   .p2align 2 
   .global reset_handler
@@ -568,7 +567,8 @@ remap_dest:
 *  COLD start moves the following to USER variables.
 *  MUST BE IN SAME ORDER AS USER VARIABLES.
 ******************************************************/
-	.p2align 10
+	.section  .text, "ax" ,%progbits 
+	.p2align 2
 
 UZERO:
 	.word 0  			/*Reserved */
@@ -599,7 +599,7 @@ ULAST:
 //  Start of Forth dictionary
 ***********************************/
 
-	.p2align 2 
+	.p2align 4
 
 // RANDOM ( n1 -- {0..n1-1} )
 // return pseudo random number 
@@ -5005,6 +5005,7 @@ CTOP:
   data that doesn't need to be 
   copied in RAM 
 *******************************/
+	.section .rodata 
 	.p2align 2
 NONAME_SUB: // routine not in the dictionary 
 	.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
@@ -5073,7 +5074,7 @@ VERSN_LBL:
 	.ascii " {version}"
 	.p2align 2 
 
-
+	.section .user 
 	.p2align 10 
 USER_SPACE: // save user image here.  
 	.word 0XFFFFFFFF

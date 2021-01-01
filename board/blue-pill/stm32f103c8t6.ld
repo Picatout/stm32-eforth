@@ -39,29 +39,43 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
-    .  = ALIGN(4);  /* From 0x20000000 */      
+  . = ALIGN(4);  
+  .inflash :
+  {
+    . = ALIGN(4) ;
+    KEEP(*(.inflash))
+    KEEP(*(.inflash.*))
+  } >FLASH 
 
-    .rodata : 
-    {
-      . = ALIGN(4)  ;
-      KEEP(*(.data))
-      _sdata = . ;
-      __data_start = _sdata ;
-        *(.data)      /* Data memory */
+  .  = ALIGN(4);        
+
+  .rodata : 
+  {
+    . = ALIGN(4)  ;
+    KEEP(*(.data))
+    _sdata = . ;
+    __data_start = _sdata ;
+      *(.data)      /* Data memory */
+    . = ALIGN(4) ;
+    _edata = . ;
+    _data_size = _edata - _sdata ;
+  } >FLASH  
+
+  . = ALIGN(10);
+  .user : 
+  {
+    KEEP(*(.user))   
+  } > FLASH 
+
+  .bss :
+  {
       . = ALIGN(4) ;
-      _edata = . ;
-      _data_size = _edata - _sdata ;
-    } >FLASH  
-
-    .bss :
-    {
-        . = ALIGN(4) ;
-        _sbss = . ;
-        __bss_start__ = _sbss;
-        *(.bss)       /* Zero-filled run time allocate data memory */
-        . = ALIGN(4) ;
-        _ebss = . ;
-        _bss_size = _ebss - _sbss ;  
-    } >RAM
+      _sbss = . ;
+      __bss_start__ = _sbss;
+      *(.bss)       /* Zero-filled run time allocate data memory */
+      . = ALIGN(4) ;
+      _ebss = . ;
+      _bss_size = _ebss - _sbss ;  
+  } >RAM
 
 }  
