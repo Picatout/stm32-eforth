@@ -88,10 +88,10 @@
 .equ SPP ,	0x20004E80	/*top of data stack (SP0) */
 .equ TIBB ,	0x20004E80	/*terminal input buffer (TIB) */
 .equ RPP ,	0x20004F80	/*top of return stack (RP0) */
-.equ UPP ,	0x20000000	/*start of user area (UP0) */
-.equ DTOP ,	0x20000100	/*start of usable RAM area (HERE) */
+.equ UPP ,	0x20000140	/*start of user area (UP0) */
+.equ DTOP ,	0x20000240	/*start of usable RAM area (HERE) */
 .equ DEND , 0x20004E00  /*usable RAM end */
- .equ RAMOFFSET ,	0x20000000	// remap
+ .equ RAMOFFSET ,	UPP 	// remap
  .equ RAMEND, 0x20005000 // 20Ko
  .equ FLASHOFFSET ,	0x08000c00	// remap
 //.equ RAMOFFSET  ,	0x00000000	/* absolute */
@@ -252,7 +252,7 @@ isr_vectors:
   .word      default_handler /* IRQ57, DMA2 CH2 */                   
   .word      default_handler /* IRQ58, DMA2 CH3 */                   
   .word      default_handler /* IRQ59, DMA2 CH4 & CH5 */                   
-
+isr_end:
   .size  isr_vectors, .-isr_vectors
 
 /*****************************************************
@@ -281,8 +281,7 @@ exception_msg:
   .p2align 2 
   .global systick_handler
 systick_handler:
-  mov r3,#UPP&0xffff
-  movt r3,#UPP>>16  	
+  _MOV32 r3,UPP
   ldr r0,[r3,#TICKS_OFS]  
   add r0,#1
   str r0,[r3,#TICKS_OFS]
@@ -383,14 +382,12 @@ forth_entry:
 init_devices:
 /* init clock to HSE 72 Mhz */
 /* set 2 wait states in FLASH_ACR_LATENCY */
-	mov r0,#FLASH_BASE_ADR&0xffff
-	movt r0,#FLASH_BASE_ADR>>16 
+  _MOV32 R0,FLASH_BASE-ADR 
   mov r2,#0x12
   str r2,[r0,#FLASH_ACR]
 /* configure clock for HSE, 8 Mhz crystal */
 /* enable HSE in RCC_CR */
-  mov r0,#RCC_BASE_ADR&0xFFFF
-  movt r0,#RCC_BASE_ADR>>16
+  _MOV32 R0,RCC_BASEADR 
   ldr r1,[r0,#RCC_CR]
   orr r1,r1,#(1<<16) /* HSEON bit */
   str r1,[r0,#RCC_CR] /* enable HSE */
@@ -421,8 +418,7 @@ wait_pllrdy:
   beq wait_pllrdy 
 /* select PLL as sysclock */
   ldr r1,[r0,#RCC_CFGR]
-  mov r2,#0xfffc
-  movt r2,#0xffff
+  _MOV32 r2,0xfffffffc
   and r1,r1,r2 
   mov r2,#2
   orr r1,r1,r2
@@ -435,14 +431,12 @@ wait_sws:
 /* now sysclock is 72 Mhz */
 
 /* enable peripheral clock for GPIOA, GPIOC and USART1 */
-  mov r0,#RCC_BASE_ADR&0xFFFF
-  movt r0,#RCC_BASE_ADR>>16
+  _MOV32 r0,RCC_BASE_ADR
   mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
   str	r1, [r0, #RCC_APB2ENR]
 
 /* configure GPIOC:13 as output for user LED */
-  mov r0,#GPIOC_BASE_ADR&0xffff
-  movt r0,#GPIOC_BASE_ADR>>16
+  _MOV32 r0,GPIOC_BASE_ADR 
   ldr r1,[r0,#GPIO_CRH]
   mvn r2,#(15<<20)
   and r1,r1,r2
@@ -451,8 +445,7 @@ wait_sws:
   str r1,[r0,#GPIO_CRH]
 
 /* configure systicks for 1msec ticks */
-  mov r0,#STK_BASE_ADR&0xFFFF
-  movt r0,#STK_BASE_ADR>>16	
+  _MOV32 r0,STK_BASE_ADR 
   mov r1,#9000 /* reload value for 1msec */
   str r1,[r0,#STK_LOAD]
   mov r1,#3
@@ -489,7 +482,16 @@ uart_init:
 	.type remap, %function 
 
 remap:
-	ldr r0,remap_dest  
+// tranfert isr_vector to RAM at 0x20000000
+	_MOV32 r0,RAM_ADR
+	eor r1,r1
+	mov r2,#(isr_end-isr_vectors) 
+1:	ldr r3,[r1],#4
+	str r3,[r0],#4
+	subs r2,#4
+	bne 1b
+// copy system variable and code 	
+	ldr r0,remap_dest
 	ldr r1,remap_src 
 	mov r2,#CTOP-UZERO 
 	add r2,r2,#3
@@ -499,8 +501,7 @@ remap:
 	subs R2,#4 
 	bne 1b
 // zero end of RAM 
-	mov r2,#0x5000
-	movt r2,#0x2000
+	_MOV32 r2,RAM_END 
 	eor r3,r3,r3 
 2:  str r3,[r0],#4
 	cmp r0,r2 
@@ -640,8 +641,7 @@ _ULED: .byte 4
 	.type ULED, %function 
 ULED:
 	mov r6,#(1<<LED_PIN)
-	mov r4,#LED_GPIO&0xffff
-	movt r4,#LED_GPIO>>16
+	_MOV32, r4,LED_GPIO 
 	movs r0,r5 
 	_POP
 	beq ULED_OFF 
@@ -1738,8 +1738,7 @@ _USER_END: .byte 8
 	.p2align 2 
 USER_END:
 	_PUSH 
-	mov r5,#DEND&0xffff
-	movt r5,#DEND>>16 
+	_MOV32 R5,DEND 
 	_NEXT 
 
 //  IMG_ADR ( -- a )
@@ -3384,8 +3383,7 @@ _QUIT:	.byte  4
 	.p2align 2 	
 QUIT:
 	_NEST
-	MOVW	R2,#RPP&0xffff  /* RESET RSTACK */
- 	MOVT	R2,#RPP>>16 
+	_MOV32 R2,RPP
 QUIT1:
 	BL	LBRAC			// start interpretation
 QUIT2:
@@ -4956,8 +4954,7 @@ LASTN:	.byte  4
 	.p2align 2,0	
 COLD:
 //  Initiate Forth registers
-	MOV R3,#UPP&0xffff	//  user area 
- 	MOVT R3,#UPP>>16		  
+	_MOV32 R3,UPP // system variables area 
 	ADD R2,R3,#RPP&0xffff	// Forth return stack
 	ADD R1,R3,#SPP&0xffff // Forth data stack
 	EOR R5,R5,R5			//  tos=0

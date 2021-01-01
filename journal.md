@@ -1,5 +1,11 @@
-### 2020-12-30  
+### 2020-12-31  
 
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
+* Transfert de la table des vecteurs d'interruptions au début de la RAM (0x20000000) afin que les applications puissent la modifiée.
+
+
+### 2020-12-30  
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
