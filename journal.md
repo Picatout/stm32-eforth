@@ -2,6 +2,18 @@
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
+* Création de la macro **_HEADER** pour faciliter l'écriture des entêtes de dictionnaire. l'entête du dictionnaire contient un champ supplémentaire 
+soit le *code field address* qui pointe vers le code. 
+
+* Ajout de **NAME>CFA**;&nbsp;( na -- cfa ) Retourne l'adresse du champ *cfa  (code field address)* de l'entête du dictionaire  à partir du champ *na* 
+
+
+* Modifier le script de linkage [stm32f103c8t6.ld](board/blue-pill/stm32f103c8t6.ld) pour ajouter des sections afin de séparer le code qui reste en FLASH de celui qui est copié en mémoire RAM.
+
+* Modification pour conserver le dictionnaire en FLASH pour économiser la mémoire RAM. 
+
+#### À faire 
+
 * ajout des mots suivants:
 
     * **I:**&nbsp;&nbsp;( -- a )  Débute la création d'une routine d'interruption *a* est l'adresse de la routine. 
