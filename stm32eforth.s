@@ -154,8 +154,9 @@
 	LDMFD	R2!,{PC}
 	.endm
 
- 	.macro	_DOLIT /*long literals */
+ 	.macro	_DOLIT  value /*long literals */
 	BL	DOLIT
+	.word \value 
 	.endm
 
  	.macro	_PUSH	/*push R5 on data stack*/
@@ -177,6 +178,7 @@
 	CA_\label:   // code field address 
 		.word \label + MAPOFFSET 
 		.section .text, "ax", %progbits 
+		.p2align 2 
 	\label:  // code address in .section .text 
 	.endm 
 
@@ -1525,20 +1527,17 @@ MMOD3:
 // 	Filter non-printing characters.
 	_HEADER TCHAR,5,">CHAR"
 	_NEST
-	_DOLIT
-	.word	0x7F
+	_DOLIT 0x7F
 	BL	ANDD
 	BL	DUPP	// mask msb
 	BL	BLANK
-	_DOLIT
-	.word	127
+	_DOLIT 127
 	BL	WITHI	// check for printable
 	BL	INVER
 	BL	QBRAN
 	.word	TCHA1+MAPOFFSET
 	BL	DROP
-	_DOLIT
-	.word	'_'	// replace non-printables
+	_DOLIT 	'_'	// replace non-printables
 TCHA1:
 	  _UNNEST
 
@@ -1664,11 +1663,9 @@ FILL2:
 	BL	OVER
 	BL	PLUS
 	BL	ONEP
-	_DOLIT
-	.word	0xFFFFFFFC
+	_DOLIT 0xFFFFFFFC
 	BL	ANDD			// count mod cell
-	_DOLIT
-	.word	0
+	_DOLIT 	0
 	BL	SWAP
 	BL	STORE			// null fill cell
 	BL	RAT
@@ -1687,8 +1684,7 @@ FILL2:
 // 	Convert digit u to a character.
 	_HEADER DIGIT,5,"DIGIT"
 	_NEST
-	_DOLIT
-	.word	9
+	_DOLIT 9
 	BL	OVER
 	BL	LESS
 	AND	R5,R5,#7
@@ -1700,8 +1696,7 @@ FILL2:
 // 	Extract the least significant digit from n.
 	_HEADER EXTRC,7,"EXTRACT"
 	_NEST
-	_DOLIT
-	.word	0
+	_DOLIT 0
 	BL	SWAP
 	BL	UMMOD
 	BL	SWAP
@@ -1760,8 +1755,7 @@ DIGS2:
 	BL	ZLESS
 	BL	QBRAN
 	.word	SIGN1+MAPOFFSET
-	_DOLIT
-	.word	'-'
+	_DOLIT '-'
 	BL	HOLD
 SIGN1:
 	  _UNNEST
@@ -1801,8 +1795,7 @@ STRR:
 // 	Use radix 16 as base for numeric conversions.
 	_HEADER HEX,3,"HEX"
 	_NEST
-	_DOLIT
-	.word	16
+	_DOLIT 16
 	BL	BASE
 	BL	STORE
 	_UNNEST
@@ -1811,8 +1804,7 @@ STRR:
 // 	Use radix 10 as base for numeric conversions.
 	_HEADER DECIM,7,"DECIMAL"
 	_NEST
-	_DOLIT
-	.word	10
+	_DOLIT 10
 	BL	BASE
 	BL	STORE
 	_UNNEST
@@ -1825,21 +1817,17 @@ STRR:
 	_HEADER DIGTQ,6,"DIGIT?"
 	_NEST
 	BL	TOR
-	_DOLIT
-	.word	'0'
+	_DOLIT '0'
 	BL	SUBB
-	_DOLIT
-	.word	9
+	_DOLIT 9
 	BL	OVER
 	BL	LESS
 	BL	QBRAN
 	.word	DGTQ1+MAPOFFSET
-	_DOLIT
-	.word	7
+	_DOLIT 7
 	BL	SUBB
 	BL	DUPP
-	_DOLIT
-	.word	10
+	_DOLIT 10
 	BL	LESS
 	BL	ORR
 DGTQ1:
@@ -1855,14 +1843,12 @@ DGTQ1:
 	BL	BASE
 	BL	AT
 	BL	TOR
-	_DOLIT
-	.word	0
+	_DOLIT 0
 	BL	OVER
 	BL	COUNT
 	BL	OVER
 	BL	CAT
-	_DOLIT
-	.word	'$'
+	_DOLIT '$'
 	BL	EQUAL
 	BL	QBRAN
 	.word	NUMQ1+MAPOFFSET
@@ -1874,8 +1860,7 @@ DGTQ1:
 NUMQ1:
 	BL	OVER
 	BL	CAT
-	_DOLIT
-	.word	'-'
+	_DOLIT '-'
 	BL	EQUAL
 	BL	TOR
 	BL	SWAP
@@ -1921,8 +1906,7 @@ NUMQ4:
 	BL	RFROM
 	BL	DDROP
 	BL	DDROP
-	_DOLIT
-	.word	0
+	_DOLIT	0
 NUMQ5:
 	BL	DUPP
 NUMQ6:
@@ -1958,8 +1942,7 @@ KEY1:
 // 	Send n spaces to the output device.
 	_HEADER SPACS,6,"SPACES"
 	_NEST
-	_DOLIT
-	.word	0
+	_DOLIT 0
 	BL	MAX
 	BL	TOR
 	B.W	CHAR2
@@ -1990,11 +1973,9 @@ TYPE2:
 // 	Output a carriage return and a line feed.
 	_HEADER CR,2,"CR"
 	_NEST
-	_DOLIT
-	.word	CRR
+	_DOLIT	CRR
 	BL	EMIT
-	_DOLIT
-	.word	LF
+	_DOLIT	LF
 	BL	EMIT
 	_UNNEST
 
@@ -2105,8 +2086,7 @@ DOTQP:
 	_NEST
 	BL	BASE
 	BL	AT
-	_DOLIT
-	.word	10
+	_DOLIT	10
 	BL	XORR			// ?decimal
 	BL	QBRAN
 	.word	DOT1+MAPOFFSET
@@ -2167,8 +2147,7 @@ PARS1:
 	.word	PARS1+MAPOFFSET
 	BL	RFROM
 	BL	DROP
-	_DOLIT
-	.word	0
+	_DOLIT	0
 	BL	DUPP
 	_UNNEST
 PARS2:
@@ -2242,8 +2221,7 @@ PARS8:
 // 	Output following string up to next ) .
 	_HEADER DOTPR,IMEDD+2,".("
 	_NEST
-	_DOLIT
-	.word	')'
+	_DOLIT	')'
 	BL	PARSE
 	BL	TYPEE
 	_UNNEST
@@ -2252,8 +2230,7 @@ PARS8:
 // 	Ignore following string up to next ) . A comment.
 	_HEADER PAREN,IMEDD+1,"("
 	_NEST
-	_DOLIT
-	.word	')'
+	_DOLIT	')'
 	BL	PARSE
 	BL	DDROP
 	_UNNEST
@@ -2304,8 +2281,7 @@ PARS8:
 	_HEADER TOCFA,4,">CFA"
 	_NEST
 	BL	COUNT
-	_DOLIT
-	.word	0x1F
+	_DOLIT	0x1F
 	BL	ANDD
 	BL	PLUS
 	BL	ALGND
@@ -2351,8 +2327,7 @@ SAME1:
 SAME2:
 	BL	DONXT
 	.word	SAME1+MAPOFFSET
-	_DOLIT
-	.word	0
+	_DOLIT	0
 	_UNNEST	// strings equal
 
 //    find	( a na -- ca na | a F )
@@ -2380,8 +2355,7 @@ FIND1:
 	.word	FIND6+MAPOFFSET	// end of vocabulary
 	BL	DUPP			// a+1 na na
 	BL	CAT			// a+1 na name1
-	_DOLIT
-	.word	MASKK
+	_DOLIT	MASKK
 	BL	ANDD
 	BL	RAT			// a+1 na name1 count 
 	BL	XORR			// a+1 na,  same length?
@@ -2451,16 +2425,14 @@ BKSP:
 	BL	XORR
 	BL	QBRAN
 	.word	BACK1+MAPOFFSET
-	_DOLIT
-	.word	BKSPP
+	_DOLIT	BKSPP
 	BL	TECHO
 // 	BL	ATEXE
 	BL	ONEM
 	BL	BLANK
 	BL	TECHO
 // 	BL	ATEXE
-	_DOLIT
-	.word	BKSPP
+	_DOLIT	BKSPP
 	BL	TECHO
 // 	BL	ATEXE
 BACK1:
@@ -2494,13 +2466,11 @@ KTAP:
 TTAP:
 	_NEST
 	BL	DUPP
-	_DOLIT
-	.word	CRR
+	_DOLIT	CRR
 	BL	XORR
 	BL	QBRAN
 	.word	KTAP2+MAPOFFSET
-	_DOLIT
-	.word	BKSPP
+	_DOLIT	BKSPP
 	BL	XORR
 	BL	QBRAN
 	.word	KTAP1+MAPOFFSET
@@ -2533,8 +2503,7 @@ ACCP1:
 	BL	KEY
 	BL	DUPP
 	BL	BLANK
-	_DOLIT
-	.word	127
+	_DOLIT	127
 	BL	WITHI
 	BL	QBRAN
 	.word	ACCP2+MAPOFFSET
@@ -2556,14 +2525,12 @@ ACCP4:
 	_HEADER QUERY,5,"QUERY"
 	_NEST
 	BL	TIB
-	_DOLIT
-	.word	80
+	_DOLIT	80
 	BL	ACCEP
 	BL	NTIB
 	BL	STORE
 	BL	DROP
-	_DOLIT
-	.word	0
+	_DOLIT	0
 	BL	INN
 	BL	STORE
 	_UNNEST
@@ -2579,8 +2546,7 @@ ACCP4:
 ABORT1:
 	BL	COUNT
 	BL	TYPEE
-	_DOLIT
-	.word	0X3F
+	_DOLIT	0X3F
 	BL	EMIT
 	BL	CR
 	BL	PRESE
@@ -2616,8 +2582,7 @@ ABORQ:
 	BL	QBRAN
 	.word	INTE1+MAPOFFSET
 	BL	AT
-	_DOLIT
-	.word	COMPO
+	_DOLIT	COMPO
 	BL	ANDD	// ?compile only lexicon bits
 	BL	ABORQ
 	.byte	13
@@ -2637,8 +2602,7 @@ INTE2:
 // 	Start the text interpreter.
 	_HEADER LBRAC,IMEDD+1,"["
 	_NEST
-	_DOLIT
-	.word	INTER+MAPOFFSET
+	_DOLIT	INTER+MAPOFFSET
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
@@ -2647,8 +2611,7 @@ INTE2:
 // 	Display "ok" only while interpreting.
 	_HEADER DOTOK,3,".OK"
 	_NEST
-	_DOLIT
-	.word	INTER+MAPOFFSET
+	_DOLIT	INTER+MAPOFFSET
 	BL	TEVAL
 	BL	AT
 	BL	EQUAL
@@ -2764,8 +2727,7 @@ WAIT1:
 	_HEADER EPAGE,10,"ERASE_PAGE"
 	_NEST
 	bl	WAIT_BSY
-	_DOLIT 
-	.word 1 
+	_DOLIT 1 
 	bl  UNLOCK 
 	ldr r0,flash_regs 	 
 	mov r4,#2 // set PER bit 
@@ -2775,8 +2737,7 @@ WAIT1:
 	orr	R4,#0x40	//  set STRT bit   
 	str	r4,[r0, #FLASH_CR]	//  start erasing
  	bl	WAIT_BSY // wait until done
-	_DOLIT 
-	.word 0 
+	_DOLIT 0 
 	bl	UNLOCK  // lock flash write 
 	ldr r5,[r0,#FLASH_SR] // check for errors 
 	and r5,r5,#(5<<2)
@@ -2816,8 +2777,7 @@ HWORD_WRITE: // ( hword address -- )
 	_HEADER ISTOR,2,"I!"
 	_NEST
 	bl	WAIT_BSY
-	_DOLIT 
-	.word 1 
+	_DOLIT 1 
 	bl  UNLOCK 
 	BL DDUP 
 	BL TOR 
@@ -2828,8 +2788,7 @@ HWORD_WRITE: // ( hword address -- )
 	BL RFROM 
 	add r5,r5,#2 
 	BL HWORD_WRITE 
-	_DOLIT 
-	.word 0
+	_DOLIT 0
 	bl UNLOCK 
 	_UNNEST
 
@@ -2838,14 +2797,12 @@ HWORD_WRITE: // ( hword address -- )
 // user ram  
 	_HEADER IMG_SIZE,8,"IMG_SIZE"
 	_NEST
-	_DOLIT 
-	.word VARS_END_OFS-IMG_SIGN_OFS 
+	_DOLIT VARS_END_OFS-IMG_SIGN_OFS 
 	BL USER_END 
 	BL USER_BEGIN 
 	BL SUBB 
 	BL PLUS 
-	_DOLIT 
-	.word 1024 
+	_DOLIT 1024 
 	BL SLMOD 
 	BL SWAP 
 	BL QBRAN 
@@ -3021,8 +2978,7 @@ HWORD_WRITE: // ( hword address -- )
 	BL TOKEN 
 	BL DUPP 
 	BL QBRAN 
-	_DOLIT 
-	.word 9f+MAPOFFSET 
+	_DOLIT 9f+MAPOFFSET 
 	BL NAMEQ // ( a -- ca na | a 0 )
 	BL QDUP 
 	BL QBRAN 
@@ -3118,12 +3074,10 @@ TICK1:	B.W	ABORT	// no, error
 // 	.p2align 2 	
 STRCQ:
 	_NEST
-	_DOLIT
-	.word	-4
+	_DOLIT	-4
 	BL	CPP
 	BL	PSTOR
-	_DOLIT
-	.word	'\"'
+	_DOLIT	'\"'
 	BL	WORDD			// move word to code dictionary
 	BL	COUNT
 	BL	PLUS
@@ -3185,8 +3139,7 @@ STRCQ:
 	BL	COMPI
 	.word	QBRAN+MAPOFFSET
 	BL	HERE
-	_DOLIT
-	.word	4
+	_DOLIT	4
 	BL	CPP
 	BL	PSTOR
 	_UNNEST
@@ -3198,8 +3151,7 @@ STRCQ:
 	BL	COMPI
 	.word	BRAN+MAPOFFSET
 	BL	HERE
-	_DOLIT
-	.word	4
+	_DOLIT	4
 	BL	CPP
 	BL	PSTOR
 	_UNNEST
@@ -3341,8 +3293,7 @@ SNAM1:
 	BL	QBRAN
 	.word	SCOM2+MAPOFFSET
 	BL	AT
-	_DOLIT
-	.word	IMEDD
+	_DOLIT	IMEDD
 	BL	ANDD	// immediate?
 	BL	QBRAN
 	.word	SCOM1+MAPOFFSET
@@ -3391,7 +3342,7 @@ COLON_ABORT:
 // 	Terminate a colon definition.
 	_HEADER SEMIS,IMEDD+COMPO+1,";"
 	_NEST
-	_DOLIT
+	BL	DOLIT 
 	_UNNEST
 	BL	COMMA
 	BL	LBRAC
@@ -3402,8 +3353,7 @@ COLON_ABORT:
 // 	Start compiling the words in the input stream.
 	_HEADER RBRAC,1,"]"
 	_NEST
-	_DOLIT
-	.word	SCOMP+MAPOFFSET
+	_DOLIT SCOMP+MAPOFFSET
 	BL	TEVAL
 	BL	STORE
 	_UNNEST
@@ -3450,14 +3400,7 @@ CALLC:
 // 	Start a new colon definition using next word as its name.
 	_HEADER COLON,1,":"
 	_NEST
-	BL	TOKEN
-	BL	SNAME
-	BL	HERE 
-	BL	CELLP  
-	BL	COMMA 
-	_DOLIT
-	_NEST
-	BL	COMMA
+	BL	HEAD 
 	BL	RBRAC
 	_UNNEST
 
@@ -3465,8 +3408,7 @@ CALLC:
 // 	Make the last compiled word an immediate word.
 	_HEADER IMMED,9,"IMMEDIATE"
 	_NEST
-	_DOLIT
-	.word	IMEDD
+	_DOLIT IMEDD
 	BL	LAST
 	BL	AT
 	BL	AT
@@ -3479,23 +3421,31 @@ CALLC:
 /*********************
    Defining words
 *********************/
+
+//  HEADER ( -- )  "string"
+// create a dictionary header in RAM
+	_HEADER HEAD,6,"HEADER"
+	_NEST 
+	BL	TOKEN
+	BL	SNAME
+//	BL	OVERT  
+	BL	HERE   
+	BL	CELLP
+	BL	COMMA 
+	BL	DOLIT 
+	_NEST 
+	BL	COMMA 
+	_UNNEST 
+
 //    CONSTANT	( u -- //  string> )
 // 	Compile a new constant.
 	_HEADER CONST,8,"CONSTANT" 
 	_NEST
-	BL	TOKEN
-	BL	SNAME
-	BL	HERE 
-	BL	CELLP
-	BL	COMMA 
-	BL	OVERT
-	_DOLIT
-	_NEST
-	BL	COMMA
-	_DOLIT
-	.word	DOCON+MAPOFFSET
+	BL	HEAD 
+	_DOLIT DOCON+MAPOFFSET
 	BL	CALLC
 	BL	COMMA
+	BL	OVERT 
 	_UNNEST
 
 	.p2align 2 
@@ -3503,24 +3453,26 @@ CALLC:
 // set code addresse in code field of new word 
 DODOES:
 	_NEST 
+	BL	LAST 
+	BL	AT 
+	BL 	TOCFA
+	BL	HERE  // this is ca of new word 
+	BL	OVER  
+	BL	STORE
+	BL	DOLIT 
+	_NEST 
+	BL COMMA  
+	_DOLIT 12 
+	BL	PLUS  // parameter field of new word 
+	BL	LITER
 	BL RAT 
 	BL ONEM 
 	BL	CELLP
-	BL LAST 
-	BL AT
-	BL NAMET
-	BL	SWAP 
-	BL	STORE 
-/*	 
-	BL CELLP 
-	BL DUPP
-	BL TOR 
-	BL SUBB 
-	SUB R5,R5,#4
-	BL	COMPILE_BLW
-	BL RFROM
-	BL STORE  
-*/
+	BL	CALLC  
+	BL	DOLIT 
+	_UNNEST 
+	BL	COMMA 
+	BL	OVERT 
 	_UNNEST 
 
 	
@@ -3530,19 +3482,14 @@ DODOES:
 //  compile time action 
 	_HEADER DOES,IMEDD+COMPO+5,"DOES>"
 	_NEST 
-	_DOLIT 
-	.word DODOES + MAPOFFSET
+	_DOLIT DODOES+MAPOFFSET
 	BL CALLC 
-	_DOLIT	
+	BL	DOLIT	
 	_UNNEST 
 	BL	COMMA  
-	_DOLIT 
+	BL	DOLIT 
 	_NEST 
-	BL COMMA 
-	BL	LAST 
-	BL	NAMET
-	BL	CELLP // parameter field
-	BL	LITER 
+	BL	COMMA 
 	_UNNEST 
 
 
@@ -3550,18 +3497,9 @@ DODOES:
 // 	Compile a new array entry without allocating code space.
 	_HEADER CREAT,6,"CREATE"
 	_NEST
-	BL	TOKEN
-	BL	SNAME
-	BL	HERE 
-	BL	CELLP
-	BL	COMMA
-	BL	OVERT
-	_DOLIT
-	_NEST
-	BL	COMMA
-	_DOLIT
-	.word	DOVAR+MAPOFFSET
-	BL	CALLC
+	BL	HEAD 
+	_DOLIT DOVAR+MAPOFFSET 
+	BL	CALLC  
 	_UNNEST
 
 //    VARIABLE	( -- //  string> )
@@ -3569,9 +3507,9 @@ DODOES:
 	_HEADER VARIA,8,"VARIABLE"
 	_NEST
 	BL	CREAT
-	_DOLIT
-	.word	0
+	_DOLIT 0
 	BL	COMMA
+	BL	OVERT 
 	_UNNEST
 
 /*************
@@ -3588,8 +3526,7 @@ DODOES:
 DMP:
 	_NEST
 	BL	OVER
-	_DOLIT
-	.word	4
+	_DOLIT	4
 	BL	UDOTR			// display address
 	BL	SPACE
 	BL	TOR			// start count down loop
@@ -3597,8 +3534,7 @@ DMP:
 PDUM1:
   BL	DUPP
 	BL	CAT
-	_DOLIT
-	.word	3
+	_DOLIT 3
 	BL	UDOTR			// display numeric data
 	BL	ONEP			// increment address
 PDUM2:
@@ -3614,15 +3550,13 @@ PDUM2:
 	BL	AT
 	BL	TOR
 	BL	HEX			// save radix,set hex
-	_DOLIT
-	.word	16
+	_DOLIT	16
 	BL	SLASH			// change count to lines
 	BL	TOR
 	B.W	DUMP4			// start count down loop
 DUMP1:
   BL	CR
-	_DOLIT
-	.word	16
+	_DOLIT	16
 	BL	DDUP
 	BL	DMP			// display numeric
 	BL	ROT
@@ -3691,8 +3625,7 @@ TNAM2:
 	BL	QBRAN
 	.word	DOTI1+MAPOFFSET
 	BL	COUNT
-	_DOLIT
-	.word	0x1F
+	_DOLIT	0x1F
 	BL	ANDD			// mask lexicon bits
 	BL	TYPEE
 	_UNNEST			// display name string
@@ -3712,8 +3645,7 @@ DOTCA:
 	_NEST 
 	BL  DUPP
 	BL UDOT 
-	_DOLIT 
-	.word 2 
+	_DOLIT 2 
 	BL SPACS 
 	_UNNEST 
 
@@ -3724,8 +3656,8 @@ CODE_ABORT:
 	BL DOTCA  
 	BL DUPP 
 	BL AT 
-	_DOLIT 
-	.word 0xed04f842 // _NEST code 
+	BL DOLIT 
+	_NEST 
 	BL XORR 
 	BL QBRAN 
 	.word 1f+MAPOFFSET 
@@ -3749,8 +3681,8 @@ UNNESTQ:
 	_NEST 
 	BL DUPP 
 	BL AT 
-	_DOLIT 
-	.word 0xfb04f852 
+	BL DOLIT 
+	_UNNEST  
 	BL EQUAL
 	BL DUPP 
 	BL QBRAN
@@ -3766,11 +3698,9 @@ UNNESTQ:
 // search no name routine from code address. 
 NONAMEQ: // ( ca -- na|ca f )
 	_NEST 
-	_DOLIT 
-	.word 0 
+	_DOLIT 0 
 	BL SWAP 
-	_DOLIT 
-	.word NONAME_SUB
+	_DOLIT NONAME_SUB
 	BL TOR   
 0:	BL DUPP // ( 0 ca ca -- )  
 	BL RAT  
@@ -3787,11 +3717,9 @@ NONAMEQ: // ( ca -- na|ca f )
 	BL BRAN 
 	.word 0b+MAPOFFSET 
 1:  BL RFROM 
-	_DOLIT 
-	.word NONAME_SUB
+	_DOLIT NONAME_SUB
 	BL SUBB
-	_DOLIT 
-	.word ANONYMOUS 
+	_DOLIT ANONYMOUS 
 	BL	PLUS
 	BL	AT   
 	BL	SWAP 
@@ -3813,8 +3741,7 @@ NONAMEQ: // ( ca -- na|ca f )
 DOTNONAME:
 	_NEST 
 	_PUSH 
-	_DOLIT 
-	.word ANONYMOUS 
+	_DOLIT ANONYMOUS 
 	BL PLUS 
 	BL AT 
 	BL TYPEE 
@@ -3824,8 +3751,7 @@ DOTNONAME:
 // check if it is a BL instruction 
 IS_BLW:
 	_NEST 
-	_DOLIT 
-	.word 0xD000F000
+	_DOLIT 0xD000F000
 	BL DUPP 
 	BL TOR 
 	BL ANDD
@@ -3844,10 +3770,20 @@ IS_BLW:
 	BL	TICK	//  ca --, starting address
 	BL	CR	
 	BL  CODE_ABORT
-	_DOLIT 
-	.word 0  
+	BL	SCOL 
+	BL  RFROM 
+	BL 	BASE 
+	BL	STORE 
+	_UNNEST
+
+
+// SEECOLON ( ca -- )
+// Decompile colon definition 
+	_HEADER SCOL,8,"SEECOLON"
+	_NEST 
+	_DOLIT 9  
 	BL TOR // not a BL counter limit to 10 consecutives 
-SEE1:
+SCOL1:
 	BL	CELLP			//  a
 	BL  DOTCA 
 	BL  UNNESTQ
@@ -3859,7 +3795,7 @@ SEE1:
 	BL	IS_BLW
 	BL	INVER  
 	BL	QBRAN 
-	.word SEE1+MAPOFFSET 
+	.word SCOL1+MAPOFFSET 
 	BL	RFROM 
 	BL	DROP 
 	BL	BRAN 
@@ -3867,20 +3803,10 @@ SEE1:
 1:	BL	DUPP			//  a a
 	BL	DECOMP		//  a
 	BL	CR 
-	BL	RAT 
-	_DOLIT 
-	.word 10 
-	BL 	GREAT 
-	BL	QBRAN 
-	.word	SEE1+MAPOFFSET
-	BL	RFROM 
-	BL	DROP 
-2:	BL	DROP
-	BL  RFROM 
-	BL 	BASE 
-	BL	STORE 
+	BL	DONXT  
+	.word	SCOL1+MAPOFFSET
+2:	BL DROP 
 	_UNNEST
-
 
 // BL-ADR ( asm_code -- rel_adr )
 // get absolute address from asm_code 
@@ -3904,6 +3830,7 @@ BLADR:
 	ASR R5,#7 
 	_NEXT 
 
+	
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
 	_HEADER DECOMP,9,"DECOMPILE"
@@ -3918,7 +3845,7 @@ BLADR:
 	BL DOTQP  
 	.byte 3
 	.ascii "BL "
-	.p2align 2 
+	.p2align 2
 	BL  BLADR   // extract relative address from BL code
 	BL	OVER			//  a offset a
 	BL	PLUS			//  a target-4
@@ -3937,20 +3864,14 @@ DECOMP3:
 // reset not BL counter 
 	BL	RFROM 
 	BL	RFROM 
-	BL	DUPP 
-	BL	SUBB 
+	BL	DROP
+	_DOLIT 9  
 	BL	TOR 
 	BL	TOR 	
 	_UNNEST
-		
 DECOM2: // not a BL 
 	BL	UDOT
 	BL	DROP
-	BL	RFROM // unnest address 
-	BL	RFROM // not BL counter 
-	BL	ONEP  // increment counter 
-	BL	TOR 
-	BL	TOR 
 	_UNNEST
 .endif 
 
@@ -3986,8 +3907,7 @@ WORS2:
 // 	.p2align 2 	
 VERSN:
 	_NEST
-	_DOLIT
-	.word	VER*256+EXT
+	_DOLIT	VER*256+EXT
 	_UNNEST
 
 //    hi	  ( -- )
@@ -3995,8 +3915,7 @@ VERSN:
 	_HEADER HI,2,"HI"
 	_NEST
 	BL	CR	// initialize I/O
-	_DOLIT 
-	.word hi_msg 
+	_DOLIT hi_msg 
 	BL	COUNT 
 	BL	TYPEE 
 	BL	BASE
@@ -4006,8 +3925,7 @@ VERSN:
 	BL	BDIGS
 	BL	DIG
 	BL	DIG
-	_DOLIT
-	.word	'.'
+	_DOLIT	'.'
 	BL	HOLD
 	BL	DIGS
 	BL	EDIGS
@@ -4037,15 +3955,11 @@ COLD:
 	EOR R5,R5,R5			//  tos=0
 	_NEST
 COLD1:
-	_DOLIT 
-	.word 0 
+	_DOLIT 0 
 	BL ULED // turn off user LED 
-	_DOLIT
-	.word	UZERO
-	_DOLIT
-	.word	UPP
-	_DOLIT
-	.word	ULAST-UZERO
+	_DOLIT	UZERO
+	_DOLIT	UPP
+	_DOLIT	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack
 	// check if user image saved in slot 0 
