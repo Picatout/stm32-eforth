@@ -2,6 +2,25 @@
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
+* Création des mots suivants:
+
+  * **SET-IVEC**&nbsp;&nbsp;( a n -- ) Assigne l'adresse *a* au vecteur d'interruption *n*. Les interruptions du **core** porte des numéros négatif de **-1** pour **systick** à **-14** pour **NMI**.  Les interruptions externe portent des numéros positif dans l'intervalle **{0..59}**.
+
+  * **RST-IVEC**&nbsp;&nbsp;( n -- ) Réénitialise le vecteur d'interruption *n* à sa valeur par défaut qui consiste à réinitialiser le **MCU**. 
+
+  * **I:**&nbsp;&nbsp;(  -- a ) Débute la compilation d'une routine de service d'interruption ces routines n'ont pas de nom dans le dictionnaire leur adresse est retournée sur la pile pour être utilisée par **SET-IVEC**. 
+
+  * **I;**&nbsp;&nbsp;( a -- a ) Termine la compilation d'une routine de service 
+  d'interruption *a* est l'adresse de la routine laissé sur la pile par **I:** .
+
+* Modification de la macro _DOLIT pour diminuer l'effort d'écriture.
+
+* Complété la tranformation de l'entête de dictionnaire pour séparer le dictionnaire du code. Nécéssitait un champ supplémentaire de plusieurs modification au niveau du compilateur.
+
+### 2021-01-01  
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
 * Création de la macro **_HEADER** pour faciliter l'écriture des entêtes de dictionnaire. l'entête du dictionnaire contient un champ supplémentaire 
 soit le *code field address* qui pointe vers le code. 
 

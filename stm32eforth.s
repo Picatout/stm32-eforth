@@ -97,6 +97,7 @@
 //.equ RAMOFFSET  ,	0x00000000	/* absolute */
 //.equ MAPOFFSET  ,	0x00000000	/* absolute */
   .equ MAPOFFSET , (RAMOFFSET-FLASHOFFSET)
+  .equ IRQOFFSET , (RAM_ADR-FLASH_ADR)
 
 /*************************************
    system variables offset from UPP
@@ -195,23 +196,23 @@ isr_vectors:
   .word   _mstack          /* main return stack address */
   .word   reset_handler    /* startup address */
 /* core interrupts || exceptions */
-  .word   default_handler  /*  NMI */
-  .word   default_handler  /*  HardFault */
-  .word   default_handler  /*  Memory Management */
-  .word   default_handler  /* Bus fault */
-  .word   default_handler  /* Usage fault */
-  .word   0
-  .word   0
-  .word   0
-  .word   0
-  .word   default_handler  /* SWI instruction */
-  .word   default_handler  /* Debug monitor */
-  .word   0
-  .word   default_handler  /* PendSV */
-  .word   systick_handler  /* Systick */
-  
+  .word   default_handler  /*  -14 NMI */
+  .word   default_handler  /*  -13 HardFault */
+  .word   default_handler  /*  -12 Memory Management */
+  .word   default_handler  /* -11 Bus fault */
+  .word   default_handler  /* -10 Usage fault */
+  .word   0 /* -9 */
+  .word   0 /* -8 */ 
+  .word   0 /* -7 */
+  .word   0	/* -6 */
+  .word   default_handler  /* -5 SWI instruction */
+  .word   default_handler  /* -4 Debug monitor */
+  .word   0 /* -3 */
+  .word   default_handler  /* -2 PendSV */
+  .word   systick_handler  /* -1 Systick */
+ irq0:  
   /* External Interrupts */
-  .word      default_handler /* IRQ0, Window WatchDog              */                                        
+  .word      default_handler /* IRQ0, Window WatchDog  */                                        
   .word      default_handler /* IRQ1, PVD_VDM */                        
   .word      default_handler /* IRQ2, TAMPER */            
   .word      default_handler /* IRQ3, RTC  */                      
@@ -619,6 +620,32 @@ ULAST:
 ***********************************/
 
 	.p2align 4
+
+// RST-IVEC ( n -- )
+// reset interrupt vector n to default_handler
+	_HEADER RSTIVEC,8,"RST-IVEC"
+	_NEST 
+	_DOLIT default_handler 
+	BL	SWAP 
+	BL	CELLS 
+	_DOLIT irq0+IRQOFFSET  
+	BL	PLUS 
+	BL	STORE 
+	_UNNEST 
+
+//	SET-IVEC ( a n -- )
+// set interrupt vector address 
+	_HEADER SETIVEC,8,"SET-IVEC"
+	_NEST
+	BL	SWAP 
+	BL 	ONEP 
+	BL	SWAP  
+	BL CELLS 
+	_DOLIT irq0+IRQOFFSET  
+	BL	PLUS 
+	BL 	STORE 
+	_UNNEST 
+
 
 // RANDOM ( n1 -- {0..n1-1} )
 // return pseudo random number 
@@ -3417,6 +3444,35 @@ CALLC:
 	BL	AT
 	BL	STORE
 	_UNNEST
+
+
+//  I: ( -- a )
+// debute la compilation 
+// d'une routine d'interruption. 
+	_HEADER ICOLON,2,"I:"
+	_NEST 
+	BL	HERE
+	BL	DOLIT 
+	_NEST 
+	BL	COMMA 
+	BL	RBRAC 
+	_UNNEST 
+
+// I; ( a -- a )
+// Termine la compilation 
+// d'une routine d'interruption. 
+	_HEADER ISEMIS,IMEDD+COMPO+2,"I;"
+	_NEST 
+	BL	DOLIT 
+	LDMFD	R2!,{LR}
+	BL	COMMA
+	BL	DOLIT 
+	BX LR 
+	NOP 
+	BL COMMA 
+	BL	LBRAC
+	_UNNEST 
+
 
 /*********************
    Defining words
