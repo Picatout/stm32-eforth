@@ -168,6 +168,7 @@
 	LDR	R5,[R1],#4
 	.endm
 
+	/* dictionary header for words copied to RAM */
 	.macro _HEADER  label, nlen, name
 		.section .inflash.dictinary 
 	LF_\label:   // link field
@@ -182,6 +183,32 @@
 		.p2align 2 
 	\label:  // code address in .section .text 
 	.endm 
+
+	/* dictionary header for words executed from flash memory */
+	.macro _HEADER_FL  label, nlen, name
+		.section .inflash.dictinary 
+	LF_\label:   // link field
+		.word link 
+		.equ link , . 
+	_\label: .byte \nlen    // name field
+		.ascii "\name"
+		.p2align 2 
+	CA_\label:   // code field address 
+		.word \label + MAPOFFSET 
+		.section .text, "ax", %progbits 
+		.p2align 2 
+	\label:  // code address in .section .text 
+		_DOLIT FL_\label 
+		MOV R4,R5
+		_POP 
+		BLX  R4
+		_NEXT     
+		.section .inflash ,"ax", %progbits 
+		.p2align 2 
+		.type FL_\label, %function 
+	FL_\label: 
+	.endm 
+
 
 	.equ link, 0
 
@@ -3568,6 +3595,17 @@ DODOES:
 	BL	OVERT 
 	_UNNEST
 
+//  FCALL ( a -- )
+//  call code in FLASH memory 
+//  from RAM or opposite
+	_HEADER FCALL,5,"FCALL"
+	MOV R4,R5
+	_POP 
+	ORR R4,R4,#1
+	BLX R4 
+	_NEXT 
+
+
 /*************
    Tools
 *************/
@@ -3578,7 +3616,9 @@ DODOES:
 // 	.word	_VARIA+MAPOFFSET
 // _DMP	.byte  3
 // 	.ascii "dm+"
-// 	.p2align 2 	
+ 	.p2align 2 	
+	.section .inflash, "ax", %progbits 
+	.type DMP, %function 
 DMP:
 	_NEST
 	BL	OVER
@@ -3595,12 +3635,13 @@ PDUM1:
 	BL	ONEP			// increment address
 PDUM2:
   BL	DONXT
-	.word	PDUM1+MAPOFFSET	// loop till done
+	.word	PDUM1	// loop till done
 	_UNNEST
 	.p2align 2 
+
 //    DUMP	( a u -- )
 // 	Dump u bytes from a, in a formatted manner.
-	_HEADER DUMP,4,"DUMP"
+	_HEADER_FL DUMP,4,"DUMP"
 	_NEST
 	BL	BASE
 	BL	AT
@@ -3611,7 +3652,7 @@ PDUM2:
 	BL	TOR
 	B.W	DUMP4			// start count down loop
 DUMP1:
-  BL	CR
+    BL	CR
 	_DOLIT	16
 	BL	DDUP
 	BL	DMP			// display numeric
@@ -3621,10 +3662,10 @@ DUMP1:
 	BL	SPACE
 	BL	TYPEE			// display printable characters
 DUMP4:
-  BL	DONXT
-	.word	DUMP1+MAPOFFSET	// loop till done
+    BL	DONXT
+	.word	DUMP1	// loop till done
 DUMP3:
-  BL	DROP
+    BL	DROP
 	BL	RFROM
 	BL	BASE
 	BL	STORE			// restore radix
@@ -3632,7 +3673,7 @@ DUMP3:
 
 //    .S	  ( ... -- ... )
 // 	Display the contents of the data stack.
-	_HEADER DOTS,2,".S"
+	_HEADER_FL DOTS,2,".S"
 	_NEST
 	BL	SPACE
 	BL	DEPTH			// stack depth
@@ -3644,13 +3685,13 @@ DOTS1:
 	BL	DOT			// index stack, display contents
 DOTS2:
 	BL	DONXT
-	.word	DOTS1+MAPOFFSET	// loop till done
+	.word	DOTS1	// loop till done
 	BL	SPACE
 	_UNNEST
 
 //    >NAME	( ca -- na | F )
 // 	Convert code address to a name address.
-	_HEADER TNAME,5,">NAME"
+	_HEADER_FL TNAME,5,">NAME"
 	_NEST
 	BL	TOR			//  
 	BL	CNTXT			//  va
@@ -3658,13 +3699,15 @@ DOTS2:
 TNAM1:
 	BL	DUPP			//  na na
 	BL	QBRAN
-	.word	TNAM2+MAPOFFSET	//  vocabulary end, no match
+	.word	TNAM2	//  vocabulary end, no match
 	BL	DUPP			//  na na
 	BL	NAMET			//  na ca
 	BL	RAT			//  na ca code
 	BL	XORR			//  na f --
+	_DOLIT 	0xFFFFFF
+	BL	ANDD 
 	BL	QBRAN
-	.word	TNAM2+MAPOFFSET
+	.word	TNAM2
 	BL	CELLM			//  la 
 	BL	AT			//  next_na
 	B.W	TNAM1
@@ -3675,11 +3718,11 @@ TNAM2:
 
 //    .ID	 ( na -- )
 // 	Display the name at address.
-	_HEADER DOTID,3,".ID"
+	_HEADER_FL DOTID,3,".ID"
 	_NEST
 	BL	QDUP			// if zero no name
 	BL	QBRAN
-	.word	DOTI1+MAPOFFSET
+	.word	DOTI1
 	BL	COUNT
 	_DOLIT	0x1F
 	BL	ANDD			// mask lexicon bits
@@ -3697,6 +3740,9 @@ DOTI1:
 
 // .CA ( ca -- ca )
 // print code field address 
+	.section .inflash ,"ax", %progbits 
+	.p2align 2
+	.type DOTCA, %function 
 DOTCA:
 	_NEST 
 	BL  DUPP
@@ -3707,6 +3753,7 @@ DOTCA:
 
 // CODE_ABORT ( ca -- f )
 // abort if code definition
+	.type CODE_ABORT,%function
 CODE_ABORT:
 	_NEST 
 	BL DOTCA  
@@ -3716,7 +3763,7 @@ CODE_ABORT:
 	_NEST 
 	BL XORR 
 	BL QBRAN 
-	.word 1f+MAPOFFSET 
+	.word 1f 
 	BL DECIM
 	BL ABORQ 
 	.byte 9 
@@ -3733,6 +3780,7 @@ CODE_ABORT:
 
 // UNNEST? ( ca -- ca f )
 // check if UNNEST 
+	.type UNNESTQ,%function
 UNNESTQ:
 	_NEST 
 	BL DUPP 
@@ -3742,7 +3790,7 @@ UNNESTQ:
 	BL EQUAL
 	BL DUPP 
 	BL QBRAN
-	.word 1f+MAPOFFSET  
+	.word 1f  
 	BL DOTQP
 	.byte 6
 	.ascii "unnest" 
@@ -3752,6 +3800,7 @@ UNNESTQ:
 
 
 // search no name routine from code address. 
+	.type NONAMEQ, %function
 NONAMEQ: // ( ca -- na|ca f )
 	_NEST 
 	_DOLIT 0 
@@ -3760,18 +3809,20 @@ NONAMEQ: // ( ca -- na|ca f )
 	BL TOR   
 0:	BL DUPP // ( 0 ca ca -- )  
 	BL RAT  
-	BL AT 
+	BL AT
 	BL QDUP 
 	BL QBRAN 
-	.word 2f+MAPOFFSET 
+	.word 2f 
 	BL XORR 
+	_DOLIT 0xFFFFFF 
+	BL	ANDD  
 	BL QBRAN 
-	.word 1f+MAPOFFSET 
+	.word 1f 
 	BL RFROM 
 	BL CELLP
 	BL TOR  
 	BL BRAN 
-	.word 0b+MAPOFFSET 
+	.word 0b 
 1:  BL RFROM 
 	_DOLIT NONAME_SUB
 	BL SUBB
@@ -3794,6 +3845,7 @@ NONAMEQ: // ( ca -- na|ca f )
 
 // print noname routine label ( n -- )
 // n is offset in ANONYMOUS array 
+	.type DOTNONAME,%function
 DOTNONAME:
 	_NEST 
 	_PUSH 
@@ -3805,6 +3857,7 @@ DOTNONAME:
 
 // IS_BLW ( code -- f )
 // check if it is a BL instruction 
+	.type IS_BLW, %function 
 IS_BLW:
 	_NEST 
 	_DOLIT 0xD000F000
@@ -3817,7 +3870,7 @@ IS_BLW:
 
 //    SEE	 ( -- //  string> )
 // 	A simple decompiler.
-	_HEADER SEE,3,"SEE"
+	_HEADER_FL SEE,3,"SEE"
 	_NEST
 	BL BASE 
 	BL AT 
@@ -3826,7 +3879,7 @@ IS_BLW:
 	BL	TICK	//  ca --, starting address
 	BL	CR	
 	BL  CODE_ABORT
-	BL	SCOL 
+	BL	FL_SCOL 
 	BL  RFROM 
 	BL 	BASE 
 	BL	STORE 
@@ -3835,7 +3888,7 @@ IS_BLW:
 
 // SEECOLON ( ca -- )
 // Decompile colon definition 
-	_HEADER SCOL,8,"SEECOLON"
+	_HEADER_FL SCOL,8,"SEECOLON"
 	_NEST 
 	_DOLIT 9  
 	BL TOR // not a BL counter limit to 10 consecutives 
@@ -3844,29 +3897,31 @@ SCOL1:
 	BL  DOTCA 
 	BL  UNNESTQ
 	BL	QBRAN 
-	.word 1f+MAPOFFSET  
+	.word 1f  
 	BL	DUPP 
 	BL	CELLP
 	BL	AT 
 	BL	IS_BLW
 	BL	INVER  
 	BL	QBRAN 
-	.word SCOL1+MAPOFFSET 
+	.word SCOL1 
 	BL	RFROM 
 	BL	DROP 
 	BL	BRAN 
-	.word 2f+MAPOFFSET 
+	.word 2f 
 1:	BL	DUPP			//  a a
-	BL	DECOMP		//  a
+	BL	FL_DECOMP		//  a
 	BL	CR 
 	BL	DONXT  
-	.word	SCOL1+MAPOFFSET
+	.word	SCOL1
 2:	BL DROP 
 	_UNNEST
 
 // BL-ADR ( asm_code -- rel_adr )
 // get absolute address from asm_code 
 // ref: ARM-v7M architecture reference, section A7.7.18 
+	.p2align 2 
+	.type BLADR, %function 
 BLADR: 
 	MOV.W R4,R5
 	ROR R4,#16 
@@ -3889,14 +3944,14 @@ BLADR:
 	
 // 	DECOMPILE ( a -- )
 // 	Convert code in a.  Display name of command or as data.
-	_HEADER DECOMP,9,"DECOMPILE"
+	_HEADER_FL DECOMP,9,"DECOMPILE"
 	_NEST
 	BL	DUPP			//  a a
 	BL	AT			//  a code
 	BL	DUPP			//  a code code
 	BL	IS_BLW
 	BL	QBRAN
-	.word	DECOM2+MAPOFFSET	//  not a BL instruction 
+	.word	DECOM2	//  not a BL instruction 
 	//  a valid_code --, extract address and display name
 	BL DOTQP  
 	.byte 3
@@ -3909,13 +3964,13 @@ BLADR:
 	BL  DOTCA 
 	BL	NONAMEQ 
 	BL	QBRAN 
-	.word DECOMP1+MAPOFFSET  
+	.word DECOMP1  
 	BL	BRAN 
-	.word DECOMP3+MAPOFFSET 
+	.word DECOMP3 
 DECOMP1:
-	BL	TNAME			//  a na/0 --, is it a name?
+	BL	FL_TNAME			//  a na/0 --, is it a name?
 DECOMP3:
-	BL	DOTID			//  a --, display name
+	BL	FL_DOTID			//  a --, display name
 	BL	DROP
 // reset not BL counter 
 	BL	RFROM 
@@ -3933,7 +3988,7 @@ DECOM2: // not a BL
 
 //    WORDS	( -- )
 // 	Display the names in the context vocabulary.
-	_HEADER WORDS,5,"WORDS"
+	_HEADER_FL WORDS,5,"WORDS"
 	_NEST
 	BL	CR
 	BL	CNTXT
@@ -3941,15 +3996,17 @@ DECOM2: // not a BL
 WORS1:
 	BL	QDUP			// ?at end of list
 	BL	QBRAN
-	.word	WORS2+MAPOFFSET
+	.word	WORS2
 	BL	DUPP
 	BL	SPACE
-	BL	DOTID			// display a name
+	BL	FL_DOTID			// display a name
 	BL	CELLM
 	BL	AT
 	B.W	WORS1
 WORS2:
 	_UNNEST
+
+	.section .text , "ax", %progbits
 
 // **************************************************************************
 //  cold start
@@ -4039,9 +4096,9 @@ COLD2:
 	.section .rodata 
 	.p2align 2
 NONAME_SUB: // routine not in the dictionary 
-	.word BRAN+MAPOFFSET,QBRAN+MAPOFFSET, DOLIT+MAPOFFSET,DONXT+MAPOFFSET,DODOES+MAPOFFSET
-	.word DOVAR+MAPOFFSET,DOCON+MAPOFFSET,IS_BLW+MAPOFFSET,DOTQP+MAPOFFSET,BLADR+MAPOFFSET  
-	.word DOTCA+MAPOFFSET,NONAMEQ+MAPOFFSET,STRCQ+MAPOFFSET,VERSN+MAPOFFSET  
+	.word BRAN,QBRAN, DOLIT,DONXT,DODOES
+	.word DOVAR,DOCON,IS_BLW,DOTQP,BLADR  
+	.word DOTCA,NONAMEQ,STRCQ,VERSN  
 	.word 0 
 
 ANONYMOUS: // anonymous routines 

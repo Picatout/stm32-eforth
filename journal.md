@@ -1,4 +1,14 @@
-### 2021-01-01  
+### 2021-01-04
+
+* Création de la macro **_HEADER_FL** pour créer des mots qui sont exécutés en mémoire flash. Ces mots sont appellé par un appel indirect par l'intruction machine **BLX**. 
+La macro cré un code qui lui est copié en mémoire RAM. J'appelle ce code un *proxy*. 
+
+* Ajout du mot **FCALL**&nbsp;&nbsp;( a -- ) Ce mot permet de faire un appel hors de porté d'un branchement relatif en mettant sur la pile l'adresse *a* de la routine.
+
+* Modifier les mots dans la section **outils** pour qu'ils s'exécutent en mémoire flash. Ces mots sont construit avec la macros **_HEADER_FL**.  Cette modificaton permet de
+d'économiser de la mémoire RAM. 
+
+### 2021-01-02  
 
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
