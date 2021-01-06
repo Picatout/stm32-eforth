@@ -1,4 +1,20 @@
+### 2021-01-06  
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
+
+* Ajout des mots:
+
+  * **DEFER**&nbsp;&nbsp;( -- ) name ,  Création d'un nouveau mot *name* dont l'action sera définit ultérieurement. 
+
+  * **DEFER!**&nbsp;&nbsp;( a -- ) name , Détermine l'action d'un mot différé *name*.  *a* est l'adresse d'exécution du code. 
+
+  * **DEFER@**&nbsp;&nbsp;( -- a ) name, Retourne l'adresse d'exécution du mot différé *name*. 
+
+  * **H.**&nbsp;&nbsp;( u --  ) Imprime un entier non signé en hexadécimal indépendamment de la valeur de la variable système **BASE**. 
+
 ### 2021-01-04
+
+#### travail sur [stm32eforth.s](stm32eforth.s)
 
 * Création de la macro **_HEADER_FL** pour créer des mots qui sont exécutés en mémoire flash. Ces mots sont appellé par un appel indirect par l'intruction machine **BLX**. 
 La macro cré un code qui lui est copié en mémoire RAM. J'appelle ce code un *proxy*. 

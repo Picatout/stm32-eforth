@@ -2134,6 +2134,21 @@ DOTQP:
 	BL	TYPEE
 	_UNNEST
 
+//   H. ( u -- )
+//  display unsigned integer in hexadecimal
+	_HEADER HDOT,2,"H."
+	_NEST 
+	BL	BASE 
+	BL	AT 
+	BL	TOR 
+	BL	HEX 
+	BL	UDOT 
+	BL	RFROM 
+	BL	BASE 
+	BL	STORE 
+	_UNNEST 
+
+
 //    .	   ( w -- )
 // 	Display an integer in free format, preceeded by a space.
 	_HEADER DOT,1,"."
@@ -2348,7 +2363,6 @@ PARS8:
 	BL	TOCFA
 	BL	AT  
 	_UNNEST 
-
 
 //    SAME?	( a1 a2 u -- a1 a2 f | -0+ )
 // 	Compare u bytes in two strings. Return 0 if identical.
@@ -3511,7 +3525,6 @@ CALLC:
 	_NEST 
 	BL	TOKEN
 	BL	SNAME
-//	BL	OVERT  
 	BL	HERE   
 	BL	CELLP
 	BL	COMMA 
@@ -3599,12 +3612,59 @@ DODOES:
 //  call code in FLASH memory 
 //  from RAM or opposite
 	_HEADER FCALL,5,"FCALL"
+	_NEST 
 	MOV R4,R5
 	_POP 
 	ORR R4,R4,#1
 	BLX R4 
-	_NEXT 
+	_UNNEST 
 
+
+// DEFER ( -- ) name
+// create a differed word 
+	_HEADER DEFER,5,"DEFER"
+	_NEST 
+	BL	HEAD
+	_DOLIT  NOP + MAPOFFSET 
+	BL	CALLC 
+	BL	DOLIT 
+	_UNNEST  
+	BL	COMMA 
+	BL	OVERT  
+	_UNNEST 
+
+// DEFER! ( a -- ) name 
+// set execution address of a defered word 
+	_HEADER DEFERSTO,6,"DEFER!"
+	_NEST
+	BIC R5,R5,#1 
+	BL	TICK 
+	BL	CELLP 
+	BL	DUPP
+	BL	TOR 
+	BL SUBB 
+	SUB R5,R5,#4 
+	BL COMPILE_BLW 
+	BL	RFROM   
+	BL	STORE 
+	_UNNEST 
+	
+// DEFER@ ( -- a ) name
+// get execution address of word 	
+	_HEADER DEFERAT,6,"DEFER@"
+	_NEST 
+	BL TICK 
+	BL	CELLP
+	BL	DUPP
+	BL	TOR  
+	BL	AT
+	_DOLIT BLADR 
+	BL	FCALL 
+	_DOLIT	4  
+	BL	PLUS 
+	BL	RFROM
+	BL	PLUS  
+	_UNNEST
 
 /*************
    Tools
