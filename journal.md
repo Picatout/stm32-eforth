@@ -1,5 +1,7 @@
 ### 2021-01-06  
 
+* Copier fichiers pour la carte **black-pill** dans le dossier **board**. 
+
 #### travail sur [stm32eforth.s](stm32eforth.s)
 
 * Ajout des mots:
