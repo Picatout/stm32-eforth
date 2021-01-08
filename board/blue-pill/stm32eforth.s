@@ -77,7 +77,7 @@
   .fpu softvfp
   .thumb
 
-  .include "board/blue-pill/stm32f103.inc"
+  .include "stm32f103.inc"
 
 /* blue pill specific constants */ 
   .equ LED_GPIO, GPIOC_BASE_ADR

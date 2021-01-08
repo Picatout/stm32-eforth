@@ -11,7 +11,7 @@ OBJCOPY=$(PREFIX)objcopy
 #build directory
 BUILD_DIR=build/
 #Link file
-LD_FILE=board/blue-pill/stm32f103c8t6.ld 
+LD_FILE=stm32f103c8t6.ld 
 LD_FLAGS=-mmcu=stm32f103
 #sources
 SRC=stm32eforth.s 

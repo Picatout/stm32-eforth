@@ -1,23 +1,8 @@
 # stm32-eforth
 
-Adaptation de eforth pour sur la carte **blue-pill**. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. 
+Adaptation de eforth pour sur les cartes **blue-pill** et **black-pill. Je vais travaillé à partir du fichier original de C.H. Ting [stm32eForth720](http://forth.org/OffeteStore/2165_stm32eForth720.zip).  Le code source a été écris en assembleur pour les outils de développements µVision 5. Je vais utilisé **gcc-arm-none-eabi** il faudra donc une réécriture du fichier source original. 
 
 Pour le suivit de mises à jours consultez le fichier [journal.md](journal.md)
-
-## 2020-12-10
-
-Il y a maintenant 2 versions du eForth.  
-
-* **subroutine threaded** Le code système Forth est copié en mémoire RAM et s'exécute à partir de là. Ça consomme 50% de la mémoire RAM. Pour construire et programmer ce système sur la blue pill il faut faire:
-```
-make build && make flash 
-```
-
-* **indirect threaded** Le système Forth demeure et s'exécute en mémoire FLASH. Seul les définitions de l'utilisateur sont en mémoire RAM et s'éxécute à partir de là. l'aventage est le gain en mémoire RAM. l'inconvient est qu'un système **indirect threaded** est plus lent qu'un système **subroutine threaded**. 
-Pour construite cette version il faut faire:
-```
-make build_fl && make flash_fl 
-```
 
 
 ## prérequis
@@ -38,10 +23,6 @@ Found 1 stlink programmers
  descr:      F1xx Medium-density
 jacques@hp15:~/github/stm32-eforth$ 
 ```
-
-## carte blue pill
-![carte](board/blue-pill/board-view-2.jpg)
-
 ## communication
 
 La comminication avec la carte se fait par le USART1 configuré à 115200 BAUD, pas de parité, 8 bits et 1 stop. Pas de contrôle de flux.
@@ -67,7 +48,39 @@ Côté RS-232
 
 ![montage](docs/montage.jpg)
 
-## programmation
 
-Tout le code sera réalisé en assembleur. La première étape sera de configurer le MCU pour qu'il utilise le cristal **8 Mhz** et le PLL pour que la fréquence du MCU soit de **72 Mhz**.  Le code d'initialisation matériel sera dans le fichier [startup.s](board/blue-pill/startup.s).
+## organisation des fichiers
+
+Dans le dossier **board** il y a un dossier pour chaque carte. Pour garder ça le plus simple possible. Chaque dossier à tout ce qu'il faut pour construire et flasher **eforth**. Il y a un **readme.md** dans chaque dossier. 
+
+## structure des dossiers 
+
+* stm32-eforth
+    * board
+        * blue-pill
+            * build 
+            * docs 
+        * black-pill
+            * build 
+            * docs 
+        * stm32g431-nucleo-32 
+            * build 
+            * docs 
+    * docs 
+
+
+
+## carte blue pill
+
+![blue pill](board/blue-pill/docs/board-view-2.jpg)
+
+## carte black pill 
+
+![black pill](board/black-pill/docs/STM32F4x1_PinoutDiagram_RichardBalint.png)
+
+## carte NUCLEO-G431KB
+
+Pour cette carte je suis bloqué car **st-flash** ne fonctionne pas avec la version 3 du programmeur STLINK utilisé sur cette carte. 
+
+![carte nucleo](board/stm32g431-nucleo-32/docs/carte.png)
 

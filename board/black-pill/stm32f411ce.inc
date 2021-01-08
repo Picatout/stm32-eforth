@@ -70,41 +70,43 @@
     .equ RCC_DCKCFGR, 0X8C 
 
     /* FLASH registers address */
-    .equ FLASH_BASE_ADR, 0x40022000
+    .equ FLASH_BASE_ADR, 0x40023C00
     /* FLASH registers offset */
     .equ FLASH_ACR, 0
     .equ FLASH_KEYR, 4
     .equ FLASH_OPTKEYR, 8
     .equ FLASH_SR, 12
     .equ FLASH_CR, 16
-    .equ FLASH_AR, 20
-    .equ FLASH_OBR, 28
-    .equ FLASH_WRPR,32
+    .equ FLASH_OPTCR, 20
     .equ RDPRT_KEY, 0x00A5
     .equ FLASH_KEY1, 0x45670123
     .equ FLASH_KEY2, 0xCDEF89AB
+    .equ OPTKEY1, 0x08192A3B
+    .equ OPTKEY2, 0x4C5D6E7F
 
     /* GPIOx base address */
-    .equ GPIOA_BASE_ADR, 0x40010800
-    .equ GPIOB_BASE_ADR, 0x40010C00
-    .equ GPIOC_BASE_ADR, 0x40011000
-    .equ GPIOD_BASE_ADR, 0x40011400
-    .equ GPIOE_BASE_ADR, 0x40011800
-    .equ GPIOF_BASE_ADR, 0x40018C00
-    .equ GPIOG_BASE_ADR, 0x40012000
+    .equ GPIOA_BASE_ADR, 0x40020000
+    .equ GPIOB_BASE_ADR, 0x40020400
+    .equ GPIOC_BASE_ADR, 0x40020800
+    .equ GPIOD_BASE_ADR, 0x40020C00
+    .equ GPIOE_BASE_ADR, 0x40021000
+    .equ GPIOH_BASE_ADR, 0x40021C00
 
     /* gpiox registers offset from base address */
-    .equ GPIO_CRL, 0
-    .equ GPIO_CRH, 4
-    .equ GPIO_IDR, 8
-    .equ GPIO_ODR, 12
-    .equ GPIO_BSRR, 16
-    .equ GPIO_BRR, 20
-    .equ GPIO_LOCKR, 24 
+    .equ GPIO_MODER, 0
+    .equ GPIO_OTYPER, 4
+    .equ GPIO_OSPEEDR, 8
+    .equ GPIO_PUPDR, 12
+    .equ GPIO_IDR, 16
+    .equ GPIO_ODR, 20
+    .equ GPIO_BSRR, 24 
+    .equ GPIO_LCKR, 28
+    .equ GPIO_AFRL, 32
+    .equ GPIO_AFRH, 36
     
 
     /* USART1 registers */
-    .equ USART1_BASE_ADR, 0x40013800
+    .equ USART1_BASE_ADR, 0x40011000
     /* USARTx registers offset */
     .equ USART_SR, 0
     .equ USART_DR,4
@@ -126,37 +128,68 @@
    .equ SCB_BASE_ADR, 0xE000ED00
    /* registers offset */
    .equ SCB_CPUID, 0
-   .equ SCB_ICSR, 4 
-   .equ SCB_VTOR, 8
-   .equ SCB_AIRCR, 12
-   .equ SCB_SCR, 16
-   .equ SCB_CCR, 20
-   .equ SCB_SHPR1,24
-   .equ SCB_SHPR2,28
-   .equ SCB_SHPR3,32
-   .equ SCB_SHCRS,36
-   .equ SCB_CFSR,40
-   .equ SCB_HFSR,44
-   .equ SCB_MMAR,52
-   .equ SCB_BFAR,56
+   .equ SCB_ICSR, 0x4 
+   .equ SCB_VTOR, 0x8
+   .equ SCB_AIRCR, 0xc
+   .equ SCB_SCR, 0x10
+   .equ SCB_CCR, 0x14
+   .equ SCB_SHPR1,0x18
+   .equ SCB_SHPR2,0x1c
+   .equ SCB_SHPR3,0x20
+   .equ SCB_SHCSR,0x24
+   .equ SCB_CFSR,0x28
+   .equ SCB_MMSR,0x28
+   .equ SCB_BFSR,0x29
+   .equ SCB_UFSR,0x2a
+   .equ SCB_HFSR,0x2c
+   .equ SCB_MMAR,0x34
+   .equ SCB_BFAR,0x38
+   .equ SCB_AFSR,0x3c
    // key to to write in SCB_AIRCR 
    .equ SCB_VECTKEY,0x5fa 
    
    /* NVIC block */
    .equ NVIC_BASE_ADR, 0xE000E100
-   .equ NVIC_ISER0, 0
-   .equ NVIC_ISER1, 4
-   .equ NVIC_ISER2, 8
-   .equ NVIC_ICER0, 0x80
-   .equ NVIC_ICER1, 0x84 
-   .equ NVIC_ICER2, 0x88 
-   .equ NVIC_ISPR0, 0x100
-   .equ NVIC_ISPR1, 0x104
-   .equ NVIC_ISPR2, 0x108 
-   .equ NVIC_ICPR0, 0x180
-   .equ NVIC_ICPR1, 0x184
-   .equ NVIC_ICPR2, 0x188
-   .equ NVIC_IABR0, 0x200
-   .equ NVIC_IABR1, 0x204
-   .equ NVIC_IABR2, 0x208
-   .equ NVIC_IPR_BASE, 0x300 
+   .equ NVIC_ISER0, 0x100
+   .equ NVIC_ISER1, 0x104
+   .equ NVIC_ISER2, 0x108
+   .equ NVIC_ISER3, 0x10c
+   .equ NVIC_ISER4, 0x110
+   .equ NVIC_ISER5, 0x114
+   .equ NVIC_ISER6, 0x118
+   .equ NVIC_ISER7, 0x11c
+   .equ NVIC_ICER0, 0x180
+   .equ NVIC_ICER1, 0x184 
+   .equ NVIC_ICER2, 0x188 
+   .equ NVIC_ICER3, 0x18C 
+   .equ NVIC_ICER4, 0x190 
+   .equ NVIC_ICER5, 0x194 
+   .equ NVIC_ICER6, 0x198 
+   .equ NVIC_ICER7, 0x19C 
+   .equ NVIC_ISPR0, 0x200
+   .equ NVIC_ISPR1, 0x204
+   .equ NVIC_ISPR2, 0x208 
+   .equ NVIC_ISPR3, 0x20c 
+   .equ NVIC_ISPR4, 0x210 
+   .equ NVIC_ISPR5, 0x214 
+   .equ NVIC_ISPR6, 0x218 
+   .equ NVIC_ISPR7, 0x21c 
+   .equ NVIC_ICPR0, 0x280
+   .equ NVIC_ICPR1, 0x284
+   .equ NVIC_ICPR2, 0x288
+   .equ NVIC_ICPR3, 0x28c
+   .equ NVIC_ICPR4, 0x290
+   .equ NVIC_ICPR5, 0x294
+   .equ NVIC_ICPR6, 0x298
+   .equ NVIC_ICPR7, 0x29c
+   .equ NVIC_IABR0, 0x300
+   .equ NVIC_IABR1, 0x304
+   .equ NVIC_IABR2, 0x308
+   .equ NVIC_IABR3, 0x30c
+   .equ NVIC_IABR4, 0x310
+   .equ NVIC_IABR5, 0x314
+   .equ NVIC_IABR6, 0x318
+   .equ NVIC_IABR7, 0x31c
+/*  NVIC_IPR0 - NVIC_IPR59 */
+   .equ NVIC_IPR_BASE, 0x400 
+   .equ NVIC_STIR, 0xE00 

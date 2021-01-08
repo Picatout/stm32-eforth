@@ -1,8 +1,21 @@
 ### 2021-01-06  
 
+* Réorganiser struture des répertoires pour rassembler tous les fichier d'une carte dans le répertoire de cette carte. 
+
+* Travail sur [stm32f411ce.inc](board/black-pill/stm32f411ce.inc) 
+
+* Pour construire et flasher la version black-pill 
+```
+~/github/stm32-eforth/board$ cd ..
+~/github/stm32-eforth$ cd board/black-pill
+~/github/stm32-eforth/board/black-pill$ make build && make flash
+```
+
+### 2021-01-06  
+
 * Copier fichiers pour la carte **black-pill** dans le dossier **board**. 
 
-#### travail sur [stm32eforth.s](stm32eforth.s)
+#### travail sur [board/black-pill/stm32eforth.s](board/black-pill/stm32eforth.s)
 
 * Ajout des mots:
 
