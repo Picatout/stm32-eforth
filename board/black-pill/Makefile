@@ -33,7 +33,7 @@ build:  *.s Makefile $(LD_FILE)
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 flash: $(BUILD_DIR)$(NAME).bin 
-	st-flash --serial=$(SERIAL) erase 
+#	st-flash --serial=$(SERIAL) erase 
 	st-flash  --serial=$(SERIAL)  write $(BUILD_DIR)$(NAME).bin 0x8000000
 
 dasm:

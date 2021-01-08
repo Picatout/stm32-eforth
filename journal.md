@@ -1,3 +1,9 @@
+### 2021-01-08
+
+#### Travail sur black-pill
+
+* Déboguer réception UART qui ne fonctionne pas. 
+
 ### 2021-01-06  
 
 * Réorganiser struture des répertoires pour rassembler tous les fichier d'une carte dans le répertoire de cette carte. 

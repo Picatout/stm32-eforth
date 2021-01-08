@@ -149,7 +149,7 @@
    .equ SCB_VECTKEY,0x5fa 
    
    /* NVIC block */
-   .equ NVIC_BASE_ADR, 0xE000E100
+   .equ NVIC_BASE_ADR, 0xE000E000
    .equ NVIC_ISER0, 0x100
    .equ NVIC_ISER1, 0x104
    .equ NVIC_ISER2, 0x108

@@ -444,11 +444,10 @@ reset_handler:
 	bl	init_devices	 	/* RCC, GPIOs, USART */
 	bl  uart_init
 	bl forth_init 
-//	bl	blink			/* test */
 	ldr r0,forth_entry
 	orr r0,#1
-	blx r0
-	b.w .  
+	bx r0
+  
 	.p2align 2 
 forth_entry:
 	.word COLD+MAPOFFSET 
@@ -461,31 +460,37 @@ forth_init:
 	EOR R5,R5  
 	BX LR 
 
-/*
+
 // test code 
+	.type echo, %function 
+echo:
+	BL KEY 
+	BL EMIT 
+	B  echo 	
+
 	.type blink, %function 
 blink:
 	_MOV32 r0,GPIOC_BASE_ADR
-0:	mov r1,#1<<LED_PIN 
-	str r1,[r0,GPIO_BSRR]
-	mov	r1,#500
-	str r1,[R3,#TIMER_OFS] 
+0:	mov r4,#1<<LED_PIN 
+	str r4,[r0,GPIO_BSRR]
+	mov	r4,#500
+	str r4,[R3,#TIMER_OFS] 
 	_CALL timeout
-	mov r1,#1<<(LED_PIN+16)
-	str r1,[r0,#GPIO_BSRR]
-	mov	r1,#500
-	str r1,[R3,#TIMER_OFS] 
+	mov r4,#1<<(LED_PIN+16)
+	str r4,[r0,#GPIO_BSRR]
+	mov	r4,#500
+	str r4,[R3,#TIMER_OFS] 
 	_CALL timeout 
 	b 0b 
 
 	.type timeout, %function 
 timeout:
-	ldr r1,[r3,#TIMER_OFS]
-	orrs r1,r1
+	ldr r4,[r3,#TIMER_OFS]
+	orrs r4,r4
 	bne timeout 
 	bx lr 
 
-*/
+
 
   .type init_devices, %function
   .p2align 2 
@@ -573,14 +578,15 @@ uart_init:
 /* set GPIOA PIN 9, uart TX  */
   _MOV32 r0,GPIOA_BASE_ADR
   ldr r1,[r0,#GPIO_MODER]
-  mvn r2,#(3<<(2*9)) //+(3<<(2*10))
+  mvn r2,#0xf<<(2*9)
   and r1,r1,r2
-  mov r2,#(2<<(2*9)) //+(2<<(2*10))
+  mov r2,#0xa<<(2*9) // alternate function mode for PA9 and PA10
   orr r1,r1,r2 
   str r1,[r0,#GPIO_MODER]
-/* select alternate functions USART1 */ 
-  mov r1,#(7<<4)+(7<<8)
+/* select alternate functions USART1==AF07 */ 
+  mov r1,#0x77<<4 
   str r1,[r0,#GPIO_AFRH]
+/* configure USART1 registers */
   _MOV32 r0,UART 
 /* BAUD rate */
   mov r1,#(52<<4)+1  /* (96Mhz/16)/115200=52,0833333 quotient=52, reste=0,083333*16=1 */
@@ -784,7 +790,7 @@ ULED_OFF:
 	str r6,[r4,#GPIO_BSRR]
 	_NEXT 
 	
-//    ?RX	 ( -- c T | F )
+//    ?KEY	 ( -- c T | F )
 // 	Return input character and true, or a false if no input.
 	_HEADER QRX,4,"?KEY"
 QKEY: 
@@ -4194,10 +4200,12 @@ COLD1:
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack
 	// check if user image saved in slot 0 
+/*
 	BL IMGQ 
 	BL	QBRAN 
 	.word 1f+MAPOFFSET
 	BL	LOAD_IMG 
+*/
 1:	BL	TBOOT
 	BL	ATEXE			// application boot
 	BL	OVERT
@@ -4206,7 +4214,7 @@ COLD1:
 CTOP: 
 COLD2:
 	.word	0XFFFFFFFF
-	
+
 /********************************
   data that doesn't need to be 
   copied in RAM 
