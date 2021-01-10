@@ -1,8 +1,22 @@
+### 2021-01-09
+
+#### Travail sur black-pill
+
+*  **SAVE_IMG**, **LOAD_IMG** et **TURNKEY** fonctionnent maintenant. 
+
+* travail sur l'interface de programmation de la mémoire FLASH qui est différente sur le stm32f411 que sur le stm32f103. Je dois donc faire des modification au système de sauvegarde d'images.
+
+* Remplacer **ERASE_PAGE** par **ERASE_SECTOR**&nbsp;&nbsp;( n -- ) pour effacer le secteur *n* {0..7}.
+
+* Suppression des mots **ERASE_MPG**, **ADR>PG** et **PG>ADR**  inutiles pour ce MCU.
+
+* **IMG_SIZE** modifié, retourne la taille de l'image en mots de 32 bits. 
+
 ### 2021-01-08
 
 #### Travail sur black-pill
 
-* Déboguer réception UART qui ne fonctionne pas. 
+* Déboguer réception UART qui ne fonctionne pas. **résolu** L'adresse de base du NVIC est 0xe000e000 et non 0xe000e100.
 
 ### 2021-01-06  
 

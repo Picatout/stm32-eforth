@@ -1497,7 +1497,7 @@ USR_BGN_ADR:
 	ldr r5,USR_IMG_ADR   
 	_NEXT 
 USR_IMG_ADR:
-	.word USER_SPACE 
+	.word SECTOR7_ADR  
 
 //  IMG_SIGN ( -- a )
 // image signature 
@@ -2808,9 +2808,10 @@ QUIT2:
 	BL	BRAN
 	.word	QUIT2+MAPOFFSET	// continue till error
 
-/***************************
-//  Flash memory interface
-***************************/
+/****************************************
+  Flash memory interface
+REF: RM0383 reference manual section 3.5
+****************************************/
 // UNLOCK ( T|F -- )
 // lock or unlock FLASH write 
 	_HEADER UNLOCK,6,"UNLOCK"
@@ -2818,29 +2819,20 @@ QUIT2:
 	BL QBRAN
 	.word LOCK+MAPOFFSET
 	ldr	r0, flash_regs 
-	mov r4,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+	ldr r4, [r0,#FLASH_CR]
+	tst r4,#(1<<31)
+	beq 1f // trying unlock sequence when already unlock generate exception 
+	mov r4,#0x1f3 // clear EOP|OPERR|WRPERR|PGAERR|PGPERR|RDERR bits 
 	str r4,[r0,#FLASH_SR]
-	ldr r4,[r0,#FLASH_CR]
-	tst r4,#(1<<7)
-	beq 1f 
 	ldr	r4, flash_regs+4 // key1
 	str	r4, [r0, #FLASH_KEYR]
 	ldr	r4, flash_regs+8 // key2 
 	str	r4, [r0, #FLASH_KEYR]
-	/* unlock option registers */
-/*
-	ldr	r4, flash_regs+4 
-	str	r4, [r0, #FLASH_OPTKEYR]
-	ldr	r4, flash_regs+8
-	str	r4, [r0, #FLASH_OPTKEYR]
-*/ 
-1:
-	_UNNEST
+1:	_UNNEST
  // lock flash memory
 LOCK: 
 	ldr r0,flash_regs  
-//	ldr r4,[r0,#FLASH_CR]
-	mov r4,#(1<<7)
+	mov r4,#(1<<31) // LOCK BIT 
 	str r4,[r0,#FLASH_CR]
 	_UNNEST  
 
@@ -2848,93 +2840,74 @@ WAIT_BSY:
 	ldr	r0,flash_regs
 WAIT1:
 	ldr	r4, [r0, #FLASH_SR]	//  FLASH_SR
-	ands	r4, #0x1	//  BSY
+	ands	r4, #(1<<16)	//  BSY
 	bne	WAIT1
 	_NEXT
 
-//    ERASE_PAGE	   ( adr -- )
-// 	  Erase one page of flash memory.
-//    stm32f103 page size is 1024 bytes 
-//    adr is any address inside page to erase 
-	_HEADER EPAGE,10,"ERASE_PAGE"
+// check for flash write error 
+FLASH_ERR_CHECK:
+	_NEST
+	_PUSH 
+	ldr r5,[r0,#FLASH_SR] // check for errors 
+	bl ABORQ 
+	.byte 31
+	.ascii " flash erase|programming error!"
+	.p2align 2
+	_UNNEST 
+
+//    ERASE_SECTOR	   ( sector -- )
+// 	  Erase one sector of flash memory.
+//    stm32f411 has 7 sectors of different size. 
+	_HEADER ESECTOR,12,"ERASE_SECTOR"
 	_NEST
 	bl	WAIT_BSY
 	_DOLIT 1 
-	bl  UNLOCK 
-	ldr r0,flash_regs 	 
-	mov r4,#2 // set PER bit 
-	str r4,[r0,#FLASH_CR]
-//	str r5,[r0,#FLASH_AR] // page to erase address 
-	ldr	r4,[r0, #FLASH_CR]	
-	orr	R4,#0x40	//  set STRT bit   
-	str	r4,[r0, #FLASH_CR]	//  start erasing
+	bl  UNLOCK
+	and R4,r5,#7  // sectors {0..7}
+	lsl r4,r4,#3
+	orr r4,#2   
+	ldr r0,flash_regs
+	_POP 
+//	str r4,[r0,#FLASH_CR]
+	orr r4,#(1<<16) // START bit 
+	str r4,[r0,#FLASH_CR] 	 
  	bl	WAIT_BSY // wait until done
-	_DOLIT 0 
-	bl	UNLOCK  // lock flash write 
-	ldr r5,[r0,#FLASH_SR] // check for errors 
-	and r5,r5,#(5<<2)
-	bl ABORQ 
-	.byte 13
-	.ascii " erase error!"
-	.p2align 2
+	bl FLASH_ERR_CHECK
 	_UNNEST
 
-// store 16 bit word
-// expect flash unlocked  
-HWORD_WRITE: // ( hword address -- )
-	_NEST
-	ldr	r4, [r0, #FLASH_CR]	//  FLASH_CR
-//	bic r4,#(1<<9)|(1<<5)|(1<<4)|(1<<2)|(1<<1) //  clear OPTWRE|OPTER|OPTPG|MER|PER
-	mov r4,#1 // set PG 
-	str r4,[r0,#FLASH_CR]
-	mov r6,r5 
-	_POP 
-	strh r5,[r6] 
-	bl WAIT_BSY 
-	ldr r5,[r0,#FLASH_SR]
-	and r5,r5,#(5<<2) 
-	bl QBRAN
-	.word 1f+MAPOFFSET 
-	bl ABORQ
-	.byte 13
-	.ascii " write error!"
-	.p2align 2
-1:	 
-	_UNNEST 
-
-
 //    I!	   ( data address -- )
-// 	   Write one word into flash memory
-//	   address must even 
+// 	   Write one 32 bits word into flash memory
+//	   address must align on 4 bytes boundary   
 	_HEADER ISTOR,2,"I!"
 	_NEST
 	bl	WAIT_BSY
 	_DOLIT 1 
 	bl  UNLOCK 
-	BL DDUP 
-	BL TOR 
-	BL TOR 
-	BL HWORD_WRITE
-	BL RFROM 
-	ror r5,r5,#16
-	BL RFROM 
-	add r5,r5,#2 
-	BL HWORD_WRITE 
-	_DOLIT 0
-	bl UNLOCK 
+	ldr r0,flash_regs 
+	mov r4,#(2<<8)+1
+	str r4,[r0,#FLASH_CR]
+	mov r4,r5 
+	_POP 
+	str r5,[r4]
+	_POP 
+	bl WAIT_BSY 
+	_DOLIT 0 
+	BL UNLOCK 
+	bl FLASH_ERR_CHECK
 	_UNNEST
 
+
 // IMG_SIZE ( -- u )
-// return flash pages required to save 
+// return image size in 32 bits words  
 // user ram  
 	_HEADER IMG_SIZE,8,"IMG_SIZE"
 	_NEST
 	_DOLIT VARS_END_OFS-IMG_SIGN_OFS 
-	BL USER_END 
+	BL HERE  
 	BL USER_BEGIN 
 	BL SUBB 
 	BL PLUS 
-	_DOLIT 1024 
+	_DOLIT 4 
 	BL SLMOD 
 	BL SWAP 
 	BL QBRAN 
@@ -2954,6 +2927,11 @@ HWORD_WRITE: // ( hword address -- )
 	BL XORR  
 	BL ZEQUAL
 	_UNNEST
+
+/*************************************************
+  Image load and save is done in 
+  sector 7 which is 128KB at address 0x08060000
+************************************************/
 
 // LOAD_IMG (  -- )
 // Load image from FLASH to RAM. 
@@ -2983,28 +2961,6 @@ HWORD_WRITE: // ( hword address -- )
 	BL MOVE
 1:	_UNNEST  
 
-// ERASE_MPG ( u1 u2 -- )
-// erase many pages 
-// u1 first page number 
-// u2 how many pages  
-	_HEADER ERASE_MPG,9,"ERASE_MPG"
-	_NEST 
-	BL TOR 
-	BL PG_TO_ADR 
-	BL BRAN 
-	.word 2f+MAPOFFSET 
-1:
-	BL DUPP 
-	BL TOR 
-	BL EPAGE 
-	BL RFROM
-	add r5,#SECTOR0_SIZE 
-2:
-	BL DONXT
-	.word 1b+MAPOFFSET 
-	_POP 
-	_UNNEST 
-
 // FLSH_WR ( src dest u -- dest+u )
 // write u words to flash memory 
 	_HEADER FLSH_WR,7,"FLSH_WR"
@@ -3028,35 +2984,13 @@ HWORD_WRITE: // ( hword address -- )
 	BL RFROM 
 	_UNNEST 
 
-// ADR>PG ( a -- n )
-// convert address to page number, {0..127} 
-	_HEADER ADR_TO_PG,6,"ADR>PG"
-	lsr r5,#10 
-	and r5,#127 
-	_NEXT  
-
-// PG>ADR ( n -- a )
-// convert page# to address 
-	_HEADER PG_TO_ADR,6,"PG>ADR"
-	movt r5,#2
-	lsl r5,#10 
-	_NEXT 
-
 // ERASE_IMG (  -- )
-// erase image in from FLASH  
+// erase image in from FLASH
+// image is saved in sector 7   
 	_HEADER ERASE_IMG,9,"ERASE_IMG"
 	_NEST
-	BL IMG_ADR 
-	BL IMG_SIZE 
-	BL TOR 
-	BL BRAN 
-	.word  2f+MAPOFFSET 
-1:	BL DUPP 
-	BL EPAGE
-	ADD R5,#SECTOR0_SIZE 
-2:	BL DONXT 
-	.word 1b+MAPOFFSET 
-	BL DROP 
+	_DOLIT 7
+	BL ESECTOR 
 	_UNNEST 
 
 // SAVE_IMG ( -- )
@@ -3130,6 +3064,9 @@ flash_regs:
 	.word FLASH_BASE_ADR // 0 
 	.word FLASH_KEY1   // 4 
 	.word FLASH_KEY2   // 8
+	.word OPTKEY1  // 12 
+	.word OPTKEY2 // 16
+
 
 // **************************************************************************
 //  The compiler
@@ -4199,13 +4136,7 @@ COLD1:
 	_DOLIT	ULAST-UZERO
 	BL	MOVE 			// initialize user area
 	BL	PRESE			// initialize stack
-	// check if user image saved in slot 0 
-/*
-	BL IMGQ 
-	BL	QBRAN 
-	.word 1f+MAPOFFSET
-	BL	LOAD_IMG 
-*/
+	BL	LOAD_IMG // if image saved load it
 1:	BL	TBOOT
 	BL	ATEXE			// application boot
 	BL	OVERT
