@@ -36,3 +36,8 @@
 \ efface du curseur jusqu'à la fin de ligne 
 : CLREOL
     ESC[ [ CHAR K ] LITERAL EMIT ;
+
+\ CURSOR ( n -- )
+\ select cursor shape n {0..6}
+: CURSOR 
+    ESC[ PARAM SPACE ." q" ;

@@ -1,3 +1,11 @@
+### 2021-01-10
+
+* Corrigé bogue mot **MOD**, entête dictionnaire était incorrecte.
+
+* Ajouter **CURSOR**&nbsp;&nbsp;( n -- ) dans ansi.f  pour sélectionner la forme du cursor n {0..6} 
+
+* Modifié jeu [snake](snake.f),  vitesse variable et forme du curseur dans le jeu changée. 
+
 ### 2021-01-09
 
 #### Travail sur black-pill

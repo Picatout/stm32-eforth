@@ -13,7 +13,6 @@
 22 CONSTANT play-height \ hauteur surface jeu
 2 CONSTANT x-offset \ pour affichage
 3 CONSTANT y-offset \ pour affichage
-75 CONSTANT speed \ controle vitesse serpent
 CHAR S CONSTANT ar_left \ vire a gauche
 CHAR D CONSTANT ar_right \ vire a droite
 0 CONSTANT false 
@@ -25,6 +24,7 @@ VARIABLE head \ direction serpent
 VARIABLE snake-len \ longueur serpent
 VARIABLE food \ localisation pastille nourriture
 VARIABLE tail \ localisation ajout anneau serpent
+VARIABLE speed \ controle vitesse serpent  
 
 \ vector permet de creer des variables tableau 1D
 : vector CREATE CELLS ALLOT DOES> SWAP CELLS + ;
@@ -164,7 +164,10 @@ CHAR V north c-head ! \ tete direction nord
    1 food @ borders?
    IF SWAP 2* SWAP THEN
    IF 2* THEN
-   score +! true food ! ;
+   score +! true food ! 
+   score @ 10 MOD 
+   0= IF -5 speed +! THEN 
+   ;
 
 \ rallonge le serpent
 : snake+ ( -- )
@@ -272,7 +275,7 @@ CHAR V north c-head ! \ tete direction nord
 \ boucle du jeu
 : game-loop ( -- )
   BEGIN 
-    speed PAUSE 
+    speed @ PAUSE 
     status food @ -1 = IF new-food THEN 
     draw-food  
     user-key? 
@@ -287,7 +290,7 @@ CHAR V north c-head ! \ tete direction nord
 
 \ initialisation du jeu
 : game-init ( -- )
-\   MSEC SEED ! 
+   70 speed ! 
    4 snake-len ! 0 score ! 
    snake-init draw-walls ;
 
@@ -301,10 +304,12 @@ CHAR V north c-head ! \ tete direction nord
 \ lance le jeux.
 : snake-run ( -- )
     MSEC SEED ! 
+    6 CURSOR 
     BEGIN 
         game-init 
         game-loop 
         game-over?  
         UNTIL 
+    1 CURSOR 
     CLS ;
 

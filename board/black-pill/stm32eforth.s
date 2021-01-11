@@ -1596,7 +1596,7 @@ MMOD3:
 
 //    MOD	 ( n n -- r )
 // 	Signed divide. Return mod only.
-	_HEADER MODD,3,"MODD"
+	_HEADER MODD,3,"MOD"
 	_NEST
 	BL	SLMOD
 	BL	DROP

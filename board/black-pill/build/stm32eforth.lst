@@ -990,10 +990,10 @@ ARM GAS  stm32eforth.s 			page 1
  698 0030 00FF0120 		.word TIBB	/*TIB */
  699 0034 80110018 		.word INTER+MAPOFFSET	/*'EVAL */
  700 0038 00000000 		.word 0			/*HLD */
- 701 003c E40B0000 		.word _LASTN	/*CONTEXT */
+ 701 003c E00B0000 		.word _LASTN	/*CONTEXT */
  702 0040 F01C0000 		.word CTOP  	/* FCP end of system dictionnary */
  703 0044 F01C0018 		.word CTOP+MAPOFFSET	/* CP end of RAM dictionary RAM */
- 704 0048 E40B0000 		.word _LASTN	/*LAST word in dictionary */
+ 704 0048 E00B0000 		.word _LASTN	/*LAST word in dictionary */
  705 004c 00000000 		.word 0,0			/*reserved */
  705      00000000 
  706              	ULAST:
@@ -1947,7 +1947,7 @@ ARM GAS  stm32eforth.s 			page 1
  1596              	
  1597              	//    MOD	 ( n n -- r )
  1598              	// 	Signed divide. Return mod only.
- 1599              		_HEADER MODD,3,"MODD"
+ 1599              		_HEADER MODD,3,"MOD"
  1600 0624 42F804ED 		_NEST
  1601 0628 FFF7F0FF 		BL	SLMOD
  1602 062c FFF702FE 		BL	DROP
@@ -3620,7 +3620,7 @@ ARM GAS  stm32eforth.s 			page 1
  3127              	//    LITERAL	( w -- )
  3128              	// 	Compile tos to code dictionary as an integer literal.
  3129              		_HEADER LITER,IMEDD+7,"LITERAL"
- 3130 1604 44090018 		.word	_COMPI+MAPOFFSET
+ 3130 1604 40090018 		.word	_COMPI+MAPOFFSET
  3131 1608 42F804ED 		_NEST
  3132 160c FFF7E6FF 		BL	COMPI
  3133 1610 8A010018 		.word	DOLIT+MAPOFFSET
@@ -5081,7 +5081,7 @@ DEFINED SYMBOLS
        stm32eforth.s:124    *ABS*:0000000000000050 RX_QUEUE_OFS
        stm32eforth.s:125    *ABS*:0000000000000060 RX_HEAD_OFS
        stm32eforth.s:126    *ABS*:0000000000000064 RX_TAIL_OFS
-       stm32eforth.s:4089   .inflash.dictinary:0000000000000be4 link
+       stm32eforth.s:4089   .inflash.dictinary:0000000000000be0 link
        stm32eforth.s:220    .isr_vector:0000000000000000 isr_vectors
        stm32eforth.s:440    .inflash:00000000000000d0 reset_handler
        stm32eforth.s:338    .inflash:0000000000000000 default_handler
@@ -5141,7 +5141,7 @@ DEFINED SYMBOLS
        stm32eforth.s:686    .text:0000000000000000 $d
        stm32eforth.s:4089   .text:0000000000001c34 HI
        stm32eforth.s:2710   .text:0000000000001180 INTER
-       stm32eforth.s:4089   .inflash.dictinary:0000000000000be4 _LASTN
+       stm32eforth.s:4089   .inflash.dictinary:0000000000000be0 _LASTN
        stm32eforth.s:706    .text:0000000000000054 ULAST
        stm32eforth.s:714    .text:000000000000006c $t
                .inflash.dictinary:0000000000000000 LF_RSTIVEC
@@ -5559,26 +5559,26 @@ DEFINED SYMBOLS
        stm32eforth.s:1589   .text:000000000000060c SLMOD
        stm32eforth.s:1589   .inflash.dictinary:00000000000004d0 LF_MODD
        stm32eforth.s:1589   .inflash.dictinary:00000000000004d4 _MODD
-       stm32eforth.s:1599   .inflash.dictinary:00000000000004dc CA_MODD
-       stm32eforth.s:1599   .inflash.dictinary:00000000000004e0 LF_SLASH
-       stm32eforth.s:1599   .inflash.dictinary:00000000000004e4 _SLASH
-       stm32eforth.s:1607   .inflash.dictinary:00000000000004e8 CA_SLASH
+       stm32eforth.s:1599   .inflash.dictinary:00000000000004d8 CA_MODD
+       stm32eforth.s:1599   .inflash.dictinary:00000000000004dc LF_SLASH
+       stm32eforth.s:1599   .inflash.dictinary:00000000000004e0 _SLASH
+       stm32eforth.s:1607   .inflash.dictinary:00000000000004e4 CA_SLASH
        stm32eforth.s:1607   .text:0000000000000634 SLASH
-       stm32eforth.s:1607   .inflash.dictinary:00000000000004ec LF_SSMOD
-       stm32eforth.s:1607   .inflash.dictinary:00000000000004f0 _SSMOD
-       stm32eforth.s:1616   .inflash.dictinary:00000000000004f8 CA_SSMOD
+       stm32eforth.s:1607   .inflash.dictinary:00000000000004e8 LF_SSMOD
+       stm32eforth.s:1607   .inflash.dictinary:00000000000004ec _SSMOD
+       stm32eforth.s:1616   .inflash.dictinary:00000000000004f4 CA_SSMOD
        stm32eforth.s:1616   .text:0000000000000648 SSMOD
-       stm32eforth.s:1616   .inflash.dictinary:00000000000004fc LF_STASL
-       stm32eforth.s:1616   .inflash.dictinary:0000000000000500 _STASL
-       stm32eforth.s:1626   .inflash.dictinary:0000000000000504 CA_STASL
+       stm32eforth.s:1616   .inflash.dictinary:00000000000004f8 LF_STASL
+       stm32eforth.s:1616   .inflash.dictinary:00000000000004fc _STASL
+       stm32eforth.s:1626   .inflash.dictinary:0000000000000500 CA_STASL
        stm32eforth.s:1626   .text:0000000000000660 STASL
-       stm32eforth.s:1626   .inflash.dictinary:0000000000000508 LF_ALGND
-       stm32eforth.s:1626   .inflash.dictinary:000000000000050c _ALGND
-       stm32eforth.s:1638   .inflash.dictinary:0000000000000514 CA_ALGND
+       stm32eforth.s:1626   .inflash.dictinary:0000000000000504 LF_ALGND
+       stm32eforth.s:1626   .inflash.dictinary:0000000000000508 _ALGND
+       stm32eforth.s:1638   .inflash.dictinary:0000000000000510 CA_ALGND
        stm32eforth.s:1638   .text:0000000000000674 ALGND
-       stm32eforth.s:1638   .inflash.dictinary:0000000000000518 LF_TCHAR
-       stm32eforth.s:1638   .inflash.dictinary:000000000000051c _TCHAR
-       stm32eforth.s:1646   .inflash.dictinary:0000000000000524 CA_TCHAR
+       stm32eforth.s:1638   .inflash.dictinary:0000000000000514 LF_TCHAR
+       stm32eforth.s:1638   .inflash.dictinary:0000000000000518 _TCHAR
+       stm32eforth.s:1646   .inflash.dictinary:0000000000000520 CA_TCHAR
        stm32eforth.s:1646   .text:0000000000000684 TCHAR
        stm32eforth.s:1648   .text:000000000000068c $d
        stm32eforth.s:1649   .text:0000000000000690 $t
@@ -5589,126 +5589,126 @@ DEFINED SYMBOLS
        stm32eforth.s:1657   .text:00000000000006b4 $t
        stm32eforth.s:1658   .text:00000000000006bc $d
        stm32eforth.s:1660   .text:00000000000006c0 $t
-       stm32eforth.s:1646   .inflash.dictinary:0000000000000528 LF_DEPTH
-       stm32eforth.s:1646   .inflash.dictinary:000000000000052c _DEPTH
-       stm32eforth.s:1664   .inflash.dictinary:0000000000000534 CA_DEPTH
+       stm32eforth.s:1646   .inflash.dictinary:0000000000000524 LF_DEPTH
+       stm32eforth.s:1646   .inflash.dictinary:0000000000000528 _DEPTH
+       stm32eforth.s:1664   .inflash.dictinary:0000000000000530 CA_DEPTH
        stm32eforth.s:1664   .text:00000000000006c4 DEPTH
-       stm32eforth.s:1664   .inflash.dictinary:0000000000000538 LF_PICK
-       stm32eforth.s:1664   .inflash.dictinary:000000000000053c _PICK
-       stm32eforth.s:1673   .inflash.dictinary:0000000000000544 CA_PICK
+       stm32eforth.s:1664   .inflash.dictinary:0000000000000534 LF_PICK
+       stm32eforth.s:1664   .inflash.dictinary:0000000000000538 _PICK
+       stm32eforth.s:1673   .inflash.dictinary:0000000000000540 CA_PICK
 ARM GAS  stm32eforth.s 			page 95
 
 
        stm32eforth.s:1673   .text:00000000000006dc PICK
-       stm32eforth.s:1673   .inflash.dictinary:0000000000000548 LF_HERE
-       stm32eforth.s:1673   .inflash.dictinary:000000000000054c _HERE
-       stm32eforth.s:1687   .inflash.dictinary:0000000000000554 CA_HERE
+       stm32eforth.s:1673   .inflash.dictinary:0000000000000544 LF_HERE
+       stm32eforth.s:1673   .inflash.dictinary:0000000000000548 _HERE
+       stm32eforth.s:1687   .inflash.dictinary:0000000000000550 CA_HERE
        stm32eforth.s:1687   .text:00000000000006f8 HERE
-       stm32eforth.s:1687   .inflash.dictinary:0000000000000558 LF_PAD
-       stm32eforth.s:1687   .inflash.dictinary:000000000000055c _PAD
-       stm32eforth.s:1695   .inflash.dictinary:0000000000000560 CA_PAD
+       stm32eforth.s:1687   .inflash.dictinary:0000000000000554 LF_PAD
+       stm32eforth.s:1687   .inflash.dictinary:0000000000000558 _PAD
+       stm32eforth.s:1695   .inflash.dictinary:000000000000055c CA_PAD
        stm32eforth.s:1695   .text:0000000000000708 PAD
-       stm32eforth.s:1695   .inflash.dictinary:0000000000000564 LF_TIB
-       stm32eforth.s:1695   .inflash.dictinary:0000000000000568 _TIB
-       stm32eforth.s:1703   .inflash.dictinary:000000000000056c CA_TIB
+       stm32eforth.s:1695   .inflash.dictinary:0000000000000560 LF_TIB
+       stm32eforth.s:1695   .inflash.dictinary:0000000000000564 _TIB
+       stm32eforth.s:1703   .inflash.dictinary:0000000000000568 CA_TIB
        stm32eforth.s:1703   .text:0000000000000718 TIB
-       stm32eforth.s:1703   .inflash.dictinary:0000000000000570 LF_ATEXE
-       stm32eforth.s:1703   .inflash.dictinary:0000000000000574 _ATEXE
-       stm32eforth.s:1710   .inflash.dictinary:0000000000000580 CA_ATEXE
+       stm32eforth.s:1703   .inflash.dictinary:000000000000056c LF_ATEXE
+       stm32eforth.s:1703   .inflash.dictinary:0000000000000570 _ATEXE
+       stm32eforth.s:1710   .inflash.dictinary:000000000000057c CA_ATEXE
        stm32eforth.s:1710   .text:0000000000000720 ATEXE
-       stm32eforth.s:1710   .inflash.dictinary:0000000000000584 LF_CMOVE
-       stm32eforth.s:1710   .inflash.dictinary:0000000000000588 _CMOVE
-       stm32eforth.s:1721   .inflash.dictinary:0000000000000590 CA_CMOVE
+       stm32eforth.s:1710   .inflash.dictinary:0000000000000580 LF_CMOVE
+       stm32eforth.s:1710   .inflash.dictinary:0000000000000584 _CMOVE
+       stm32eforth.s:1721   .inflash.dictinary:000000000000058c CA_CMOVE
        stm32eforth.s:1721   .text:0000000000000734 CMOVE
        stm32eforth.s:1728   .text:0000000000000746 CMOV1
        stm32eforth.s:1725   .text:000000000000073e CMOV0
        stm32eforth.s:1733   .text:0000000000000750 CMOV2
-       stm32eforth.s:1721   .inflash.dictinary:0000000000000594 LF_MOVE
-       stm32eforth.s:1721   .inflash.dictinary:0000000000000598 _MOVE
-       stm32eforth.s:1739   .inflash.dictinary:00000000000005a0 CA_MOVE
+       stm32eforth.s:1721   .inflash.dictinary:0000000000000590 LF_MOVE
+       stm32eforth.s:1721   .inflash.dictinary:0000000000000594 _MOVE
+       stm32eforth.s:1739   .inflash.dictinary:000000000000059c CA_MOVE
        stm32eforth.s:1739   .text:0000000000000758 MOVE
        stm32eforth.s:1747   .text:000000000000076e MOVE1
        stm32eforth.s:1744   .text:0000000000000766 MOVE0
        stm32eforth.s:1752   .text:0000000000000778 MOVE2
-       stm32eforth.s:1739   .inflash.dictinary:00000000000005a4 LF_FILL
-       stm32eforth.s:1739   .inflash.dictinary:00000000000005a8 _FILL
-       stm32eforth.s:1758   .inflash.dictinary:00000000000005b0 CA_FILL
+       stm32eforth.s:1739   .inflash.dictinary:00000000000005a0 LF_FILL
+       stm32eforth.s:1739   .inflash.dictinary:00000000000005a4 _FILL
+       stm32eforth.s:1758   .inflash.dictinary:00000000000005ac CA_FILL
        stm32eforth.s:1758   .text:0000000000000780 FILL
        stm32eforth.s:1761   .text:0000000000000788 FILL0
        stm32eforth.s:1764   .text:000000000000078c FILL1
        stm32eforth.s:1770   .text:000000000000079a FILL2
-       stm32eforth.s:1758   .inflash.dictinary:00000000000005b4 LF_PACKS
-       stm32eforth.s:1758   .inflash.dictinary:00000000000005b8 _PACKS
-       stm32eforth.s:1776   .inflash.dictinary:00000000000005c0 CA_PACKS
+       stm32eforth.s:1758   .inflash.dictinary:00000000000005b0 LF_PACKS
+       stm32eforth.s:1758   .inflash.dictinary:00000000000005b4 _PACKS
+       stm32eforth.s:1776   .inflash.dictinary:00000000000005bc CA_PACKS
        stm32eforth.s:1776   .text:00000000000007a0 PACKS
        stm32eforth.s:1784   .text:00000000000007c0 $d
        stm32eforth.s:1785   .text:00000000000007c4 $t
        stm32eforth.s:1786   .text:00000000000007cc $d
        stm32eforth.s:1787   .text:00000000000007d0 $t
-       stm32eforth.s:1776   .inflash.dictinary:00000000000005c4 LF_DIGIT
-       stm32eforth.s:1776   .inflash.dictinary:00000000000005c8 _DIGIT
-       stm32eforth.s:1803   .inflash.dictinary:00000000000005d0 CA_DIGIT
+       stm32eforth.s:1776   .inflash.dictinary:00000000000005c0 LF_DIGIT
+       stm32eforth.s:1776   .inflash.dictinary:00000000000005c4 _DIGIT
+       stm32eforth.s:1803   .inflash.dictinary:00000000000005cc CA_DIGIT
        stm32eforth.s:1803   .text:00000000000007f8 DIGIT
        stm32eforth.s:1805   .text:0000000000000800 $d
        stm32eforth.s:1806   .text:0000000000000804 $t
-       stm32eforth.s:1803   .inflash.dictinary:00000000000005d4 LF_EXTRC
-       stm32eforth.s:1803   .inflash.dictinary:00000000000005d8 _EXTRC
-       stm32eforth.s:1815   .inflash.dictinary:00000000000005e0 CA_EXTRC
+       stm32eforth.s:1803   .inflash.dictinary:00000000000005d0 LF_EXTRC
+       stm32eforth.s:1803   .inflash.dictinary:00000000000005d4 _EXTRC
+       stm32eforth.s:1815   .inflash.dictinary:00000000000005dc CA_EXTRC
        stm32eforth.s:1815   .text:000000000000081c EXTRC
        stm32eforth.s:1817   .text:0000000000000824 $d
 ARM GAS  stm32eforth.s 			page 96
 
 
        stm32eforth.s:1818   .text:0000000000000828 $t
-       stm32eforth.s:1815   .inflash.dictinary:00000000000005e4 LF_BDIGS
-       stm32eforth.s:1815   .inflash.dictinary:00000000000005e8 _BDIGS
-       stm32eforth.s:1826   .inflash.dictinary:00000000000005ec CA_BDIGS
+       stm32eforth.s:1815   .inflash.dictinary:00000000000005e0 LF_BDIGS
+       stm32eforth.s:1815   .inflash.dictinary:00000000000005e4 _BDIGS
+       stm32eforth.s:1826   .inflash.dictinary:00000000000005e8 CA_BDIGS
        stm32eforth.s:1826   .text:000000000000083c BDIGS
-       stm32eforth.s:1826   .inflash.dictinary:00000000000005f0 LF_HOLD
-       stm32eforth.s:1826   .inflash.dictinary:00000000000005f4 _HOLD
-       stm32eforth.s:1835   .inflash.dictinary:00000000000005fc CA_HOLD
+       stm32eforth.s:1826   .inflash.dictinary:00000000000005ec LF_HOLD
+       stm32eforth.s:1826   .inflash.dictinary:00000000000005f0 _HOLD
+       stm32eforth.s:1835   .inflash.dictinary:00000000000005f8 CA_HOLD
        stm32eforth.s:1835   .text:0000000000000850 HOLD
-       stm32eforth.s:1835   .inflash.dictinary:0000000000000600 LF_DIG
-       stm32eforth.s:1835   .inflash.dictinary:0000000000000604 _DIG
-       stm32eforth.s:1848   .inflash.dictinary:0000000000000608 CA_DIG
+       stm32eforth.s:1835   .inflash.dictinary:00000000000005fc LF_DIG
+       stm32eforth.s:1835   .inflash.dictinary:0000000000000600 _DIG
+       stm32eforth.s:1848   .inflash.dictinary:0000000000000604 CA_DIG
        stm32eforth.s:1848   .text:0000000000000874 DIG
-       stm32eforth.s:1848   .inflash.dictinary:000000000000060c LF_DIGS
-       stm32eforth.s:1848   .inflash.dictinary:0000000000000610 _DIGS
-       stm32eforth.s:1858   .inflash.dictinary:0000000000000614 CA_DIGS
+       stm32eforth.s:1848   .inflash.dictinary:0000000000000608 LF_DIGS
+       stm32eforth.s:1848   .inflash.dictinary:000000000000060c _DIGS
+       stm32eforth.s:1858   .inflash.dictinary:0000000000000610 CA_DIGS
        stm32eforth.s:1858   .text:000000000000088c DIGS
        stm32eforth.s:1860   .text:0000000000000890 DIGS1
        stm32eforth.s:1864   .text:000000000000089c $d
        stm32eforth.s:1866   .text:00000000000008a2 DIGS2
        stm32eforth.s:1865   .text:00000000000008a0 $t
-       stm32eforth.s:1858   .inflash.dictinary:0000000000000618 LF_SIGN
-       stm32eforth.s:1858   .inflash.dictinary:000000000000061c _SIGN
-       stm32eforth.s:1871   .inflash.dictinary:0000000000000624 CA_SIGN
+       stm32eforth.s:1858   .inflash.dictinary:0000000000000614 LF_SIGN
+       stm32eforth.s:1858   .inflash.dictinary:0000000000000618 _SIGN
+       stm32eforth.s:1871   .inflash.dictinary:0000000000000620 CA_SIGN
        stm32eforth.s:1871   .text:00000000000008a8 SIGN
        stm32eforth.s:1875   .text:00000000000008b4 $d
        stm32eforth.s:1878   .text:00000000000008c4 SIGN1
        stm32eforth.s:1876   .text:00000000000008b8 $t
        stm32eforth.s:1876   .text:00000000000008bc $d
        stm32eforth.s:1877   .text:00000000000008c0 $t
-       stm32eforth.s:1871   .inflash.dictinary:0000000000000628 LF_EDIGS
-       stm32eforth.s:1871   .inflash.dictinary:000000000000062c _EDIGS
-       stm32eforth.s:1883   .inflash.dictinary:0000000000000630 CA_EDIGS
+       stm32eforth.s:1871   .inflash.dictinary:0000000000000624 LF_EDIGS
+       stm32eforth.s:1871   .inflash.dictinary:0000000000000628 _EDIGS
+       stm32eforth.s:1883   .inflash.dictinary:000000000000062c CA_EDIGS
        stm32eforth.s:1883   .text:00000000000008c8 EDIGS
        stm32eforth.s:1900   .text:00000000000008e8 STRR
-       stm32eforth.s:1883   .inflash.dictinary:0000000000000634 LF_HEX
-       stm32eforth.s:1883   .inflash.dictinary:0000000000000638 _HEX
-       stm32eforth.s:1914   .inflash.dictinary:000000000000063c CA_HEX
+       stm32eforth.s:1883   .inflash.dictinary:0000000000000630 LF_HEX
+       stm32eforth.s:1883   .inflash.dictinary:0000000000000634 _HEX
+       stm32eforth.s:1914   .inflash.dictinary:0000000000000638 CA_HEX
        stm32eforth.s:1914   .text:0000000000000910 HEX
        stm32eforth.s:1916   .text:0000000000000918 $d
        stm32eforth.s:1917   .text:000000000000091c $t
-       stm32eforth.s:1914   .inflash.dictinary:0000000000000640 LF_DECIM
-       stm32eforth.s:1914   .inflash.dictinary:0000000000000644 _DECIM
-       stm32eforth.s:1923   .inflash.dictinary:000000000000064c CA_DECIM
+       stm32eforth.s:1914   .inflash.dictinary:000000000000063c LF_DECIM
+       stm32eforth.s:1914   .inflash.dictinary:0000000000000640 _DECIM
+       stm32eforth.s:1923   .inflash.dictinary:0000000000000648 CA_DECIM
        stm32eforth.s:1923   .text:0000000000000928 DECIM
        stm32eforth.s:1925   .text:0000000000000930 $d
        stm32eforth.s:1926   .text:0000000000000934 $t
-       stm32eforth.s:1923   .inflash.dictinary:0000000000000650 LF_DIGTQ
-       stm32eforth.s:1923   .inflash.dictinary:0000000000000654 _DIGTQ
-       stm32eforth.s:1935   .inflash.dictinary:000000000000065c CA_DIGTQ
+       stm32eforth.s:1923   .inflash.dictinary:000000000000064c LF_DIGTQ
+       stm32eforth.s:1923   .inflash.dictinary:0000000000000650 _DIGTQ
+       stm32eforth.s:1935   .inflash.dictinary:0000000000000658 CA_DIGTQ
        stm32eforth.s:1935   .text:0000000000000940 DIGTQ
        stm32eforth.s:1938   .text:000000000000094c $d
        stm32eforth.s:1939   .text:0000000000000950 $t
@@ -5724,9 +5724,9 @@ DEFINED SYMBOLS
        stm32eforth.s:1946   .text:0000000000000974 $t
        stm32eforth.s:1948   .text:0000000000000980 $d
        stm32eforth.s:1949   .text:0000000000000984 $t
-       stm32eforth.s:1935   .inflash.dictinary:0000000000000660 LF_NUMBQ
-       stm32eforth.s:1935   .inflash.dictinary:0000000000000664 _NUMBQ
-       stm32eforth.s:1959   .inflash.dictinary:000000000000066c CA_NUMBQ
+       stm32eforth.s:1935   .inflash.dictinary:000000000000065c LF_NUMBQ
+       stm32eforth.s:1935   .inflash.dictinary:0000000000000660 _NUMBQ
+       stm32eforth.s:1959   .inflash.dictinary:0000000000000668 CA_NUMBQ
        stm32eforth.s:1959   .text:000000000000099c NUMBQ
        stm32eforth.s:1964   .text:00000000000009b0 $d
        stm32eforth.s:1965   .text:00000000000009b4 $t
@@ -5752,19 +5752,19 @@ DEFINED SYMBOLS
        stm32eforth.s:2028   .text:0000000000000aac NUMQ5
        stm32eforth.s:2027   .text:0000000000000aa8 $d
        stm32eforth.s:2029   .text:0000000000000aac $t
-       stm32eforth.s:1959   .inflash.dictinary:0000000000000670 LF_KEY
-       stm32eforth.s:1959   .inflash.dictinary:0000000000000674 _KEY
-       stm32eforth.s:2043   .inflash.dictinary:0000000000000678 CA_KEY
+       stm32eforth.s:1959   .inflash.dictinary:000000000000066c LF_KEY
+       stm32eforth.s:1959   .inflash.dictinary:0000000000000670 _KEY
+       stm32eforth.s:2043   .inflash.dictinary:0000000000000674 CA_KEY
        stm32eforth.s:2045   .text:0000000000000acc KEY1
        stm32eforth.s:2048   .text:0000000000000ad4 $d
        stm32eforth.s:2049   .text:0000000000000ad8 $t
-       stm32eforth.s:2043   .inflash.dictinary:000000000000067c LF_SPACE
-       stm32eforth.s:2043   .inflash.dictinary:0000000000000680 _SPACE
-       stm32eforth.s:2053   .inflash.dictinary:0000000000000688 CA_SPACE
+       stm32eforth.s:2043   .inflash.dictinary:0000000000000678 LF_SPACE
+       stm32eforth.s:2043   .inflash.dictinary:000000000000067c _SPACE
+       stm32eforth.s:2053   .inflash.dictinary:0000000000000684 CA_SPACE
        stm32eforth.s:2053   .text:0000000000000adc SPACE
-       stm32eforth.s:2053   .inflash.dictinary:000000000000068c LF_SPACS
-       stm32eforth.s:2053   .inflash.dictinary:0000000000000690 _SPACS
-       stm32eforth.s:2061   .inflash.dictinary:0000000000000698 CA_SPACS
+       stm32eforth.s:2053   .inflash.dictinary:0000000000000688 LF_SPACS
+       stm32eforth.s:2053   .inflash.dictinary:000000000000068c _SPACS
+       stm32eforth.s:2061   .inflash.dictinary:0000000000000694 CA_SPACS
        stm32eforth.s:2061   .text:0000000000000aec SPACS
        stm32eforth.s:2063   .text:0000000000000af4 $d
        stm32eforth.s:2064   .text:0000000000000af8 $t
@@ -5772,9 +5772,9 @@ DEFINED SYMBOLS
        stm32eforth.s:2067   .text:0000000000000b04 CHAR1
        stm32eforth.s:2071   .text:0000000000000b0c $d
        stm32eforth.s:2072   .text:0000000000000b10 $t
-       stm32eforth.s:2061   .inflash.dictinary:000000000000069c LF_TYPEE
-       stm32eforth.s:2061   .inflash.dictinary:00000000000006a0 _TYPEE
-       stm32eforth.s:2076   .inflash.dictinary:00000000000006a8 CA_TYPEE
+       stm32eforth.s:2061   .inflash.dictinary:0000000000000698 LF_TYPEE
+       stm32eforth.s:2061   .inflash.dictinary:000000000000069c _TYPEE
+       stm32eforth.s:2076   .inflash.dictinary:00000000000006a4 CA_TYPEE
        stm32eforth.s:2076   .text:0000000000000b14 TYPEE
 ARM GAS  stm32eforth.s 			page 98
 
@@ -5783,9 +5783,9 @@ DEFINED SYMBOLS
        stm32eforth.s:2080   .text:0000000000000b20 TYPE1
        stm32eforth.s:2086   .text:0000000000000b30 $d
        stm32eforth.s:2087   .text:0000000000000b34 $t
-       stm32eforth.s:2076   .inflash.dictinary:00000000000006ac LF_CR
-       stm32eforth.s:2076   .inflash.dictinary:00000000000006b0 _CR
-       stm32eforth.s:2092   .inflash.dictinary:00000000000006b4 CA_CR
+       stm32eforth.s:2076   .inflash.dictinary:00000000000006a8 LF_CR
+       stm32eforth.s:2076   .inflash.dictinary:00000000000006ac _CR
+       stm32eforth.s:2092   .inflash.dictinary:00000000000006b0 CA_CR
        stm32eforth.s:2092   .text:0000000000000b3c CR
        stm32eforth.s:2094   .text:0000000000000b44 $d
        stm32eforth.s:2095   .text:0000000000000b48 $t
@@ -5795,34 +5795,34 @@ DEFINED SYMBOLS
        stm32eforth.s:2131   .text:0000000000000b90 STRQP
        stm32eforth.s:2143   .text:0000000000000b9c DOTST
        stm32eforth.s:2156   .text:0000000000000bac DOTQP
-       stm32eforth.s:2092   .inflash.dictinary:00000000000006b8 LF_DOTR
-       stm32eforth.s:2092   .inflash.dictinary:00000000000006bc _DOTR
-       stm32eforth.s:2164   .inflash.dictinary:00000000000006c0 CA_DOTR
+       stm32eforth.s:2092   .inflash.dictinary:00000000000006b4 LF_DOTR
+       stm32eforth.s:2092   .inflash.dictinary:00000000000006b8 _DOTR
+       stm32eforth.s:2164   .inflash.dictinary:00000000000006bc CA_DOTR
        stm32eforth.s:2164   .text:0000000000000bbc DOTR
-       stm32eforth.s:2164   .inflash.dictinary:00000000000006c4 LF_UDOTR
-       stm32eforth.s:2164   .inflash.dictinary:00000000000006c8 _UDOTR
-       stm32eforth.s:2177   .inflash.dictinary:00000000000006cc CA_UDOTR
+       stm32eforth.s:2164   .inflash.dictinary:00000000000006c0 LF_UDOTR
+       stm32eforth.s:2164   .inflash.dictinary:00000000000006c4 _UDOTR
+       stm32eforth.s:2177   .inflash.dictinary:00000000000006c8 CA_UDOTR
        stm32eforth.s:2177   .text:0000000000000be0 UDOTR
-       stm32eforth.s:2177   .inflash.dictinary:00000000000006d0 LF_UDOT
-       stm32eforth.s:2177   .inflash.dictinary:00000000000006d4 _UDOT
-       stm32eforth.s:2192   .inflash.dictinary:00000000000006d8 CA_UDOT
+       stm32eforth.s:2177   .inflash.dictinary:00000000000006cc LF_UDOT
+       stm32eforth.s:2177   .inflash.dictinary:00000000000006d0 _UDOT
+       stm32eforth.s:2192   .inflash.dictinary:00000000000006d4 CA_UDOT
        stm32eforth.s:2192   .text:0000000000000c0c UDOT
-       stm32eforth.s:2192   .inflash.dictinary:00000000000006dc LF_HDOT
-       stm32eforth.s:2192   .inflash.dictinary:00000000000006e0 _HDOT
-       stm32eforth.s:2203   .inflash.dictinary:00000000000006e4 CA_HDOT
+       stm32eforth.s:2192   .inflash.dictinary:00000000000006d8 LF_HDOT
+       stm32eforth.s:2192   .inflash.dictinary:00000000000006dc _HDOT
+       stm32eforth.s:2203   .inflash.dictinary:00000000000006e0 CA_HDOT
        stm32eforth.s:2203   .text:0000000000000c28 HDOT
-       stm32eforth.s:2203   .inflash.dictinary:00000000000006e8 LF_DOT
-       stm32eforth.s:2203   .inflash.dictinary:00000000000006ec _DOT
-       stm32eforth.s:2218   .inflash.dictinary:00000000000006f0 CA_DOT
+       stm32eforth.s:2203   .inflash.dictinary:00000000000006e4 LF_DOT
+       stm32eforth.s:2203   .inflash.dictinary:00000000000006e8 _DOT
+       stm32eforth.s:2218   .inflash.dictinary:00000000000006ec CA_DOT
        stm32eforth.s:2218   .text:0000000000000c50 DOT
        stm32eforth.s:2222   .text:0000000000000c60 $d
        stm32eforth.s:2223   .text:0000000000000c64 $t
        stm32eforth.s:2225   .text:0000000000000c6c $d
        stm32eforth.s:2228   .text:0000000000000c78 DOT1
        stm32eforth.s:2226   .text:0000000000000c70 $t
-       stm32eforth.s:2218   .inflash.dictinary:00000000000006f4 LF_QUEST
-       stm32eforth.s:2218   .inflash.dictinary:00000000000006f8 _QUEST
-       stm32eforth.s:2236   .inflash.dictinary:00000000000006fc CA_QUEST
+       stm32eforth.s:2218   .inflash.dictinary:00000000000006f0 LF_QUEST
+       stm32eforth.s:2218   .inflash.dictinary:00000000000006f4 _QUEST
+       stm32eforth.s:2236   .inflash.dictinary:00000000000006f8 CA_QUEST
        stm32eforth.s:2236   .text:0000000000000c88 QUEST
        stm32eforth.s:2252   .text:0000000000000c98 PARS
        stm32eforth.s:2260   .text:0000000000000cb4 $d
@@ -5852,54 +5852,54 @@ DEFINED SYMBOLS
        stm32eforth.s:2310   .text:0000000000000d6c $d
        stm32eforth.s:2311   .text:0000000000000d70 $t
        stm32eforth.s:2320   .text:0000000000000d8e PARS7
-       stm32eforth.s:2236   .inflash.dictinary:0000000000000700 LF_PARSE
-       stm32eforth.s:2236   .inflash.dictinary:0000000000000704 _PARSE
-       stm32eforth.s:2335   .inflash.dictinary:000000000000070c CA_PARSE
+       stm32eforth.s:2236   .inflash.dictinary:00000000000006fc LF_PARSE
+       stm32eforth.s:2236   .inflash.dictinary:0000000000000700 _PARSE
+       stm32eforth.s:2335   .inflash.dictinary:0000000000000708 CA_PARSE
        stm32eforth.s:2335   .text:0000000000000db8 PARSE
-       stm32eforth.s:2335   .inflash.dictinary:0000000000000710 LF_DOTPR
-       stm32eforth.s:2335   .inflash.dictinary:0000000000000714 _DOTPR
-       stm32eforth.s:2355   .inflash.dictinary:0000000000000718 CA_DOTPR
+       stm32eforth.s:2335   .inflash.dictinary:000000000000070c LF_DOTPR
+       stm32eforth.s:2335   .inflash.dictinary:0000000000000710 _DOTPR
+       stm32eforth.s:2355   .inflash.dictinary:0000000000000714 CA_DOTPR
        stm32eforth.s:2355   .text:0000000000000df8 DOTPR
        stm32eforth.s:2357   .text:0000000000000e00 $d
        stm32eforth.s:2358   .text:0000000000000e04 $t
-       stm32eforth.s:2355   .inflash.dictinary:000000000000071c LF_PAREN
-       stm32eforth.s:2355   .inflash.dictinary:0000000000000720 _PAREN
-       stm32eforth.s:2364   .inflash.dictinary:0000000000000724 CA_PAREN
+       stm32eforth.s:2355   .inflash.dictinary:0000000000000718 LF_PAREN
+       stm32eforth.s:2355   .inflash.dictinary:000000000000071c _PAREN
+       stm32eforth.s:2364   .inflash.dictinary:0000000000000720 CA_PAREN
        stm32eforth.s:2364   .text:0000000000000e10 PAREN
        stm32eforth.s:2366   .text:0000000000000e18 $d
        stm32eforth.s:2367   .text:0000000000000e1c $t
-       stm32eforth.s:2364   .inflash.dictinary:0000000000000728 LF_BKSLA
-       stm32eforth.s:2364   .inflash.dictinary:000000000000072c _BKSLA
-       stm32eforth.s:2373   .inflash.dictinary:0000000000000730 CA_BKSLA
+       stm32eforth.s:2364   .inflash.dictinary:0000000000000724 LF_BKSLA
+       stm32eforth.s:2364   .inflash.dictinary:0000000000000728 _BKSLA
+       stm32eforth.s:2373   .inflash.dictinary:000000000000072c CA_BKSLA
        stm32eforth.s:2373   .text:0000000000000e28 BKSLA
-       stm32eforth.s:2373   .inflash.dictinary:0000000000000734 LF_CAHR
-       stm32eforth.s:2373   .inflash.dictinary:0000000000000738 _CAHR
-       stm32eforth.s:2383   .inflash.dictinary:0000000000000740 CA_CAHR
+       stm32eforth.s:2373   .inflash.dictinary:0000000000000730 LF_CAHR
+       stm32eforth.s:2373   .inflash.dictinary:0000000000000734 _CAHR
+       stm32eforth.s:2383   .inflash.dictinary:000000000000073c CA_CAHR
        stm32eforth.s:2383   .text:0000000000000e40 CAHR
-       stm32eforth.s:2383   .inflash.dictinary:0000000000000744 LF_WORDD
-       stm32eforth.s:2383   .inflash.dictinary:0000000000000748 _WORDD
-       stm32eforth.s:2393   .inflash.dictinary:0000000000000750 CA_WORDD
+       stm32eforth.s:2383   .inflash.dictinary:0000000000000740 LF_WORDD
+       stm32eforth.s:2383   .inflash.dictinary:0000000000000744 _WORDD
+       stm32eforth.s:2393   .inflash.dictinary:000000000000074c CA_WORDD
        stm32eforth.s:2393   .text:0000000000000e58 WORDD
-       stm32eforth.s:2393   .inflash.dictinary:0000000000000754 LF_TOKEN
-       stm32eforth.s:2393   .inflash.dictinary:0000000000000758 _TOKEN
-       stm32eforth.s:2403   .inflash.dictinary:0000000000000760 CA_TOKEN
+       stm32eforth.s:2393   .inflash.dictinary:0000000000000750 LF_TOKEN
+       stm32eforth.s:2393   .inflash.dictinary:0000000000000754 _TOKEN
+       stm32eforth.s:2403   .inflash.dictinary:000000000000075c CA_TOKEN
        stm32eforth.s:2403   .text:0000000000000e70 TOKEN
-       stm32eforth.s:2403   .inflash.dictinary:0000000000000764 LF_TOCFA
-       stm32eforth.s:2403   .inflash.dictinary:0000000000000768 _TOCFA
-       stm32eforth.s:2414   .inflash.dictinary:0000000000000770 CA_TOCFA
+       stm32eforth.s:2403   .inflash.dictinary:0000000000000760 LF_TOCFA
+       stm32eforth.s:2403   .inflash.dictinary:0000000000000764 _TOCFA
+       stm32eforth.s:2414   .inflash.dictinary:000000000000076c CA_TOCFA
        stm32eforth.s:2414   .text:0000000000000e80 TOCFA
        stm32eforth.s:2417   .text:0000000000000e8c $d
        stm32eforth.s:2418   .text:0000000000000e90 $t
-       stm32eforth.s:2414   .inflash.dictinary:0000000000000774 LF_NAMET
-       stm32eforth.s:2414   .inflash.dictinary:0000000000000778 _NAMET
-       stm32eforth.s:2425   .inflash.dictinary:0000000000000780 CA_NAMET
+       stm32eforth.s:2414   .inflash.dictinary:0000000000000770 LF_NAMET
+       stm32eforth.s:2414   .inflash.dictinary:0000000000000774 _NAMET
+       stm32eforth.s:2425   .inflash.dictinary:000000000000077c CA_NAMET
        stm32eforth.s:2425   .text:0000000000000ea0 NAMET
-       stm32eforth.s:2425   .inflash.dictinary:0000000000000784 LF_SAMEQ
-       stm32eforth.s:2425   .inflash.dictinary:0000000000000788 _SAMEQ
+       stm32eforth.s:2425   .inflash.dictinary:0000000000000780 LF_SAMEQ
+       stm32eforth.s:2425   .inflash.dictinary:0000000000000784 _SAMEQ
 ARM GAS  stm32eforth.s 			page 100
 
 
-       stm32eforth.s:2439   .inflash.dictinary:0000000000000790 CA_SAMEQ
+       stm32eforth.s:2439   .inflash.dictinary:000000000000078c CA_SAMEQ
        stm32eforth.s:2439   .text:0000000000000eb0 SAMEQ
        stm32eforth.s:2459   .text:0000000000000ef8 SAME2
        stm32eforth.s:2443   .text:0000000000000ebc SAME1
@@ -5924,9 +5924,9 @@ DEFINED SYMBOLS
        stm32eforth.s:2515   .text:0000000000000f98 $d
        stm32eforth.s:2520   .text:0000000000000fac FIND5
        stm32eforth.s:2516   .text:0000000000000f9c $t
-       stm32eforth.s:2439   .inflash.dictinary:0000000000000794 LF_NAMEQ
-       stm32eforth.s:2439   .inflash.dictinary:0000000000000798 _NAMEQ
-       stm32eforth.s:2533   .inflash.dictinary:00000000000007a0 CA_NAMEQ
+       stm32eforth.s:2439   .inflash.dictinary:0000000000000790 LF_NAMEQ
+       stm32eforth.s:2439   .inflash.dictinary:0000000000000794 _NAMEQ
+       stm32eforth.s:2533   .inflash.dictinary:000000000000079c CA_NAMEQ
        stm32eforth.s:2533   .text:0000000000000fd0 NAMEQ
        stm32eforth.s:2550   .text:0000000000000fe4 BKSP
        stm32eforth.s:2559   .text:0000000000001004 $d
@@ -5951,9 +5951,9 @@ DEFINED SYMBOLS
        stm32eforth.s:2609   .text:000000000000107c $t
        stm32eforth.s:2612   .text:0000000000001088 $d
        stm32eforth.s:2614   .text:000000000000108c $t
-       stm32eforth.s:2533   .inflash.dictinary:00000000000007a4 LF_ACCEP
-       stm32eforth.s:2533   .inflash.dictinary:00000000000007a8 _ACCEP
-       stm32eforth.s:2625   .inflash.dictinary:00000000000007b0 CA_ACCEP
+       stm32eforth.s:2533   .inflash.dictinary:00000000000007a0 LF_ACCEP
+       stm32eforth.s:2533   .inflash.dictinary:00000000000007a4 _ACCEP
+       stm32eforth.s:2625   .inflash.dictinary:00000000000007ac CA_ACCEP
        stm32eforth.s:2625   .text:00000000000010a8 ACCEP
        stm32eforth.s:2630   .text:00000000000010b8 ACCP1
 ARM GAS  stm32eforth.s 			page 101
@@ -5968,17 +5968,17 @@ DEFINED SYMBOLS
        stm32eforth.s:2644   .text:00000000000010ee ACCP2
        stm32eforth.s:2642   .text:00000000000010e8 $t
        stm32eforth.s:2647   .text:00000000000010f2 ACCP3
-       stm32eforth.s:2625   .inflash.dictinary:00000000000007b4 LF_QUERY
-       stm32eforth.s:2625   .inflash.dictinary:00000000000007b8 _QUERY
-       stm32eforth.s:2657   .inflash.dictinary:00000000000007c0 CA_QUERY
+       stm32eforth.s:2625   .inflash.dictinary:00000000000007b0 LF_QUERY
+       stm32eforth.s:2625   .inflash.dictinary:00000000000007b4 _QUERY
+       stm32eforth.s:2657   .inflash.dictinary:00000000000007bc CA_QUERY
        stm32eforth.s:2657   .text:0000000000001104 QUERY
        stm32eforth.s:2660   .text:0000000000001110 $d
        stm32eforth.s:2661   .text:0000000000001114 $t
        stm32eforth.s:2665   .text:0000000000001128 $d
        stm32eforth.s:2666   .text:000000000000112c $t
-       stm32eforth.s:2657   .inflash.dictinary:00000000000007c4 LF_ABORT
-       stm32eforth.s:2657   .inflash.dictinary:00000000000007c8 _ABORT
-       stm32eforth.s:2675   .inflash.dictinary:00000000000007d0 CA_ABORT
+       stm32eforth.s:2657   .inflash.dictinary:00000000000007c0 LF_ABORT
+       stm32eforth.s:2657   .inflash.dictinary:00000000000007c4 _ABORT
+       stm32eforth.s:2675   .inflash.dictinary:00000000000007cc CA_ABORT
        stm32eforth.s:2675   .text:0000000000001138 ABORT
        stm32eforth.s:2678   .text:0000000000001140 ABORT1
        stm32eforth.s:2681   .text:000000000000114c $d
@@ -5988,9 +5988,9 @@ DEFINED SYMBOLS
        stm32eforth.s:2694   .text:0000000000001160 ABORQ
        stm32eforth.s:2699   .text:0000000000001170 $d
        stm32eforth.s:2700   .text:0000000000001174 $t
-       stm32eforth.s:2675   .inflash.dictinary:00000000000007d4 LF_INTER
-       stm32eforth.s:2675   .inflash.dictinary:00000000000007d8 _INTER
-       stm32eforth.s:2710   .inflash.dictinary:00000000000007e4 CA_INTER
+       stm32eforth.s:2675   .inflash.dictinary:00000000000007d0 LF_INTER
+       stm32eforth.s:2675   .inflash.dictinary:00000000000007d4 _INTER
+       stm32eforth.s:2710   .inflash.dictinary:00000000000007e0 CA_INTER
        stm32eforth.s:2715   .text:0000000000001190 $d
        stm32eforth.s:2725   .text:00000000000011c0 INTE1
        stm32eforth.s:2716   .text:0000000000001194 $t
@@ -6001,15 +6001,15 @@ DEFINED SYMBOLS
        stm32eforth.s:2728   .text:00000000000011c8 $d
        stm32eforth.s:2730   .text:00000000000011d0 INTE2
        stm32eforth.s:2729   .text:00000000000011cc $t
-       stm32eforth.s:2710   .inflash.dictinary:00000000000007e8 LF_LBRAC
-       stm32eforth.s:2710   .inflash.dictinary:00000000000007ec _LBRAC
-       stm32eforth.s:2735   .inflash.dictinary:00000000000007f0 CA_LBRAC
+       stm32eforth.s:2710   .inflash.dictinary:00000000000007e4 LF_LBRAC
+       stm32eforth.s:2710   .inflash.dictinary:00000000000007e8 _LBRAC
+       stm32eforth.s:2735   .inflash.dictinary:00000000000007ec CA_LBRAC
        stm32eforth.s:2735   .text:00000000000011d4 LBRAC
        stm32eforth.s:2737   .text:00000000000011dc $d
        stm32eforth.s:2738   .text:00000000000011e0 $t
-       stm32eforth.s:2735   .inflash.dictinary:00000000000007f4 LF_DOTOK
-       stm32eforth.s:2735   .inflash.dictinary:00000000000007f8 _DOTOK
-       stm32eforth.s:2744   .inflash.dictinary:00000000000007fc CA_DOTOK
+       stm32eforth.s:2735   .inflash.dictinary:00000000000007f0 LF_DOTOK
+       stm32eforth.s:2735   .inflash.dictinary:00000000000007f4 _DOTOK
+       stm32eforth.s:2744   .inflash.dictinary:00000000000007f8 CA_DOTOK
        stm32eforth.s:2744   .text:00000000000011ec DOTOK
        stm32eforth.s:2746   .text:00000000000011f4 $d
        stm32eforth.s:2747   .text:00000000000011f8 $t
@@ -6021,31 +6021,31 @@ DEFINED SYMBOLS
 
        stm32eforth.s:2753   .text:0000000000001210 $d
        stm32eforth.s:2756   .text:0000000000001214 $t
-       stm32eforth.s:2744   .inflash.dictinary:0000000000000800 LF_QSTAC
-       stm32eforth.s:2744   .inflash.dictinary:0000000000000804 _QSTAC
-       stm32eforth.s:2761   .inflash.dictinary:000000000000080c CA_QSTAC
+       stm32eforth.s:2744   .inflash.dictinary:00000000000007fc LF_QSTAC
+       stm32eforth.s:2744   .inflash.dictinary:0000000000000800 _QSTAC
+       stm32eforth.s:2761   .inflash.dictinary:0000000000000808 CA_QSTAC
        stm32eforth.s:2761   .text:000000000000121c QSTAC
        stm32eforth.s:2766   .text:000000000000122c $d
-       stm32eforth.s:2761   .inflash.dictinary:0000000000000810 LF_EVAL
-       stm32eforth.s:2761   .inflash.dictinary:0000000000000814 _EVAL
-       stm32eforth.s:2773   .inflash.dictinary:000000000000081c CA_EVAL
+       stm32eforth.s:2761   .inflash.dictinary:000000000000080c LF_EVAL
+       stm32eforth.s:2761   .inflash.dictinary:0000000000000810 _EVAL
+       stm32eforth.s:2773   .inflash.dictinary:0000000000000818 CA_EVAL
        stm32eforth.s:2773   .text:000000000000123c EVAL
        stm32eforth.s:2775   .text:0000000000001240 EVAL1
        stm32eforth.s:2780   .text:0000000000001250 $d
        stm32eforth.s:2785   .text:0000000000001264 EVAL2
        stm32eforth.s:2781   .text:0000000000001254 $t
-       stm32eforth.s:2773   .inflash.dictinary:0000000000000820 LF_PRESE
-       stm32eforth.s:2773   .inflash.dictinary:0000000000000824 _PRESE
-       stm32eforth.s:2792   .inflash.dictinary:000000000000082c CA_PRESE
-       stm32eforth.s:2792   .inflash.dictinary:0000000000000830 LF_QUIT
-       stm32eforth.s:2792   .inflash.dictinary:0000000000000834 _QUIT
-       stm32eforth.s:2800   .inflash.dictinary:000000000000083c CA_QUIT
+       stm32eforth.s:2773   .inflash.dictinary:000000000000081c LF_PRESE
+       stm32eforth.s:2773   .inflash.dictinary:0000000000000820 _PRESE
+       stm32eforth.s:2792   .inflash.dictinary:0000000000000828 CA_PRESE
+       stm32eforth.s:2792   .inflash.dictinary:000000000000082c LF_QUIT
+       stm32eforth.s:2792   .inflash.dictinary:0000000000000830 _QUIT
+       stm32eforth.s:2800   .inflash.dictinary:0000000000000838 CA_QUIT
        stm32eforth.s:2803   .text:0000000000001290 QUIT1
        stm32eforth.s:2805   .text:0000000000001294 QUIT2
        stm32eforth.s:2809   .text:00000000000012a0 $d
-       stm32eforth.s:2800   .inflash.dictinary:0000000000000840 LF_UNLOCK
-       stm32eforth.s:2800   .inflash.dictinary:0000000000000844 _UNLOCK
-       stm32eforth.s:2817   .inflash.dictinary:000000000000084c CA_UNLOCK
+       stm32eforth.s:2800   .inflash.dictinary:000000000000083c LF_UNLOCK
+       stm32eforth.s:2800   .inflash.dictinary:0000000000000840 _UNLOCK
+       stm32eforth.s:2817   .inflash.dictinary:0000000000000848 CA_UNLOCK
        stm32eforth.s:2817   .text:00000000000012a4 UNLOCK
        stm32eforth.s:2817   .text:00000000000012a4 $t
        stm32eforth.s:2820   .text:00000000000012ac $d
@@ -6057,23 +6057,23 @@ DEFINED SYMBOLS
        stm32eforth.s:2848   .text:00000000000012e4 FLASH_ERR_CHECK
        stm32eforth.s:2853   .text:00000000000012f2 $d
        stm32eforth.s:2855   .text:0000000000001312 $t
-       stm32eforth.s:2817   .inflash.dictinary:0000000000000850 LF_ESECTOR
-       stm32eforth.s:2817   .inflash.dictinary:0000000000000854 _ESECTOR
-       stm32eforth.s:2861   .inflash.dictinary:0000000000000864 CA_ESECTOR
+       stm32eforth.s:2817   .inflash.dictinary:000000000000084c LF_ESECTOR
+       stm32eforth.s:2817   .inflash.dictinary:0000000000000850 _ESECTOR
+       stm32eforth.s:2861   .inflash.dictinary:0000000000000860 CA_ESECTOR
        stm32eforth.s:2861   .text:0000000000001318 ESECTOR
        stm32eforth.s:2864   .text:0000000000001324 $d
        stm32eforth.s:2865   .text:0000000000001328 $t
-       stm32eforth.s:2861   .inflash.dictinary:0000000000000868 LF_ISTOR
-       stm32eforth.s:2861   .inflash.dictinary:000000000000086c _ISTOR
-       stm32eforth.s:2881   .inflash.dictinary:0000000000000870 CA_ISTOR
+       stm32eforth.s:2861   .inflash.dictinary:0000000000000864 LF_ISTOR
+       stm32eforth.s:2861   .inflash.dictinary:0000000000000868 _ISTOR
+       stm32eforth.s:2881   .inflash.dictinary:000000000000086c CA_ISTOR
        stm32eforth.s:2881   .text:0000000000001350 ISTOR
        stm32eforth.s:2884   .text:000000000000135c $d
        stm32eforth.s:2885   .text:0000000000001360 $t
        stm32eforth.s:2894   .text:0000000000001380 $d
        stm32eforth.s:2895   .text:0000000000001384 $t
-       stm32eforth.s:2881   .inflash.dictinary:0000000000000874 LF_IMG_SIZE
-       stm32eforth.s:2881   .inflash.dictinary:0000000000000878 _IMG_SIZE
-       stm32eforth.s:2903   .inflash.dictinary:0000000000000884 CA_IMG_SIZE
+       stm32eforth.s:2881   .inflash.dictinary:0000000000000870 LF_IMG_SIZE
+       stm32eforth.s:2881   .inflash.dictinary:0000000000000874 _IMG_SIZE
+       stm32eforth.s:2903   .inflash.dictinary:0000000000000880 CA_IMG_SIZE
        stm32eforth.s:2903   .text:0000000000001390 IMG_SIZE
        stm32eforth.s:2905   .text:0000000000001398 $d
 ARM GAS  stm32eforth.s 			page 103
@@ -6084,46 +6084,46 @@ DEFINED SYMBOLS
        stm32eforth.s:2911   .text:00000000000013b4 $t
        stm32eforth.s:2914   .text:00000000000013c0 $d
        stm32eforth.s:2915   .text:00000000000013c4 $t
-       stm32eforth.s:2903   .inflash.dictinary:0000000000000888 LF_IMGQ
-       stm32eforth.s:2903   .inflash.dictinary:000000000000088c _IMGQ
-       stm32eforth.s:2921   .inflash.dictinary:0000000000000894 CA_IMGQ
+       stm32eforth.s:2903   .inflash.dictinary:0000000000000884 LF_IMGQ
+       stm32eforth.s:2903   .inflash.dictinary:0000000000000888 _IMGQ
+       stm32eforth.s:2921   .inflash.dictinary:0000000000000890 CA_IMGQ
        stm32eforth.s:2921   .text:00000000000013cc IMGQ
-       stm32eforth.s:2921   .inflash.dictinary:0000000000000898 LF_LOAD_IMG
-       stm32eforth.s:2921   .inflash.dictinary:000000000000089c _LOAD_IMG
-       stm32eforth.s:2938   .inflash.dictinary:00000000000008a8 CA_LOAD_IMG
+       stm32eforth.s:2921   .inflash.dictinary:0000000000000894 LF_LOAD_IMG
+       stm32eforth.s:2921   .inflash.dictinary:0000000000000898 _LOAD_IMG
+       stm32eforth.s:2938   .inflash.dictinary:00000000000008a4 CA_LOAD_IMG
        stm32eforth.s:2938   .text:00000000000013ec LOAD_IMG
        stm32eforth.s:2942   .text:00000000000013f8 $d
        stm32eforth.s:2944   .text:00000000000013fc $t
-       stm32eforth.s:2938   .inflash.dictinary:00000000000008ac LF_FLSH_WR
-       stm32eforth.s:2938   .inflash.dictinary:00000000000008b0 _FLSH_WR
-       stm32eforth.s:2966   .inflash.dictinary:00000000000008b8 CA_FLSH_WR
+       stm32eforth.s:2938   .inflash.dictinary:00000000000008a8 LF_FLSH_WR
+       stm32eforth.s:2938   .inflash.dictinary:00000000000008ac _FLSH_WR
+       stm32eforth.s:2966   .inflash.dictinary:00000000000008b4 CA_FLSH_WR
        stm32eforth.s:2966   .text:0000000000001444 FLSH_WR
        stm32eforth.s:2970   .text:0000000000001450 $d
        stm32eforth.s:2972   .text:0000000000001454 $t
        stm32eforth.s:2981   .text:0000000000001478 $d
        stm32eforth.s:2982   .text:000000000000147c $t
-       stm32eforth.s:2966   .inflash.dictinary:00000000000008bc LF_ERASE_IMG
-       stm32eforth.s:2966   .inflash.dictinary:00000000000008c0 _ERASE_IMG
-       stm32eforth.s:2990   .inflash.dictinary:00000000000008cc CA_ERASE_IMG
+       stm32eforth.s:2966   .inflash.dictinary:00000000000008b8 LF_ERASE_IMG
+       stm32eforth.s:2966   .inflash.dictinary:00000000000008bc _ERASE_IMG
+       stm32eforth.s:2990   .inflash.dictinary:00000000000008c8 CA_ERASE_IMG
        stm32eforth.s:2990   .text:000000000000148c ERASE_IMG
        stm32eforth.s:2992   .text:0000000000001494 $d
        stm32eforth.s:2993   .text:0000000000001498 $t
-       stm32eforth.s:2990   .inflash.dictinary:00000000000008d0 LF_SAVE_IMG
-       stm32eforth.s:2990   .inflash.dictinary:00000000000008d4 _SAVE_IMG
-       stm32eforth.s:2998   .inflash.dictinary:00000000000008e0 CA_SAVE_IMG
+       stm32eforth.s:2990   .inflash.dictinary:00000000000008cc LF_SAVE_IMG
+       stm32eforth.s:2990   .inflash.dictinary:00000000000008d0 _SAVE_IMG
+       stm32eforth.s:2998   .inflash.dictinary:00000000000008dc CA_SAVE_IMG
        stm32eforth.s:2998   .text:00000000000014a0 SAVE_IMG
        stm32eforth.s:3004   .text:00000000000014b4 $d
        stm32eforth.s:3005   .text:00000000000014b8 $t
        stm32eforth.s:3008   .text:00000000000014c4 $d
        stm32eforth.s:3010   .text:00000000000014c8 $t
-       stm32eforth.s:2998   .inflash.dictinary:00000000000008e4 LF_TURNKEY
-       stm32eforth.s:2998   .inflash.dictinary:00000000000008e8 _TURNKEY
-       stm32eforth.s:3032   .inflash.dictinary:00000000000008f0 CA_TURNKEY
+       stm32eforth.s:2998   .inflash.dictinary:00000000000008e0 LF_TURNKEY
+       stm32eforth.s:2998   .inflash.dictinary:00000000000008e4 _TURNKEY
+       stm32eforth.s:3032   .inflash.dictinary:00000000000008ec CA_TURNKEY
        stm32eforth.s:3032   .text:0000000000001504 TURNKEY
        stm32eforth.s:3076   .text:0000000000001580 TICK
-       stm32eforth.s:3032   .inflash.dictinary:00000000000008f4 LF_FORGET
-       stm32eforth.s:3032   .inflash.dictinary:00000000000008f8 _FORGET
-       stm32eforth.s:3042   .inflash.dictinary:0000000000000900 CA_FORGET
+       stm32eforth.s:3032   .inflash.dictinary:00000000000008f0 LF_FORGET
+       stm32eforth.s:3032   .inflash.dictinary:00000000000008f4 _FORGET
+       stm32eforth.s:3042   .inflash.dictinary:00000000000008fc CA_FORGET
        stm32eforth.s:3042   .text:000000000000151c FORGET
        stm32eforth.s:3047   .text:0000000000001530 $d
        stm32eforth.s:3048   .text:0000000000001534 $t
@@ -6131,9 +6131,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3052   .text:0000000000001544 $t
        stm32eforth.s:3402   .text:00000000000018ac OVERT
        stm32eforth.s:3064   .text:000000000000156c $d
-       stm32eforth.s:3042   .inflash.dictinary:0000000000000904 LF_TICK
-       stm32eforth.s:3042   .inflash.dictinary:0000000000000908 _TICK
-       stm32eforth.s:3076   .inflash.dictinary:000000000000090c CA_TICK
+       stm32eforth.s:3042   .inflash.dictinary:0000000000000900 LF_TICK
+       stm32eforth.s:3042   .inflash.dictinary:0000000000000904 _TICK
+       stm32eforth.s:3076   .inflash.dictinary:0000000000000908 CA_TICK
        stm32eforth.s:3076   .text:0000000000001580 $t
        stm32eforth.s:3081   .text:0000000000001590 $d
 ARM GAS  stm32eforth.s 			page 104
@@ -6141,26 +6141,26 @@ DEFINED SYMBOLS
 
        stm32eforth.s:3083   .text:0000000000001598 TICK1
        stm32eforth.s:3082   .text:0000000000001594 $t
-       stm32eforth.s:3076   .inflash.dictinary:0000000000000910 LF_ALLOT
-       stm32eforth.s:3076   .inflash.dictinary:0000000000000914 _ALLOT
-       stm32eforth.s:3087   .inflash.dictinary:000000000000091c CA_ALLOT
+       stm32eforth.s:3076   .inflash.dictinary:000000000000090c LF_ALLOT
+       stm32eforth.s:3076   .inflash.dictinary:0000000000000910 _ALLOT
+       stm32eforth.s:3087   .inflash.dictinary:0000000000000918 CA_ALLOT
        stm32eforth.s:3087   .text:000000000000159c ALLOT
-       stm32eforth.s:3087   .inflash.dictinary:0000000000000920 LF_COMMA
-       stm32eforth.s:3087   .inflash.dictinary:0000000000000924 _COMMA
-       stm32eforth.s:3095   .inflash.dictinary:0000000000000928 CA_COMMA
+       stm32eforth.s:3087   .inflash.dictinary:000000000000091c LF_COMMA
+       stm32eforth.s:3087   .inflash.dictinary:0000000000000920 _COMMA
+       stm32eforth.s:3095   .inflash.dictinary:0000000000000924 CA_COMMA
        stm32eforth.s:3095   .text:00000000000015ac COMMA
-       stm32eforth.s:3095   .inflash.dictinary:000000000000092c LF_BCOMP
-       stm32eforth.s:3095   .inflash.dictinary:0000000000000930 _BCOMP
-       stm32eforth.s:3107   .inflash.dictinary:000000000000093c CA_BCOMP
+       stm32eforth.s:3095   .inflash.dictinary:0000000000000928 LF_BCOMP
+       stm32eforth.s:3095   .inflash.dictinary:000000000000092c _BCOMP
+       stm32eforth.s:3107   .inflash.dictinary:0000000000000938 CA_BCOMP
        stm32eforth.s:3107   .text:00000000000015cc BCOMP
-       stm32eforth.s:3107   .inflash.dictinary:0000000000000940 LF_COMPI
-       stm32eforth.s:3107   .inflash.dictinary:0000000000000944 _COMPI
-       stm32eforth.s:3115   .inflash.dictinary:000000000000094c CA_COMPI
+       stm32eforth.s:3107   .inflash.dictinary:000000000000093c LF_COMPI
+       stm32eforth.s:3107   .inflash.dictinary:0000000000000940 _COMPI
+       stm32eforth.s:3115   .inflash.dictinary:0000000000000948 CA_COMPI
        stm32eforth.s:3115   .text:00000000000015dc COMPI
        stm32eforth.s:3457   .text:000000000000193a CALLC
-       stm32eforth.s:3115   .inflash.dictinary:0000000000000950 LF_LITER
-       stm32eforth.s:3115   .inflash.dictinary:0000000000000954 _LITER
-       stm32eforth.s:3129   .inflash.dictinary:000000000000095c CA_LITER
+       stm32eforth.s:3115   .inflash.dictinary:000000000000094c LF_LITER
+       stm32eforth.s:3115   .inflash.dictinary:0000000000000950 _LITER
+       stm32eforth.s:3129   .inflash.dictinary:0000000000000958 CA_LITER
        stm32eforth.s:3129   .text:0000000000001604 LITER
        stm32eforth.s:3130   .text:0000000000001604 $d
        stm32eforth.s:3131   .text:0000000000001608 $t
@@ -6171,97 +6171,97 @@ DEFINED SYMBOLS
        stm32eforth.s:3147   .text:0000000000001628 $t
        stm32eforth.s:3149   .text:0000000000001634 $d
        stm32eforth.s:3150   .text:0000000000001638 $t
-       stm32eforth.s:3129   .inflash.dictinary:0000000000000960 LF_FOR
-       stm32eforth.s:3129   .inflash.dictinary:0000000000000964 _FOR
-       stm32eforth.s:3163   .inflash.dictinary:0000000000000968 CA_FOR
+       stm32eforth.s:3129   .inflash.dictinary:000000000000095c LF_FOR
+       stm32eforth.s:3129   .inflash.dictinary:0000000000000960 _FOR
+       stm32eforth.s:3163   .inflash.dictinary:0000000000000964 CA_FOR
        stm32eforth.s:3163   .text:0000000000001654 FOR
        stm32eforth.s:3166   .text:000000000000165c $d
        stm32eforth.s:3167   .text:0000000000001660 $t
-       stm32eforth.s:3163   .inflash.dictinary:000000000000096c LF_BEGIN
-       stm32eforth.s:3163   .inflash.dictinary:0000000000000970 _BEGIN
-       stm32eforth.s:3172   .inflash.dictinary:0000000000000978 CA_BEGIN
+       stm32eforth.s:3163   .inflash.dictinary:0000000000000968 LF_BEGIN
+       stm32eforth.s:3163   .inflash.dictinary:000000000000096c _BEGIN
+       stm32eforth.s:3172   .inflash.dictinary:0000000000000974 CA_BEGIN
        stm32eforth.s:3172   .text:0000000000001668 BEGIN
-       stm32eforth.s:3172   .inflash.dictinary:000000000000097c LF_NEXT
-       stm32eforth.s:3172   .inflash.dictinary:0000000000000980 _NEXT
-       stm32eforth.s:3179   .inflash.dictinary:0000000000000988 CA_NEXT
+       stm32eforth.s:3172   .inflash.dictinary:0000000000000978 LF_NEXT
+       stm32eforth.s:3172   .inflash.dictinary:000000000000097c _NEXT
+       stm32eforth.s:3179   .inflash.dictinary:0000000000000984 CA_NEXT
        stm32eforth.s:3179   .text:0000000000001674 NEXT
        stm32eforth.s:3182   .text:000000000000167c $d
        stm32eforth.s:3183   .text:0000000000001680 $t
-       stm32eforth.s:3179   .inflash.dictinary:000000000000098c LF_UNTIL
-       stm32eforth.s:3179   .inflash.dictinary:0000000000000990 _UNTIL
-       stm32eforth.s:3188   .inflash.dictinary:0000000000000998 CA_UNTIL
+       stm32eforth.s:3179   .inflash.dictinary:0000000000000988 LF_UNTIL
+       stm32eforth.s:3179   .inflash.dictinary:000000000000098c _UNTIL
+       stm32eforth.s:3188   .inflash.dictinary:0000000000000994 CA_UNTIL
        stm32eforth.s:3188   .text:0000000000001688 UNTIL
        stm32eforth.s:3191   .text:0000000000001690 $d
        stm32eforth.s:3192   .text:0000000000001694 $t
-       stm32eforth.s:3188   .inflash.dictinary:000000000000099c LF_AGAIN
-       stm32eforth.s:3188   .inflash.dictinary:00000000000009a0 _AGAIN
-       stm32eforth.s:3197   .inflash.dictinary:00000000000009a8 CA_AGAIN
+       stm32eforth.s:3188   .inflash.dictinary:0000000000000998 LF_AGAIN
+       stm32eforth.s:3188   .inflash.dictinary:000000000000099c _AGAIN
+       stm32eforth.s:3197   .inflash.dictinary:00000000000009a4 CA_AGAIN
 ARM GAS  stm32eforth.s 			page 105
 
 
        stm32eforth.s:3197   .text:000000000000169c AGAIN
        stm32eforth.s:3200   .text:00000000000016a4 $d
        stm32eforth.s:3201   .text:00000000000016a8 $t
-       stm32eforth.s:3197   .inflash.dictinary:00000000000009ac LF_IFF
-       stm32eforth.s:3197   .inflash.dictinary:00000000000009b0 _IFF
-       stm32eforth.s:3206   .inflash.dictinary:00000000000009b4 CA_IFF
+       stm32eforth.s:3197   .inflash.dictinary:00000000000009a8 LF_IFF
+       stm32eforth.s:3197   .inflash.dictinary:00000000000009ac _IFF
+       stm32eforth.s:3206   .inflash.dictinary:00000000000009b0 CA_IFF
        stm32eforth.s:3206   .text:00000000000016b0 IFF
        stm32eforth.s:3209   .text:00000000000016b8 $d
        stm32eforth.s:3210   .text:00000000000016bc $t
        stm32eforth.s:3211   .text:00000000000016c4 $d
        stm32eforth.s:3212   .text:00000000000016c8 $t
-       stm32eforth.s:3206   .inflash.dictinary:00000000000009b8 LF_AHEAD
-       stm32eforth.s:3206   .inflash.dictinary:00000000000009bc _AHEAD
-       stm32eforth.s:3218   .inflash.dictinary:00000000000009c4 CA_AHEAD
+       stm32eforth.s:3206   .inflash.dictinary:00000000000009b4 LF_AHEAD
+       stm32eforth.s:3206   .inflash.dictinary:00000000000009b8 _AHEAD
+       stm32eforth.s:3218   .inflash.dictinary:00000000000009c0 CA_AHEAD
        stm32eforth.s:3218   .text:00000000000016d4 AHEAD
        stm32eforth.s:3221   .text:00000000000016dc $d
        stm32eforth.s:3222   .text:00000000000016e0 $t
        stm32eforth.s:3223   .text:00000000000016e8 $d
        stm32eforth.s:3224   .text:00000000000016ec $t
-       stm32eforth.s:3218   .inflash.dictinary:00000000000009c8 LF_REPEA
-       stm32eforth.s:3218   .inflash.dictinary:00000000000009cc _REPEA
-       stm32eforth.s:3230   .inflash.dictinary:00000000000009d4 CA_REPEA
+       stm32eforth.s:3218   .inflash.dictinary:00000000000009c4 LF_REPEA
+       stm32eforth.s:3218   .inflash.dictinary:00000000000009c8 _REPEA
+       stm32eforth.s:3230   .inflash.dictinary:00000000000009d0 CA_REPEA
        stm32eforth.s:3230   .text:00000000000016f8 REPEA
-       stm32eforth.s:3230   .inflash.dictinary:00000000000009d8 LF_THENN
-       stm32eforth.s:3230   .inflash.dictinary:00000000000009dc _THENN
-       stm32eforth.s:3240   .inflash.dictinary:00000000000009e4 CA_THENN
+       stm32eforth.s:3230   .inflash.dictinary:00000000000009d4 LF_THENN
+       stm32eforth.s:3230   .inflash.dictinary:00000000000009d8 _THENN
+       stm32eforth.s:3240   .inflash.dictinary:00000000000009e0 CA_THENN
        stm32eforth.s:3240   .text:0000000000001710 THENN
-       stm32eforth.s:3240   .inflash.dictinary:00000000000009e8 LF_AFT
-       stm32eforth.s:3240   .inflash.dictinary:00000000000009ec _AFT
-       stm32eforth.s:3249   .inflash.dictinary:00000000000009f0 CA_AFT
+       stm32eforth.s:3240   .inflash.dictinary:00000000000009e4 LF_AFT
+       stm32eforth.s:3240   .inflash.dictinary:00000000000009e8 _AFT
+       stm32eforth.s:3249   .inflash.dictinary:00000000000009ec CA_AFT
        stm32eforth.s:3249   .text:0000000000001724 AFT
-       stm32eforth.s:3249   .inflash.dictinary:00000000000009f4 LF_ELSEE
-       stm32eforth.s:3249   .inflash.dictinary:00000000000009f8 _ELSEE
-       stm32eforth.s:3259   .inflash.dictinary:0000000000000a00 CA_ELSEE
+       stm32eforth.s:3249   .inflash.dictinary:00000000000009f0 LF_ELSEE
+       stm32eforth.s:3249   .inflash.dictinary:00000000000009f4 _ELSEE
+       stm32eforth.s:3259   .inflash.dictinary:00000000000009fc CA_ELSEE
        stm32eforth.s:3259   .text:000000000000173c ELSEE
-       stm32eforth.s:3259   .inflash.dictinary:0000000000000a04 LF_WHILE
-       stm32eforth.s:3259   .inflash.dictinary:0000000000000a08 _WHILE
-       stm32eforth.s:3268   .inflash.dictinary:0000000000000a10 CA_WHILE
+       stm32eforth.s:3259   .inflash.dictinary:0000000000000a00 LF_WHILE
+       stm32eforth.s:3259   .inflash.dictinary:0000000000000a04 _WHILE
+       stm32eforth.s:3268   .inflash.dictinary:0000000000000a0c CA_WHILE
        stm32eforth.s:3268   .text:0000000000001750 WHILE
-       stm32eforth.s:3268   .inflash.dictinary:0000000000000a14 LF_ABRTQ
-       stm32eforth.s:3268   .inflash.dictinary:0000000000000a18 _ABRTQ
-       stm32eforth.s:3276   .inflash.dictinary:0000000000000a20 CA_ABRTQ
+       stm32eforth.s:3268   .inflash.dictinary:0000000000000a10 LF_ABRTQ
+       stm32eforth.s:3268   .inflash.dictinary:0000000000000a14 _ABRTQ
+       stm32eforth.s:3276   .inflash.dictinary:0000000000000a1c CA_ABRTQ
        stm32eforth.s:3276   .text:0000000000001760 ABRTQ
        stm32eforth.s:3279   .text:0000000000001768 $d
        stm32eforth.s:3280   .text:000000000000176c $t
-       stm32eforth.s:3276   .inflash.dictinary:0000000000000a24 LF_STRQ
-       stm32eforth.s:3276   .inflash.dictinary:0000000000000a28 _STRQ
-       stm32eforth.s:3285   .inflash.dictinary:0000000000000a2c CA_STRQ
+       stm32eforth.s:3276   .inflash.dictinary:0000000000000a20 LF_STRQ
+       stm32eforth.s:3276   .inflash.dictinary:0000000000000a24 _STRQ
+       stm32eforth.s:3285   .inflash.dictinary:0000000000000a28 CA_STRQ
        stm32eforth.s:3285   .text:0000000000001774 STRQ
        stm32eforth.s:3288   .text:000000000000177c $d
        stm32eforth.s:3289   .text:0000000000001780 $t
-       stm32eforth.s:3285   .inflash.dictinary:0000000000000a30 LF_DOTQ
-       stm32eforth.s:3285   .inflash.dictinary:0000000000000a34 _DOTQ
-       stm32eforth.s:3294   .inflash.dictinary:0000000000000a38 CA_DOTQ
+       stm32eforth.s:3285   .inflash.dictinary:0000000000000a2c LF_DOTQ
+       stm32eforth.s:3285   .inflash.dictinary:0000000000000a30 _DOTQ
+       stm32eforth.s:3294   .inflash.dictinary:0000000000000a34 CA_DOTQ
        stm32eforth.s:3294   .text:0000000000001788 DOTQ
        stm32eforth.s:3297   .text:0000000000001790 $d
        stm32eforth.s:3298   .text:0000000000001794 $t
 ARM GAS  stm32eforth.s 			page 106
 
 
-       stm32eforth.s:3294   .inflash.dictinary:0000000000000a3c LF_UNIQU
-       stm32eforth.s:3294   .inflash.dictinary:0000000000000a40 _UNIQU
-       stm32eforth.s:3307   .inflash.dictinary:0000000000000a48 CA_UNIQU
+       stm32eforth.s:3294   .inflash.dictinary:0000000000000a38 LF_UNIQU
+       stm32eforth.s:3294   .inflash.dictinary:0000000000000a3c _UNIQU
+       stm32eforth.s:3307   .inflash.dictinary:0000000000000a44 CA_UNIQU
        stm32eforth.s:3307   .text:000000000000179c UNIQU
        stm32eforth.s:3312   .text:00000000000017ac $d
        stm32eforth.s:3320   .text:00000000000017c8 UNIQ1
@@ -6274,9 +6274,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3337   .text:00000000000017e4 $t
        stm32eforth.s:3352   .text:000000000000181c $d
        stm32eforth.s:3354   .text:0000000000001824 $t
-       stm32eforth.s:3307   .inflash.dictinary:0000000000000a4c LF_SCOMP
-       stm32eforth.s:3307   .inflash.dictinary:0000000000000a50 _SCOMP
-       stm32eforth.s:3358   .inflash.dictinary:0000000000000a5c CA_SCOMP
+       stm32eforth.s:3307   .inflash.dictinary:0000000000000a48 LF_SCOMP
+       stm32eforth.s:3307   .inflash.dictinary:0000000000000a4c _SCOMP
+       stm32eforth.s:3358   .inflash.dictinary:0000000000000a58 CA_SCOMP
        stm32eforth.s:3358   .text:0000000000001828 SCOMP
        stm32eforth.s:3363   .text:0000000000001838 $d
        stm32eforth.s:3374   .text:0000000000001864 SCOM2
@@ -6290,89 +6290,89 @@ DEFINED SYMBOLS
        stm32eforth.s:3380   .text:0000000000001878 SCOM3
        stm32eforth.s:3378   .text:0000000000001870 $t
        stm32eforth.s:3387   .text:0000000000001880 COLON_ABORT
-       stm32eforth.s:3358   .inflash.dictinary:0000000000000a60 LF_OVERT
-       stm32eforth.s:3358   .inflash.dictinary:0000000000000a64 _OVERT
-       stm32eforth.s:3402   .inflash.dictinary:0000000000000a6c CA_OVERT
-       stm32eforth.s:3402   .inflash.dictinary:0000000000000a70 LF_SEMIS
-       stm32eforth.s:3402   .inflash.dictinary:0000000000000a74 _SEMIS
-       stm32eforth.s:3412   .inflash.dictinary:0000000000000a78 CA_SEMIS
+       stm32eforth.s:3358   .inflash.dictinary:0000000000000a5c LF_OVERT
+       stm32eforth.s:3358   .inflash.dictinary:0000000000000a60 _OVERT
+       stm32eforth.s:3402   .inflash.dictinary:0000000000000a68 CA_OVERT
+       stm32eforth.s:3402   .inflash.dictinary:0000000000000a6c LF_SEMIS
+       stm32eforth.s:3402   .inflash.dictinary:0000000000000a70 _SEMIS
+       stm32eforth.s:3412   .inflash.dictinary:0000000000000a74 CA_SEMIS
        stm32eforth.s:3412   .text:00000000000018c4 SEMIS
-       stm32eforth.s:3412   .inflash.dictinary:0000000000000a7c LF_RBRAC
-       stm32eforth.s:3412   .inflash.dictinary:0000000000000a80 _RBRAC
-       stm32eforth.s:3423   .inflash.dictinary:0000000000000a84 CA_RBRAC
+       stm32eforth.s:3412   .inflash.dictinary:0000000000000a78 LF_RBRAC
+       stm32eforth.s:3412   .inflash.dictinary:0000000000000a7c _RBRAC
+       stm32eforth.s:3423   .inflash.dictinary:0000000000000a80 CA_RBRAC
        stm32eforth.s:3423   .text:00000000000018e0 RBRAC
        stm32eforth.s:3425   .text:00000000000018e8 $d
        stm32eforth.s:3426   .text:00000000000018ec $t
        stm32eforth.s:3434   .text:00000000000018f8 COMPILE_BLW
-       stm32eforth.s:3423   .inflash.dictinary:0000000000000a88 LF_COLON
-       stm32eforth.s:3423   .inflash.dictinary:0000000000000a8c _COLON
-       stm32eforth.s:3470   .inflash.dictinary:0000000000000a90 CA_COLON
+       stm32eforth.s:3423   .inflash.dictinary:0000000000000a84 LF_COLON
+       stm32eforth.s:3423   .inflash.dictinary:0000000000000a88 _COLON
+       stm32eforth.s:3470   .inflash.dictinary:0000000000000a8c CA_COLON
        stm32eforth.s:3470   .text:000000000000195c COLON
        stm32eforth.s:3525   .text:00000000000019d8 HEAD
-       stm32eforth.s:3470   .inflash.dictinary:0000000000000a94 LF_IMMED
-       stm32eforth.s:3470   .inflash.dictinary:0000000000000a98 _IMMED
-       stm32eforth.s:3478   .inflash.dictinary:0000000000000aa4 CA_IMMED
+       stm32eforth.s:3470   .inflash.dictinary:0000000000000a90 LF_IMMED
+       stm32eforth.s:3470   .inflash.dictinary:0000000000000a94 _IMMED
+       stm32eforth.s:3478   .inflash.dictinary:0000000000000aa0 CA_IMMED
        stm32eforth.s:3478   .text:000000000000196c IMMED
        stm32eforth.s:3480   .text:0000000000001974 $d
        stm32eforth.s:3481   .text:0000000000001978 $t
-       stm32eforth.s:3478   .inflash.dictinary:0000000000000aa8 LF_ICOLON
+       stm32eforth.s:3478   .inflash.dictinary:0000000000000aa4 LF_ICOLON
 ARM GAS  stm32eforth.s 			page 107
 
 
-       stm32eforth.s:3478   .inflash.dictinary:0000000000000aac _ICOLON
-       stm32eforth.s:3494   .inflash.dictinary:0000000000000ab0 CA_ICOLON
+       stm32eforth.s:3478   .inflash.dictinary:0000000000000aa8 _ICOLON
+       stm32eforth.s:3494   .inflash.dictinary:0000000000000aac CA_ICOLON
        stm32eforth.s:3494   .text:0000000000001998 ICOLON
-       stm32eforth.s:3494   .inflash.dictinary:0000000000000ab4 LF_ISEMIS
-       stm32eforth.s:3494   .inflash.dictinary:0000000000000ab8 _ISEMIS
-       stm32eforth.s:3506   .inflash.dictinary:0000000000000abc CA_ISEMIS
+       stm32eforth.s:3494   .inflash.dictinary:0000000000000ab0 LF_ISEMIS
+       stm32eforth.s:3494   .inflash.dictinary:0000000000000ab4 _ISEMIS
+       stm32eforth.s:3506   .inflash.dictinary:0000000000000ab8 CA_ISEMIS
        stm32eforth.s:3506   .text:00000000000019b4 ISEMIS
-       stm32eforth.s:3506   .inflash.dictinary:0000000000000ac0 LF_HEAD
-       stm32eforth.s:3506   .inflash.dictinary:0000000000000ac4 _HEAD
-       stm32eforth.s:3525   .inflash.dictinary:0000000000000acc CA_HEAD
-       stm32eforth.s:3525   .inflash.dictinary:0000000000000ad0 LF_CONST
-       stm32eforth.s:3525   .inflash.dictinary:0000000000000ad4 _CONST
-       stm32eforth.s:3539   .inflash.dictinary:0000000000000ae0 CA_CONST
+       stm32eforth.s:3506   .inflash.dictinary:0000000000000abc LF_HEAD
+       stm32eforth.s:3506   .inflash.dictinary:0000000000000ac0 _HEAD
+       stm32eforth.s:3525   .inflash.dictinary:0000000000000ac8 CA_HEAD
+       stm32eforth.s:3525   .inflash.dictinary:0000000000000acc LF_CONST
+       stm32eforth.s:3525   .inflash.dictinary:0000000000000ad0 _CONST
+       stm32eforth.s:3539   .inflash.dictinary:0000000000000adc CA_CONST
        stm32eforth.s:3539   .text:0000000000001a00 CONST
        stm32eforth.s:3542   .text:0000000000001a0c $d
        stm32eforth.s:3543   .text:0000000000001a10 $t
        stm32eforth.s:3551   .text:0000000000001a20 DODOES
        stm32eforth.s:3562   .text:0000000000001a4c $d
        stm32eforth.s:3563   .text:0000000000001a50 $t
-       stm32eforth.s:3539   .inflash.dictinary:0000000000000ae4 LF_DOES
-       stm32eforth.s:3539   .inflash.dictinary:0000000000000ae8 _DOES
-       stm32eforth.s:3580   .inflash.dictinary:0000000000000af0 CA_DOES
+       stm32eforth.s:3539   .inflash.dictinary:0000000000000ae0 LF_DOES
+       stm32eforth.s:3539   .inflash.dictinary:0000000000000ae4 _DOES
+       stm32eforth.s:3580   .inflash.dictinary:0000000000000aec CA_DOES
        stm32eforth.s:3580   .text:0000000000001a7c DOES
        stm32eforth.s:3582   .text:0000000000001a84 $d
        stm32eforth.s:3583   .text:0000000000001a88 $t
-       stm32eforth.s:3580   .inflash.dictinary:0000000000000af4 LF_CREAT
-       stm32eforth.s:3580   .inflash.dictinary:0000000000000af8 _CREAT
-       stm32eforth.s:3595   .inflash.dictinary:0000000000000b00 CA_CREAT
+       stm32eforth.s:3580   .inflash.dictinary:0000000000000af0 LF_CREAT
+       stm32eforth.s:3580   .inflash.dictinary:0000000000000af4 _CREAT
+       stm32eforth.s:3595   .inflash.dictinary:0000000000000afc CA_CREAT
        stm32eforth.s:3595   .text:0000000000001aa8 CREAT
        stm32eforth.s:3598   .text:0000000000001ab4 $d
        stm32eforth.s:3599   .text:0000000000001ab8 $t
-       stm32eforth.s:3595   .inflash.dictinary:0000000000000b04 LF_VARIA
-       stm32eforth.s:3595   .inflash.dictinary:0000000000000b08 _VARIA
-       stm32eforth.s:3604   .inflash.dictinary:0000000000000b14 CA_VARIA
+       stm32eforth.s:3595   .inflash.dictinary:0000000000000b00 LF_VARIA
+       stm32eforth.s:3595   .inflash.dictinary:0000000000000b04 _VARIA
+       stm32eforth.s:3604   .inflash.dictinary:0000000000000b10 CA_VARIA
        stm32eforth.s:3604   .text:0000000000001ac0 VARIA
        stm32eforth.s:3607   .text:0000000000001acc $d
        stm32eforth.s:3608   .text:0000000000001ad0 $t
-       stm32eforth.s:3604   .inflash.dictinary:0000000000000b18 LF_FCALL
-       stm32eforth.s:3604   .inflash.dictinary:0000000000000b1c _FCALL
-       stm32eforth.s:3615   .inflash.dictinary:0000000000000b24 CA_FCALL
+       stm32eforth.s:3604   .inflash.dictinary:0000000000000b14 LF_FCALL
+       stm32eforth.s:3604   .inflash.dictinary:0000000000000b18 _FCALL
+       stm32eforth.s:3615   .inflash.dictinary:0000000000000b20 CA_FCALL
        stm32eforth.s:3615   .text:0000000000001adc FCALL
-       stm32eforth.s:3615   .inflash.dictinary:0000000000000b28 LF_DEFER
-       stm32eforth.s:3615   .inflash.dictinary:0000000000000b2c _DEFER
-       stm32eforth.s:3626   .inflash.dictinary:0000000000000b34 CA_DEFER
+       stm32eforth.s:3615   .inflash.dictinary:0000000000000b24 LF_DEFER
+       stm32eforth.s:3615   .inflash.dictinary:0000000000000b28 _DEFER
+       stm32eforth.s:3626   .inflash.dictinary:0000000000000b30 CA_DEFER
        stm32eforth.s:3626   .text:0000000000001af0 DEFER
        stm32eforth.s:3629   .text:0000000000001afc $d
        stm32eforth.s:3630   .text:0000000000001b00 $t
-       stm32eforth.s:3626   .inflash.dictinary:0000000000000b38 LF_DEFERSTO
-       stm32eforth.s:3626   .inflash.dictinary:0000000000000b3c _DEFERSTO
-       stm32eforth.s:3639   .inflash.dictinary:0000000000000b44 CA_DEFERSTO
+       stm32eforth.s:3626   .inflash.dictinary:0000000000000b34 LF_DEFERSTO
+       stm32eforth.s:3626   .inflash.dictinary:0000000000000b38 _DEFERSTO
+       stm32eforth.s:3639   .inflash.dictinary:0000000000000b40 CA_DEFERSTO
        stm32eforth.s:3639   .text:0000000000001b18 DEFERSTO
-       stm32eforth.s:3639   .inflash.dictinary:0000000000000b48 LF_DEFERAT
-       stm32eforth.s:3639   .inflash.dictinary:0000000000000b4c _DEFERAT
-       stm32eforth.s:3655   .inflash.dictinary:0000000000000b54 CA_DEFERAT
+       stm32eforth.s:3639   .inflash.dictinary:0000000000000b44 LF_DEFERAT
+       stm32eforth.s:3639   .inflash.dictinary:0000000000000b48 _DEFERAT
+       stm32eforth.s:3655   .inflash.dictinary:0000000000000b50 CA_DEFERAT
        stm32eforth.s:3655   .text:0000000000001b48 DEFERAT
        stm32eforth.s:3662   .text:0000000000001b64 $d
        stm32eforth.s:3986   .inflash:000000000000065c BLADR
@@ -6392,9 +6392,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3695   .inflash:00000000000002ec $t
        stm32eforth.s:3699   .inflash:00000000000002f8 $d
        stm32eforth.s:3700   .inflash:00000000000002fc $t
-       stm32eforth.s:3655   .inflash.dictinary:0000000000000b58 LF_DUMP
-       stm32eforth.s:3655   .inflash.dictinary:0000000000000b5c _DUMP
-       stm32eforth.s:3705   .inflash.dictinary:0000000000000b64 CA_DUMP
+       stm32eforth.s:3655   .inflash.dictinary:0000000000000b54 LF_DUMP
+       stm32eforth.s:3655   .inflash.dictinary:0000000000000b58 _DUMP
+       stm32eforth.s:3705   .inflash.dictinary:0000000000000b60 CA_DUMP
        stm32eforth.s:3705   .text:0000000000001b84 DUMP
        stm32eforth.s:3705   .text:0000000000001b88 $d
        stm32eforth.s:3705   .inflash:0000000000000300 FL_DUMP
@@ -6408,9 +6408,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3727   .inflash:0000000000000354 $d
        stm32eforth.s:3728   .inflash:0000000000000358 DUMP3
        stm32eforth.s:3729   .inflash:0000000000000358 $t
-       stm32eforth.s:3705   .inflash.dictinary:0000000000000b68 LF_DOTS
-       stm32eforth.s:3705   .inflash.dictinary:0000000000000b6c _DOTS
-       stm32eforth.s:3737   .inflash.dictinary:0000000000000b70 CA_DOTS
+       stm32eforth.s:3705   .inflash.dictinary:0000000000000b64 LF_DOTS
+       stm32eforth.s:3705   .inflash.dictinary:0000000000000b68 _DOTS
+       stm32eforth.s:3737   .inflash.dictinary:0000000000000b6c CA_DOTS
        stm32eforth.s:3737   .text:0000000000001b98 DOTS
        stm32eforth.s:3737   .text:0000000000001b9c $d
        stm32eforth.s:3737   .inflash:000000000000036c FL_DOTS
@@ -6419,9 +6419,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3743   .inflash:0000000000000380 DOTS1
        stm32eforth.s:3749   .inflash:0000000000000390 $d
        stm32eforth.s:3750   .inflash:0000000000000394 $t
-       stm32eforth.s:3737   .inflash.dictinary:0000000000000b74 LF_TNAME
-       stm32eforth.s:3737   .inflash.dictinary:0000000000000b78 _TNAME
-       stm32eforth.s:3755   .inflash.dictinary:0000000000000b80 CA_TNAME
+       stm32eforth.s:3737   .inflash.dictinary:0000000000000b70 LF_TNAME
+       stm32eforth.s:3737   .inflash.dictinary:0000000000000b74 _TNAME
+       stm32eforth.s:3755   .inflash.dictinary:0000000000000b7c CA_TNAME
        stm32eforth.s:3755   .text:0000000000001bac TNAME
        stm32eforth.s:3755   .text:0000000000001bb0 $d
        stm32eforth.s:3755   .inflash:000000000000039c FL_TNAME
@@ -6434,12 +6434,12 @@ DEFINED SYMBOLS
        stm32eforth.s:3769   .inflash:00000000000003d0 $t
        stm32eforth.s:3771   .inflash:00000000000003d8 $d
        stm32eforth.s:3772   .inflash:00000000000003dc $t
-       stm32eforth.s:3755   .inflash.dictinary:0000000000000b84 LF_DOTID
-       stm32eforth.s:3755   .inflash.dictinary:0000000000000b88 _DOTID
+       stm32eforth.s:3755   .inflash.dictinary:0000000000000b80 LF_DOTID
+       stm32eforth.s:3755   .inflash.dictinary:0000000000000b84 _DOTID
 ARM GAS  stm32eforth.s 			page 109
 
 
-       stm32eforth.s:3782   .inflash.dictinary:0000000000000b8c CA_DOTID
+       stm32eforth.s:3782   .inflash.dictinary:0000000000000b88 CA_DOTID
        stm32eforth.s:3782   .text:0000000000001bc0 DOTID
        stm32eforth.s:3782   .text:0000000000001bc4 $d
        stm32eforth.s:3782   .inflash:00000000000003f4 FL_DOTID
@@ -6490,9 +6490,9 @@ DEFINED SYMBOLS
        stm32eforth.s:3922   .inflash:0000000000000598 IS_BLW
        stm32eforth.s:3924   .inflash:00000000000005a0 $d
        stm32eforth.s:3925   .inflash:00000000000005a4 $t
-       stm32eforth.s:3782   .inflash.dictinary:0000000000000b90 LF_SEE
-       stm32eforth.s:3782   .inflash.dictinary:0000000000000b94 _SEE
-       stm32eforth.s:3934   .inflash.dictinary:0000000000000b98 CA_SEE
+       stm32eforth.s:3782   .inflash.dictinary:0000000000000b8c LF_SEE
+       stm32eforth.s:3782   .inflash.dictinary:0000000000000b90 _SEE
+       stm32eforth.s:3934   .inflash.dictinary:0000000000000b94 CA_SEE
        stm32eforth.s:3934   .text:0000000000001bd4 SEE
        stm32eforth.s:3934   .text:0000000000001bd8 $d
        stm32eforth.s:3934   .inflash:00000000000005bc FL_SEE
@@ -6501,9 +6501,9 @@ DEFINED SYMBOLS
 
        stm32eforth.s:3934   .text:0000000000001bdc $t
        stm32eforth.s:3952   .inflash:00000000000005f0 FL_SCOL
-       stm32eforth.s:3934   .inflash.dictinary:0000000000000b9c LF_SCOL
-       stm32eforth.s:3934   .inflash.dictinary:0000000000000ba0 _SCOL
-       stm32eforth.s:3952   .inflash.dictinary:0000000000000bac CA_SCOL
+       stm32eforth.s:3934   .inflash.dictinary:0000000000000b98 LF_SCOL
+       stm32eforth.s:3934   .inflash.dictinary:0000000000000b9c _SCOL
+       stm32eforth.s:3952   .inflash.dictinary:0000000000000ba8 CA_SCOL
        stm32eforth.s:3952   .text:0000000000001be8 SCOL
        stm32eforth.s:3952   .text:0000000000001bec $d
        stm32eforth.s:3952   .text:0000000000001bf0 $t
@@ -6519,9 +6519,9 @@ DEFINED SYMBOLS
        stm32eforth.s:4008   .inflash:00000000000006a0 FL_DECOMP
        stm32eforth.s:3977   .inflash:0000000000000650 $d
        stm32eforth.s:3978   .inflash:0000000000000654 $t
-       stm32eforth.s:3952   .inflash.dictinary:0000000000000bb0 LF_DECOMP
-       stm32eforth.s:3952   .inflash.dictinary:0000000000000bb4 _DECOMP
-       stm32eforth.s:4008   .inflash.dictinary:0000000000000bc0 CA_DECOMP
+       stm32eforth.s:3952   .inflash.dictinary:0000000000000bac LF_DECOMP
+       stm32eforth.s:3952   .inflash.dictinary:0000000000000bb0 _DECOMP
+       stm32eforth.s:4008   .inflash.dictinary:0000000000000bbc CA_DECOMP
        stm32eforth.s:4008   .text:0000000000001bfc DECOMP
        stm32eforth.s:4008   .text:0000000000001c00 $d
        stm32eforth.s:4008   .text:0000000000001c04 $t
@@ -6538,9 +6538,9 @@ DEFINED SYMBOLS
        stm32eforth.s:4032   .inflash:00000000000006ec $t
        stm32eforth.s:4040   .inflash:0000000000000708 $d
        stm32eforth.s:4041   .inflash:000000000000070c $t
-       stm32eforth.s:4008   .inflash.dictinary:0000000000000bc4 LF_WORDS
-       stm32eforth.s:4008   .inflash.dictinary:0000000000000bc8 _WORDS
-       stm32eforth.s:4052   .inflash.dictinary:0000000000000bd0 CA_WORDS
+       stm32eforth.s:4008   .inflash.dictinary:0000000000000bc0 LF_WORDS
+       stm32eforth.s:4008   .inflash.dictinary:0000000000000bc4 _WORDS
+       stm32eforth.s:4052   .inflash.dictinary:0000000000000bcc CA_WORDS
        stm32eforth.s:4052   .text:0000000000001c10 WORDS
        stm32eforth.s:4052   .text:0000000000001c14 $d
        stm32eforth.s:4052   .inflash:0000000000000724 FL_WORDS
@@ -6552,9 +6552,9 @@ DEFINED SYMBOLS
        stm32eforth.s:4082   .text:0000000000001c22 VERSN
        stm32eforth.s:4084   .text:0000000000001c2a $d
        stm32eforth.s:4085   .text:0000000000001c2e $t
-       stm32eforth.s:4052   .inflash.dictinary:0000000000000bd4 LF_HI
-       stm32eforth.s:4052   .inflash.dictinary:0000000000000bd8 _HI
-       stm32eforth.s:4089   .inflash.dictinary:0000000000000bdc CA_HI
+       stm32eforth.s:4052   .inflash.dictinary:0000000000000bd0 LF_HI
+       stm32eforth.s:4052   .inflash.dictinary:0000000000000bd4 _HI
+       stm32eforth.s:4089   .inflash.dictinary:0000000000000bd8 CA_HI
        stm32eforth.s:4092   .text:0000000000001c40 $d
 ARM GAS  stm32eforth.s 			page 111
 
@@ -6564,8 +6564,8 @@ DEFINED SYMBOLS
        stm32eforth.s:4102   .text:0000000000001c6c $d
        stm32eforth.s:4103   .text:0000000000001c70 $t
        stm32eforth.s:4113   .rodata:0000000000000000 $d
-       stm32eforth.s:4089   .inflash.dictinary:0000000000000be0 LF_LASTN
-       stm32eforth.s:4123   .inflash.dictinary:0000000000000bec CA_LASTN
+       stm32eforth.s:4089   .inflash.dictinary:0000000000000bdc LF_LASTN
+       stm32eforth.s:4123   .inflash.dictinary:0000000000000be8 CA_LASTN
        stm32eforth.s:4123   .text:0000000000001c90 LASTN
        stm32eforth.s:4131   .text:0000000000001cb0 COLD1
        stm32eforth.s:4132   .text:0000000000001cb4 $d
